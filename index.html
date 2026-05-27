@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.3</title>
+<title>Project Signal Mk.II v0.3.7.11</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -110,7 +110,7 @@
 
   /* Mk.II — 1차 합체 미구현 직업 색 (도감용) */
   --job-warden: #c08a4a;          /* 워든 — 전사 청동 */
-  --job-hunter: #8fa860;          /* 수렵 — 사냥 녹 */
+  --job-hunter: #8fa860;          /* 파수궁 — 사냥 녹 */
   --job-paladin: #f0e4a8;         /* 성휘 — 성광 */
   --job-vanguard: #ff9a4a;        /* 선봉 — 돌격 주황 */
   --job-binder: #d8c8a8;          /* 금제 — 빛 사슬 */
@@ -121,7 +121,7 @@
   /* Mk.II — 종착지 색 */
   --job-dragoon: #d85a3a;         /* 용창 — 용의 빨강 */
   --job-sage: #a87de0;            /* 현자 — 지혜 보라 */
-  --job-sovereign: #ffc94a;       /* 성왕 — 황금 */
+  --job-sovereign: #ffc94a;       /* 성황 — 황금 */
 
   /* Mk.II — 위치 색 (전열/후열) */
   --front-line: #c08a4a;
@@ -1796,6 +1796,33 @@ body {
   50%      { transform: scale(1.15); opacity: 0.2; }
 }
 
+/* v0.3.7.4: 마도 원형 파동 — CSS animation (iOS Safari SMIL 누락 결 대체)
+   SVG circle을 stroke만 박고, transform-origin은 inline 좌표로 박음.
+   r 변화 대신 transform: scale로 박음 (iOS Safari GPU 합성 강건).
+   v0.3.7.5: 선 두께/광량 결 낮춤 — 얇고 은은하게 퍼지는 결로 박음. */
+@keyframes mk-arcane-wave {
+  0%   { transform: scale(0.15); opacity: 0.55; }
+  60%  { opacity: 0.28; }
+  100% { transform: scale(8.0);  opacity: 0; }
+}
+.mk-arcane-wave-circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mk-arcane-wave 1.0s ease-out forwards;
+  will-change: transform, opacity;
+}
+.mk-arcane-wave-circle.wave-2 { animation-delay: 0.14s; }
+.mk-arcane-wave-circle.wave-3 { animation-delay: 0.28s; }
+
+@keyframes mk-arcane-guide {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+.mk-arcane-guide-line {
+  animation: mk-arcane-guide 0.6s ease-out forwards;
+}
+
 /* 공격자 — 앞으로 튀어나감 */
 .unit.acting-attack {
   animation: act-attack 0.34s ease-out;
@@ -3009,7 +3036,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.3</div>
+      <div class="title-version">MK.II — v0.3.7.11</div>
     </div>
 
     <p class="title-tagline">
@@ -3407,7 +3434,7 @@ const FUSIONS = [
       tags: ["protect", "intercept", "endure"]
     },
     desc: "한 명을 대신 맞는 벽.",
-    leadsTo: ["sovereign"] // 성왕
+    leadsTo: ["sovereign"] // 성황 (legacy 결, 진짜 합체는 선봉+수호자)
   },
   {
     id: "purifier",
@@ -3439,7 +3466,7 @@ const FUSIONS = [
       tags: ["front", "heal", "sustain", "holy"]
     },
     desc: "공격하며 버티는 기사.",
-    leadsTo: ["sovereign"] // 성왕
+    leadsTo: ["sovereign"] // 성황 (legacy 결, 진짜 합체는 선봉+수호자)
   },
   {
     id: "binder",
@@ -3474,6 +3501,92 @@ const FUSIONS = [
     leadsTo: ["sage"]      // 현자
   },
 
+  /* v0.3.7.7: 1차 직업 ③④ — 워든 + 파수궁 박힘
+     - 워든: 전사 + 유격수 → 위험한 적 1명 끊는 전열 제어
+     - 파수궁: 수호자 + 궁수 → 후열 견제 + 약한 아군 보호
+     바드/도적과 결 차이:
+       바드: 적 2명 넓게 감속 (광역 템포 조율)
+       워든: 위험한 1명 강하게 끊음 (포인트 끊기)
+       궁수: 후열 때림
+       도적: 후열 강하게 자름 (치명타)
+       파수궁: 후열 견제 + 아군 보호 (지원형 사수)
+  */
+  {
+    id: "warden",
+    name: "워든",
+    role: "front",
+    requires: ["bravery", "disrupt"],     // 전사 + 유격수
+    inherits: [
+      { from: "bravery", ratio: 0.7 },
+      { from: "disrupt", ratio: 0.7 }
+    ],
+    evolution: {
+      type: "warden_intercept",
+      tags: ["front", "control", "disrupt"]
+    },
+    desc: "곧 행동할 위험한 적을 끊는다.",
+    leadsTo: []
+  },
+  {
+    id: "hunter",
+    name: "파수궁",                        // v0.3.7.7: 표시명 "수렵" → "파수궁" (내부 id는 hunter 유지)
+    role: "back",
+    requires: ["guard", "snipe"],         // 수호자 + 궁수
+    inherits: [
+      { from: "guard", ratio: 0.7 },
+      { from: "snipe", ratio: 0.7 }
+    ],
+    evolution: {
+      type: "guarded_shot",
+      tags: ["back", "shield", "snipe"]
+    },
+    desc: "후열을 견제하며 약한 아군을 지킨다.",
+    leadsTo: []
+  },
+
+  /* v0.3.7.8: 1차 직업 ⑤⑥ — 선봉 + 치원 박힘 (남은 1차 직업 완성)
+     - 선봉: 전사 + 신관 → 전열 공격 + 소량 회복 (전선 유지형)
+     - 치원: 사제 + 궁수 → 조건부 회복/공격 (상황 전환형)
+     성기사/사제/신관과 결 차이:
+       성기사: 자기 유지 + 자기 보호막
+       사제: 직접 회복 중심
+       신관: 광역 회복
+       선봉: 전열 공격하며 소량 회복 (자기보다 파티 지탱)
+       치원: 위험 시 회복 / 여유 시 후열 사격 (상황 전환)
+  */
+  {
+    id: "vanguard",
+    name: "선봉",
+    role: "front",
+    requires: ["bravery", "blessing"],    // 전사 + 신관
+    inherits: [
+      { from: "bravery",  ratio: 0.7 },
+      { from: "blessing", ratio: 0.7 }
+    ],
+    evolution: {
+      type: "vanguard_rally",
+      tags: ["front", "sustain", "support"]
+    },
+    desc: "앞에서 싸우며 둘에게 동시에 손을 내민다.",
+    leadsTo: []
+  },
+  {
+    id: "chainheal",
+    name: "치원",
+    role: "back",
+    requires: ["heal", "snipe"],          // 사제 + 궁수
+    inherits: [
+      { from: "heal",  ratio: 0.7 },
+      { from: "snipe", ratio: 0.7 }
+    ],
+    evolution: {
+      type: "chainheal_support",
+      tags: ["back", "heal", "snipe"]
+    },
+    desc: "한 박자에 적을 쏘고 아군을 살린다.",
+    leadsTo: []
+  },
+
   /* ===== 2차 직업 (v0.3.2: 첫 실험 - 용창) =====
      규칙:
        - 기본 + 기본 → 1차
@@ -3500,6 +3613,54 @@ const FUSIONS = [
     desc: "전열을 찌르며 후열까지 꿰뚫는다.",
     statOverride: {                             // 의도적 atk 최고치 박는 자리
       atkBoost: 1.35                            // 자연 계산 atk × 1.35 (최고치 보장)
+    },
+    leadsTo: []
+  },
+
+  /* v0.3.7.11: 2차 직업 ②③ — 현자 + 성황 박힘 (예비 2차 직업 자리)
+     - 현자: 마도 + 유격수 → 차징 중 아군 게이지 가속 + 광역 마법
+       마도의 2단 행동 결을 진화시킴 (집중하는 동안 아군 템포까지 조율)
+     - 성황: 선봉 + 수호자 → 전열 공격 + 2명 회복 + 위기 시 파티 보호막
+       선봉의 전선 유지 결을 진화시킴 (위기 반응 결 추가)
+     2차 직업 결: 상위호환 X, "더 깊은 결"
+  */
+  {
+    id: "sage",
+    name: "현자",
+    role: "back",
+    tier: "secondary",
+    requires: ["arcanist", "disrupt"],          // 마도(1차) + 유격수(기본)
+    inherits: [
+      { from: "arcanist", ratio: 0.7 },
+      { from: "disrupt",  ratio: 0.7 }
+    ],
+    evolution: {
+      type: "sage_arcane",
+      tags: ["magic", "aoe", "haste_ally"]
+    },
+    desc: "집중하며 아군의 박자를 앞당기고, 결국 전장을 쓸어버린다.",
+    statOverride: {
+      atkBoost: 1.20                            // 자연 계산 atk × 1.20
+    },
+    leadsTo: []
+  },
+  {
+    id: "sovereign",
+    name: "성황",                                // v0.3.7.11: 표시명 "성왕" → "성황" (내부 id sovereign 유지)
+    role: "front",
+    tier: "secondary",
+    requires: ["vanguard", "guard"],            // 선봉(1차) + 수호자(기본)
+    inherits: [
+      { from: "vanguard", ratio: 0.7 },
+      { from: "guard",    ratio: 0.7 }
+    ],
+    evolution: {
+      type: "sovereign_sanctuary",
+      tags: ["front", "sustain", "sanctuary"]
+    },
+    desc: "전열에서 버티며 파티 전선을 다시 세운다.",
+    statOverride: {
+      atkBoost: 1.15                            // 자연 계산 atk × 1.15 (성황은 atk보다 유지력)
     },
     leadsTo: []
   },
@@ -3812,7 +3973,11 @@ function openCodexDetail(entryId) {
     </div>
 
     <div class="codex-detail-info">
-      <div class="row"><span class="k">계열</span><span class="v">${entry.base}</span></div>
+      <!-- v0.3.7.9: 계열 결을 base → combo로 박음.
+           base는 legacy 결로 일부 잘못 박힌 자리 있었음.
+           combo는 도감 헤더에도 박히는 진짜 합체 조합 결.
+           → single source of truth 박음. -->
+      <div class="row"><span class="k">계열</span><span class="v">${entry.combo}</span></div>
       <div class="row"><span class="k">위치</span><span class="v">${entry.role === "front" ? "전열" : "후열"}</span></div>
       <div class="row"><span class="k">역할</span><span class="v">${entry.role_desc}</span></div>
     </div>
@@ -4078,7 +4243,7 @@ const AVATAR_PARTS = {
     <rect x="30" y="40" width="5" height="8" fill="${AVATAR_FG}"/>
   `,
   hunter: `
-    <!-- 수렵: 수호 + 저격 = 강적 추적 사냥꾼 -->
+    <!-- 파수궁 (구 수렵): 수호 + 후열 견제 = 보호 사수 -->
     <!-- 큰 활 (당겨진) -->
     <path d="M 8 12 Q 2 28 8 44" stroke="#5a3a18" stroke-width="2.2" fill="none" stroke-linecap="round"/>
     <line x1="8" y1="12" x2="8" y2="44" stroke="#aaa" stroke-width="0.8" stroke-dasharray="1 1"/>
@@ -4855,6 +5020,11 @@ function loadStage(stageNum) {
     u._shieldCooldown = 0;
     // v0.3.6: 마도 차징 결 정리
     u._arcaneCharged = false;
+    // v0.3.7.4: slow 결 정리 (적/아군 공통)
+    u._speedMul = 1.0;
+    delete u._slowedTurns;
+    // v0.3.7.11: 성황 성역 쿨다운 리셋
+    u._sanctuaryCooldown = 0;
   });
 
   // v0.3.6: DOM에 남은 arcane-charging 클래스 정리
@@ -4920,10 +5090,13 @@ function tickBattle() {
   });
 
   // 게이지 누적
+  // v0.3.7.4: u._speedMul 결 박음 — 바드 slow (또는 다른 slow 결) 시 게이지 fill rate 감소
+  //   기본값 1.0. 바드가 0.7 박으면 게이지가 70% 속도로 채워짐.
   const allUnits = [...runState.units, ...runState.enemies];
   allUnits.forEach(u => {
     if (!u.alive) return;
-    u.gauge += (u.spd / 100) * tickGauge;
+    const speedMul = (typeof u._speedMul === "number") ? u._speedMul : 1.0;
+    u.gauge += (u.spd / 100) * tickGauge * speedMul;
     if (u.gauge >= 100) {
       u.gauge = 0;
       executeAction(u);
@@ -5315,15 +5488,43 @@ function actFusion(actor) {
     case "rhythm_buff": {
       showActionLabel(actor, "리듬!", "heal");
 
-      // 1) 적 속도 감소 (유지) — 게이지/속도 높은 적 2명
+      // 1) 적 속도 감소 (v0.3.7.4 결의 진화)
+      //    유키 결: 즉시 게이지 -30% + 2턴 slow (speedMul 0.7)
+      //    대상: 게이지/속도 높은 적 2명
       const aliveEnemies = runState.enemies.filter(e => e.alive);
       const slowTargets = aliveEnemies
         .sort((a, b) => (b.gauge + b.spd * 0.3) - (a.gauge + a.spd * 0.3))
         .slice(0, 2);
+
+      // 디버그/검증 로그 — 유키 PD 요청 형식
+      const bardDebug = [];
+
       slowTargets.forEach(t => {
-        t.spd = Math.max(40, t.spd - 12);
+        const gaugeBefore = Math.round(t.gauge);
+        // (a) 즉시 현재 게이지 30 깎음 (0 미만 안 됨)
+        t.gauge = Math.max(0, t.gauge - 30);
+        const gaugeAfter = Math.round(t.gauge);
+        // (b) 2턴 slow — speedMul 0.7 (게이지 fill rate 30% 감소)
+        t._speedMul = 0.7;
+        t._slowedTurns = 2;
+        // (c) 시각 피드백
         drawLine(actor, t, "debuff");
+        reactReceive(t, "debuff");
+        // (d) 이벤트 피드 — 1명씩 짧게
+        pushEvent(
+          `<b>${t.name}</b> 속도 저하 — 게이지 ${gaugeBefore} → ${gaugeAfter} · slow 2턴`,
+          "system"
+        );
+        bardDebug.push({
+          target: t.name,
+          gaugeBefore, gaugeAfter,
+          speedMultiplier: t._speedMul,
+          slowTurns: t._slowedTurns,
+        });
       });
+      // 콘솔 (PWA 못 봐도, 데스크탑 검증용)
+      console.log(`[bardSlow] targets=${JSON.stringify(slowTargets.map(t => t.name))}`);
+      bardDebug.forEach(d => console.log(`[bardSlow] ${d.target} gaugeBefore=${d.gaugeBefore} gaugeAfter=${d.gaugeAfter} speedMultiplier=${d.speedMultiplier} slowTurns=${d.slowTurns}`));
 
       // 2) 리듬 버프 — 자기 제외 아군 중 *atk 가장 높은* 1명
       //    우선도: atk 높은 순 → 동률 시 게이지 높은 순
@@ -5627,6 +5828,184 @@ function actFusion(actor) {
       break;
     }
 
+    /* ─── 워든 (v0.3.7.7 박힘): 위험한 적 1명 끊는 전열 제어 ───
+       조합: 전사 + 유격수
+       의도: 곧 행동할 위험한 적 1명을 강하게 끊는다.
+         - 바드: 적 2명 넓게 감속 (광역 템포 조율)
+         - 워든: 위험한 1명 강하게 끊음 (포인트 끊기)
+       동작:
+         1) 살아있는 적 중 게이지가 가장 많이 찬 적을 타겟으로
+         2) 공격 (전사 결, 후열보다 전열 우선되지 않음 — 게이지 우선)
+         3) 공격 후 대상 게이지 -40 박음 (즉시 행동을 미룬다)
+       라벨: "제압!"
+    */
+    case "warden_intercept": {
+      const aliveEnemies = runState.enemies.filter(e => e.alive);
+      if (aliveEnemies.length === 0) break;
+      // 게이지 가장 찬 적 (동률 시 spd 높은 적)
+      aliveEnemies.sort((a, b) => {
+        if (b.gauge !== a.gauge) return b.gauge - a.gauge;
+        return b.spd - a.spd;
+      });
+      const target = aliveEnemies[0];
+
+      const dmg = Math.floor(actor.atk * 0.95);
+      showActionLabel(actor, "제압!", "attack");
+      dealDamage(actor, target, dmg);
+      drawLine(actor, target, "attack");
+
+      // 게이지 견제 — 즉시 -40 (행동 미루기)
+      if (target.alive) {
+        const gaugeBefore = Math.round(target.gauge);
+        target.gauge = Math.max(0, target.gauge - 40);
+        const gaugeAfter = Math.round(target.gauge);
+        reactReceive(target, "debuff");
+        pushEvent(
+          `<b>${actor.name}</b> → <b>${target.name}</b> 제압 (${dmg}) · 게이지 ${gaugeBefore} → ${gaugeAfter}`,
+          "attack"
+        );
+      } else {
+        pushEvent(`<b>${actor.name}</b> → <b>${target.name}</b> 제압 마무리 (${dmg})`, "attack");
+      }
+      break;
+    }
+
+    /* ─── 파수궁 (v0.3.7.7 박힘): 후열 견제 + 약한 아군 보호 ───
+       조합: 수호자 + 궁수 (id 내부값 "hunter" 유지, 표시명 "파수궁")
+       의도:
+         - 궁수: 후열 때림
+         - 도적: 후열 강하게 자름 (치명타)
+         - 파수궁: 후열 견제 + 우리 편 약한 대상 보호 (지원형 사수)
+       동작:
+         1) 후열 적 우선 공격
+         2) 공격 후 HP 비율이 가장 낮은 아군에게 작은 보호막
+       라벨: "감시!" / "보호!"
+    */
+    case "guarded_shot": {
+      // 1) 후열 적 우선 공격
+      let target = pickEnemyTarget(actor, "back");
+      if (!target) target = pickEnemyTarget(actor, "any");
+      if (!target) break;
+
+      const dmg = Math.floor(actor.atk * 1.0);
+      showActionLabel(actor, "감시!", "attack");
+      dealDamage(actor, target, dmg);
+      drawLine(actor, target, "attack");
+      pushEvent(`<b>${actor.name}</b> → <b>${target.name}</b> (${dmg})`, "attack");
+
+      // 2) HP 비율 가장 낮은 아군에게 보호막
+      const aliveAllies = runState.units.filter(u => u.alive);
+      if (aliveAllies.length > 0) {
+        aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+        const wounded = aliveAllies[0];
+        const shieldAmount = Math.floor(actor.atk * 0.45);  // 검증용 기본값
+        wounded.shield = Math.max(wounded.shield || 0, shieldAmount);
+        drawLine(actor, wounded, "shield");
+        reactReceive(wounded, "shield");
+        pushEvent(`<b>${actor.name}</b> 보호 — <b>${wounded.name}</b>에게 ◇${shieldAmount}`, "heal");
+      }
+      break;
+    }
+
+    /* ─── 선봉 (v0.3.7.8 박힘, v0.3.7.10 진화): 전열 공격 + 팀 전선 유지 ───
+       조합: 전사 + 신관
+       의도: 앞에서 싸우며 파티 전체가 무너지지 않도록 받친다.
+         - 성기사: 자기 유지 + 자기 보호막
+         - 사제: 단일 직접 회복
+         - 신관: 광역 회복
+         - 치원: 후열 공격 + 단일 회복 (하이브리드)
+         - 선봉: 전열 공격 + 2명 소량 회복 (팀 전선 유지 결)
+       동작:
+         1) 전열 적 우선 공격 (atk × 1.0)
+         2) HP 비율 가장 낮은 아군 2명에게 소량 회복 (각 atk × 0.3)
+            - 생존 아군 1명뿐이면 그 1명만
+         결: "한 명을 크게" 가 아니라 "팀 전체를 조금씩 받쳐주는 결"
+       라벨: "진군!" / "격려!"
+    */
+    case "vanguard_rally": {
+      // 1) 전열 적 우선 공격
+      let target = pickEnemyTarget(actor, "front");
+      if (!target) target = pickEnemyTarget(actor, "any");
+      if (!target) break;
+
+      const dmg = Math.floor(actor.atk * 1.0);
+      showActionLabel(actor, "진군!", "attack");
+      dealDamage(actor, target, dmg);
+      drawLine(actor, target, "attack");
+      pushEvent(`<b>${actor.name}</b> → <b>${target.name}</b> (${dmg})`, "attack");
+
+      // 2) HP 비율 가장 낮은 아군 2명에게 소량 회복 박음
+      //    v0.3.7.10: 1명 → 2명. 사제/치원과 결 차이 박음. 팀 전선 유지 시각 결.
+      const aliveAllies = runState.units.filter(u => u.alive);
+      if (aliveAllies.length > 0) {
+        aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+        const healTargets = aliveAllies.slice(0, Math.min(2, aliveAllies.length));
+        const healAmount = Math.floor(actor.atk * 0.3);   // 2명 × 0.3 = 합 0.6 (이전 단일 0.4보다 큼 — 결 의도)
+        let anyHealed = false;
+        healTargets.forEach(ally => {
+          if (ally.hp < ally.maxHp) {
+            doHeal(actor, ally, healAmount);
+            drawLine(actor, ally, "heal");
+            pushEvent(`<b>${actor.name}</b> 격려 — <b>${ally.name}</b> +${healAmount}`, "heal");
+            anyHealed = true;
+          } else {
+            // 만피여도 시각 결만 살짝 (격려 느낌 유지)
+            drawLine(actor, ally, "heal");
+          }
+        });
+        if (!anyHealed) {
+          pushEvent(`<b>${actor.name}</b> 격려 — 파티 전선 유지`, "system");
+        }
+      }
+      break;
+    }
+
+    /* ─── 치원 (v0.3.7.8 박힘, v0.3.7.10 진화): 공격 + 회복 동시 (하이브리드) ───
+       조합: 사제 + 궁수
+       의도: 후열에서 원호사격을 하며 동시에 아군을 치료하는 "치유 원호가".
+         - 사제: 회복 중심 (단일 회복 강함)
+         - 궁수: 후열 공격 중심 (피해 강함)
+         - 파수궁: 후열 공격 + 보호막
+         - 치원: 후열 공격 + 회복 동시 수행 (총효율은 높지만 각 전문성은 낮음)
+       동작:
+         한 행동에 동시에:
+           1) 후열 적 우선 공격 (atk × 0.7 — 궁수의 70%)
+           2) HP 비율 가장 낮은 아군 1명 회복 (atk × 0.7 — 사제의 70%)
+         총효율: 공격+회복 합쳐 약 140% (각각의 전문성은 낮음, 동시성이 결의 깊이)
+       라벨: "치유 원호!"
+    */
+    case "chainheal_support": {
+      showActionLabel(actor, "치유 원호!", "heal");
+
+      // 1) 후열 적 우선 공격 (궁수의 70%)
+      let target = pickEnemyTarget(actor, "back");
+      if (!target) target = pickEnemyTarget(actor, "any");
+      if (target) {
+        const dmg = Math.floor(actor.atk * 0.7);
+        dealDamage(actor, target, dmg);
+        drawLine(actor, target, "attack");
+        pushEvent(`<b>${actor.name}</b> 원호 — <b>${target.name}</b> (${dmg})`, "attack");
+      }
+
+      // 2) 동시에 HP 비율 가장 낮은 아군 1명 회복 (사제의 70%)
+      //    공격과 같은 행동 박자에 회복선이 같이 박힘 → "동시성" 시각 결
+      const aliveAllies = runState.units.filter(u => u.alive);
+      if (aliveAllies.length > 0) {
+        aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+        const wounded = aliveAllies[0];
+        if (wounded.hp < wounded.maxHp) {
+          const healAmount = Math.floor(actor.atk * 0.7);
+          doHeal(actor, wounded, healAmount);
+          drawLine(actor, wounded, "heal");
+          pushEvent(`<b>${actor.name}</b> 치유 — <b>${wounded.name}</b> +${healAmount}`, "heal");
+        } else {
+          // 전원 만피면 회복선만 살짝 (원호의 시선 결)
+          drawLine(actor, wounded, "heal");
+        }
+      }
+      break;
+    }
+
     /* ─── 마도: 느리지만 압도적인 광역 누커 (v0.3.6 리뉴얼) ───
        2단 행동:
          행동 1) charge = true 박음. "집중…" 라벨. 행동 소비.
@@ -5674,6 +6053,130 @@ function actFusion(actor) {
       pushEvent(`<b>${actor.name}</b> 원형 파동! — 적 ${aliveEnemies.length}명에게 ${pulseDmg}`, "attack");
       break;
     }
+
+    /* ─── 현자 (v0.3.7.11 박힘): 2단 행동 + 아군 템포 가속 (마도의 진화) ───
+       조합: 마도 + 유격수
+       의도: 마도의 2단 행동 결에 *아군 템포 보조*가 더해짐. 상위호환 X, "더 깊은 결".
+         - 마도: 차징 → 광역 파동 (전장만 쓸어버림)
+         - 현자: 차징 중 아군 게이지 가속 + 차징 후 광역 마법 (아군까지 챙긴다)
+       동작:
+         행동 1 (집중): _arcaneCharged=true 박음. + HP 비율 낮은 아군 2명 게이지 +25씩.
+         행동 2 (지혜의 파동): 광역 마법 — 적 전체 atk × 1.5 (마도보다 살짝 큼)
+       라벨: "현자의 집중…" / "지혜의 파동!"
+    */
+    case "sage_arcane": {
+      const aliveEnemies = runState.enemies.filter(e => e.alive);
+      if (aliveEnemies.length === 0) break;
+
+      if (!actor._arcaneCharged) {
+        // ─── 행동 1: 집중 + 아군 게이지 보조 ───
+        actor._arcaneCharged = true;
+        showActionLabel(actor, "현자의 집중…", "control");
+        const el = document.querySelector(`[data-uid="${actor.uid}"]`);
+        if (el) el.classList.add("arcane-charging");
+
+        // 아군 2명 게이지 가속 — HP 비율 낮은 순 우선 (위험한 아군 먼저 행동)
+        //   자기 제외. 큰 가속이 아니라 "살짝 앞당기는 결" → +25씩
+        const aliveAllies = runState.units.filter(u => u.alive && u.uid !== actor.uid);
+        if (aliveAllies.length > 0) {
+          aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          const hasteTargets = aliveAllies.slice(0, Math.min(2, aliveAllies.length));
+          hasteTargets.forEach(ally => {
+            const gaugeBefore = Math.round(ally.gauge);
+            ally.gauge = Math.min(99, ally.gauge + 25);  // 100 도달 시 그 tick에 발동 — 99로 cap
+            const gaugeAfter = Math.round(ally.gauge);
+            drawLine(actor, ally, "heal");
+            reactReceive(ally, "haste");
+            pushEvent(
+              `<b>${actor.name}</b> 박자 보조 — <b>${ally.name}</b> 게이지 ${gaugeBefore} → ${gaugeAfter}`,
+              "system"
+            );
+          });
+        }
+
+        pushEvent(`<b>${actor.name}</b> 지혜 집중 — 다음 행동에 파동`, "system");
+        break;
+      }
+
+      // ─── 행동 2: 지혜의 파동! ───
+      actor._arcaneCharged = false;
+      const elDone = document.querySelector(`[data-uid="${actor.uid}"]`);
+      if (elDone) elDone.classList.remove("arcane-charging");
+
+      showActionLabel(actor, "지혜의 파동!", "control");
+
+      // 광역 피해 — 마도(×1.4)보다 살짝 큼 (×1.5)
+      const pulseDmg = Math.floor(actor.atk * 1.5);
+      aliveEnemies.forEach((t, i) => {
+        setTimeout(() => {
+          if (!t.alive) return;
+          dealDamage(actor, t, pulseDmg);
+        }, 120 + i * 80);
+      });
+
+      drawCenterPulse(actor, aliveEnemies, "magic");
+      pushEvent(`<b>${actor.name}</b> 지혜의 파동! — 적 ${aliveEnemies.length}명에게 ${pulseDmg}`, "attack");
+      break;
+    }
+
+    /* ─── 성황 (v0.3.7.11 박힘): 전열 + 2명 회복 + 위기 시 파티 보호막 (선봉의 진화) ───
+       조합: 선봉 + 수호자 (id 내부값 "sovereign" 유지, 표시명 "성황")
+       의도: 선봉의 전선 유지 결에 *위기 반응 성역*이 더해짐.
+         - 선봉: 전열 공격 + 2명 소량 회복 (팀 전선)
+         - 성황: 전열 공격 + 2명 회복 + 위기 시 파티 전체 작은 보호막 (전선 재건)
+       동작:
+         1) 전열 적 우선 공격 (atk × 1.0)
+         2) HP 비율 낮은 아군 2명에게 회복 (각 atk × 0.4) — 선봉보다 큼
+         3) [위기 반응] HP 비율 50% 이하 아군이 2명 이상이면:
+            - 파티 전체에 작은 보호막 (atk × 0.5)
+            - 쿨다운 3턴 (성황 자기 턴 카운트)
+       라벨: "진군!" / 위기 반응 시 "성역!"
+    */
+    case "sovereign_sanctuary": {
+      // 1) 전열 적 우선 공격
+      let target = pickEnemyTarget(actor, "front");
+      if (!target) target = pickEnemyTarget(actor, "any");
+      if (target) {
+        const dmg = Math.floor(actor.atk * 1.0);
+        showActionLabel(actor, "진군!", "attack");
+        dealDamage(actor, target, dmg);
+        drawLine(actor, target, "attack");
+        pushEvent(`<b>${actor.name}</b> → <b>${target.name}</b> (${dmg})`, "attack");
+      }
+
+      // 2) HP 비율 낮은 아군 2명에게 회복
+      const aliveAllies = runState.units.filter(u => u.alive);
+      aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+      const healTargets = aliveAllies.slice(0, Math.min(2, aliveAllies.length));
+      const healAmount = Math.floor(actor.atk * 0.4);
+      healTargets.forEach(ally => {
+        if (ally.hp < ally.maxHp) {
+          doHeal(actor, ally, healAmount);
+          drawLine(actor, ally, "heal");
+          pushEvent(`<b>${actor.name}</b> 가호 — <b>${ally.name}</b> +${healAmount}`, "heal");
+        } else {
+          drawLine(actor, ally, "heal");
+        }
+      });
+
+      // 3) 위기 반응 — 쿨다운 카운트다운
+      if (actor._sanctuaryCooldown && actor._sanctuaryCooldown > 0) {
+        actor._sanctuaryCooldown--;
+      }
+      // 위기 조건: HP 비율 50% 이하 아군 2명 이상 + 쿨다운 0
+      const inDanger = aliveAllies.filter(u => u.hp / u.maxHp <= 0.5).length;
+      if (inDanger >= 2 && (!actor._sanctuaryCooldown || actor._sanctuaryCooldown <= 0)) {
+        const shieldAmount = Math.floor(actor.atk * 0.5);
+        showActionLabel(actor, "성역!", "shield");
+        aliveAllies.forEach(ally => {
+          ally.shield = Math.max(ally.shield || 0, shieldAmount);
+          reactReceive(ally, "shield");
+        });
+        actor._sanctuaryCooldown = 3;     // 자기 턴 기준 3턴 쿨다운
+        pushEvent(`<b>${actor.name}</b> 성역 발동 — 파티 전체 ◇${shieldAmount}`, "system");
+      }
+      break;
+    }
   }
 }
 
@@ -5686,6 +6189,18 @@ function actEnemyAttack(actor) {
       actor.atk = actor._atkOriginal;
       delete actor._atkOriginal;
       pushEvent(`<b>${actor.name}</b> 공격력 회복`, "system");
+    }
+  }
+
+  // v0.3.7.4: 바드 slow 카운트다운 (행동 시점에 -1)
+  //   slow가 박힌 적이 행동에 도달했다는 것 = 1턴 지나갔다
+  //   turns 0이 되면 _speedMul 원복 (1.0)
+  if (actor._slowedTurns && actor._slowedTurns > 0) {
+    actor._slowedTurns--;
+    if (actor._slowedTurns <= 0) {
+      actor._speedMul = 1.0;
+      delete actor._slowedTurns;
+      pushEvent(`<b>${actor.name}</b> 속도 회복`, "system");
     }
   }
 
@@ -7223,14 +7738,26 @@ function drawAoeWave(actor, targets, kind) {
 function drawCenterPulse(actor, targets, kind = "magic") {
   const svg = document.getElementById("battle-svg");
   if (!svg) return;
+  syncBattleSvg();
 
-  // 전장 중앙 위치 — targets들의 중간점
-  if (targets.length === 0) return;
-  const targetPositions = targets.map(t => getUnitCenter(t)).filter(p => p);
-  if (targetPositions.length === 0) return;
-
-  const cx = targetPositions.reduce((s, p) => s + p.x, 0) / targetPositions.length;
-  const cy = targetPositions.reduce((s, p) => s + p.y, 0) / targetPositions.length;
+  // v0.3.7.4: 중심점 결 — *적 진영 zone 중앙으로 고정*
+  //   유키 결: "매번 중심점이 바뀌는 결은 정신 산만. 적이 서 있는 영역 중앙으로 고정"
+  //   .battle-zone.enemy 컨테이너의 rect 중앙을 박음 (적의 분포와 무관)
+  const enemyZone = document.querySelector(".battle-zone.enemy");
+  const svgRect = svg.getBoundingClientRect();
+  let cx, cy;
+  if (enemyZone) {
+    const zRect = enemyZone.getBoundingClientRect();
+    cx = zRect.left + zRect.width / 2 - svgRect.left;
+    cy = zRect.top + zRect.height / 2 - svgRect.top;
+  } else {
+    // 폴백: targets 평균 (legacy 결)
+    if (targets.length === 0) return;
+    const targetPositions = targets.map(t => getUnitCenter(t)).filter(p => p);
+    if (targetPositions.length === 0) return;
+    cx = targetPositions.reduce((s, p) => s + p.x, 0) / targetPositions.length;
+    cy = targetPositions.reduce((s, p) => s + p.y, 0) / targetPositions.length;
+  }
 
   // 색 결정
   const colorMap = {
@@ -7240,7 +7767,8 @@ function drawCenterPulse(actor, targets, kind = "magic") {
   const color = colorMap[kind] || "#a87de0";
   const glow  = `${color}aa`;
 
-  // 1) actor → 중앙 선 (시선 유도)
+  // 1) actor → 중앙 선 (시선 유도) — CSS animation 결
+  //    v0.3.7.5: 선 두께/광량 결 낮춤
   const actorPos = getUnitCenter(actor);
   if (actorPos) {
     const guideGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -7250,51 +7778,37 @@ function drawCenterPulse(actor, targets, kind = "magic") {
     guideLine.setAttribute("x2", cx);
     guideLine.setAttribute("y2", cy);
     guideLine.setAttribute("stroke", color);
-    guideLine.setAttribute("stroke-width", "1.6");
+    guideLine.setAttribute("stroke-width", "0.7");    // v0.3.7.6: 1.0 → 0.7
     guideLine.setAttribute("stroke-dasharray", "4 3");
-    guideLine.setAttribute("opacity", "0.7");
-    guideLine.style.filter = `drop-shadow(0 0 3px ${glow})`;
+    guideLine.setAttribute("opacity", "0");
+    guideLine.style.filter = `drop-shadow(0 0 1.5px ${glow})`;  // v0.3.7.5: 3px → 1.5px
+    guideLine.classList.add("mk-arcane-guide-line");
     guideGroup.appendChild(guideLine);
     svg.appendChild(guideGroup);
-    setTimeout(() => guideGroup.remove(), 350);
+    setTimeout(() => guideGroup.remove(), 700);
   }
 
-  // 2) 중앙에서 점점 커지는 원형 파동 (3겹)
+  // 2) 중앙에서 점점 커지는 원형 파동 (3겹) — CSS animation 결
+  //    v0.3.7.4: SMIL <animate> → CSS @keyframes 박음 (iOS Safari 강건)
+  //    transform: scale 결로 박아 GPU 합성 결 박힘
+  //    v0.3.7.5: 선 두께/광량 결 낮춤 — 전장을 덮는 결 → 얇고 은은하게 퍼지는 결
   const pulseGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
   for (let i = 0; i < 3; i++) {
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circle.setAttribute("cx", cx);
     circle.setAttribute("cy", cy);
-    circle.setAttribute("r", "6");
+    circle.setAttribute("r", "18");                  // 베이스 반지름 (scale로 8배까지 박힘 → ~144px)
     circle.setAttribute("fill", "none");
     circle.setAttribute("stroke", color);
-    circle.setAttribute("stroke-width", "2.4");
-    circle.setAttribute("opacity", "0.85");
-    circle.style.filter = `drop-shadow(0 0 6px ${glow})`;
-
-    // 애니메이션: r 0 → 120, opacity 1 → 0
-    const animR = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-    animR.setAttribute("attributeName", "r");
-    animR.setAttribute("from", "6");
-    animR.setAttribute("to", "180");
-    animR.setAttribute("dur", "0.8s");
-    animR.setAttribute("begin", `${i * 0.15}s`);
-    animR.setAttribute("fill", "freeze");
-    circle.appendChild(animR);
-
-    const animO = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-    animO.setAttribute("attributeName", "opacity");
-    animO.setAttribute("from", "0.85");
-    animO.setAttribute("to", "0");
-    animO.setAttribute("dur", "0.8s");
-    animO.setAttribute("begin", `${i * 0.15}s`);
-    animO.setAttribute("fill", "freeze");
-    circle.appendChild(animO);
-
+    circle.setAttribute("stroke-width", "0.8");       // v0.3.7.6: 1.2 → 0.8 (더 얇게)
+    circle.style.filter = `drop-shadow(0 0 3px ${glow})`;  // v0.3.7.5: 6px → 3px (절반)
+    circle.classList.add("mk-arcane-wave-circle");
+    if (i === 1) circle.classList.add("wave-2");
+    if (i === 2) circle.classList.add("wave-3");
     pulseGroup.appendChild(circle);
   }
   svg.appendChild(pulseGroup);
-  setTimeout(() => pulseGroup.remove(), 1400);
+  setTimeout(() => pulseGroup.remove(), 1500);
 }
 
 /* v0.3.6.3: 중복 선언 제거됨.
@@ -7489,15 +8003,15 @@ const CODEX_ENTRIES = [
     combo: "전사 + 궁수", role_desc: "핵심 대상을 빠르게 끊는다",
     flavor: "위험한 후열에 직접 침투해 치명타로 마무리한다.",
     tags: ["치명타", "처치"], status: "구현" },
-  { id: "warden",   name: "워든", tier: "tier2", base: "전사+궁수", role: "front",
-    combo: "전사 + 유격수", role_desc: "전장을 난장판으로 만든다",
-    flavor: "적의 진형을 흔들고 시선을 묶는 전술가.",
-    tags: ["도발", "혼란"], status: "미구현" },
-  { id: "hunter",   name: "수렵", tier: "tier2", base: "전사+궁수", role: "front",
-    combo: "수호자 + 궁수", role_desc: "강한 적을 묶어두고 잡는다",
-    flavor: "단단한 사냥꾼. 강적 하나를 끝까지 추적한다.",
-    tags: ["탱킹", "처치"], status: "미구현" },
-  { id: "trapper",  name: "덫꾼", tier: "tier2", base: "전사+궁수", role: "back",
+  { id: "warden",   name: "워든", tier: "tier2", base: "전사+유격수", role: "front",
+    combo: "전사 + 유격수", role_desc: "위험한 적의 턴을 끊는다",
+    flavor: "곧 행동할 위협을 잡아 끌어내리는 감시자.",
+    tags: ["제압", "게이지 견제"], status: "구현" },
+  { id: "hunter",   name: "파수궁", tier: "tier2", base: "수호자+궁수", role: "back",
+    combo: "수호자 + 궁수", role_desc: "후열을 견제하며 약한 아군을 지킨다",
+    flavor: "활을 들었지만 시선은 아군에게도 향한다. 후열을 끊고 우리 편을 감싼다.",
+    tags: ["보호막", "후열 견제"], status: "구현" },
+  { id: "trapper",  name: "덫꾼", tier: "tier2", base: "수호자+유격수", role: "back",
     combo: "수호자 + 유격수", role_desc: "재생·회복형 적을 카운터",
     flavor: "독과 덫으로 적의 회복을 차단한다.",
     tags: ["중독", "회복차단"], status: "구현" },
@@ -7505,10 +8019,10 @@ const CODEX_ENTRIES = [
     combo: "전사 + 사제", role_desc: "공격하며 버티는 기사",
     flavor: "검을 휘두를 때마다 자신이 살아난다. 후열 한 명에게는 미리 빛을 둘러준다.",
     tags: ["자가회복", "보호막"], status: "구현" },
-  { id: "vanguard", name: "선봉", tier: "tier2", base: "전사+사제", role: "front",
-    combo: "전사 + 신관", role_desc: "앞에서 피해를 나눠 받는다",
-    flavor: "돌격대장. 깃발을 들고 가장 먼저 뛰어든다.",
-    tags: ["도발", "보호"], status: "미구현" },
+  { id: "vanguard", name: "선봉", tier: "tier2", base: "전사+신관", role: "front",
+    combo: "전사 + 신관", role_desc: "앞에서 싸우며 팀 전선을 유지한다",
+    flavor: "전열에서 칼을 휘두르면서도 등 뒤를 돌본다. 큰 회복은 아니지만, 둘에게 동시에 손을 내민다.",
+    tags: ["전열 공격", "2인 소량 회복"], status: "구현" },
   { id: "binder",   name: "금제", tier: "tier2", base: "수호자 + 사제", role: "front",
     combo: "수호자 + 사제", role_desc: "위험한 적 하나를 묶는다",
     flavor: "빛의 사슬로 적을 묶는 술사기사. 묶인 적은 약해지고, 자기가 받는 피해의 30%를 대신 받는다.",
@@ -7518,18 +8032,18 @@ const CODEX_ENTRIES = [
     flavor: "지정한 아군이 받을 피해의 절반을 자기 몸으로 받는다. 든든하다.",
     tags: ["보호", "가로채기"], status: "구현" },
   { id: "chainheal",name: "치원", tier: "tier2", base: "사제+궁수", role: "back",
-    combo: "사제 + 궁수", role_desc: "원거리에서 정확히 살린다",
-    flavor: "회복 화살로 멀리 있는 아군까지 닿는다.",
-    tags: ["회복", "원거리"], status: "미구현" },
+    combo: "사제 + 궁수", role_desc: "후열을 쏘면서 동시에 아군을 살린다",
+    flavor: "활을 당기는 손과 약병을 든 손이 같이 움직인다. 한 박자에 적을 쏘고 아군을 어루만진다.",
+    tags: ["후열 공격", "동시 치유"], status: "구현" },
   { id: "purifier", name: "정화사", tier: "tier2", base: "사제 + 유격수", role: "back",
     combo: "사제 + 유격수", role_desc: "중독을 거두고 빛으로 채운다",
     flavor: "독에 잠긴 아군 위에 손을 얹는다. 한 번 떨치면 빛이 흐른다.",
     tags: ["정화", "회복"], status: "구현" },
-  { id: "arcanist", name: "마도", tier: "tier2", base: "사제+궁수", role: "back",
+  { id: "arcanist", name: "마도", tier: "tier2", base: "신관+궁수", role: "back",
     combo: "신관 + 궁수", role_desc: "마법 공격으로 후열을 친다",
     flavor: "별의 힘으로 적의 후열을 꿰뚫는다.",
     tags: ["마법", "광역"], status: "구현" },
-  { id: "bard",     name: "바드", tier: "tier2", base: "사제+궁수", role: "back",
+  { id: "bard",     name: "바드", tier: "tier2", base: "신관+유격수", role: "back",
     combo: "신관 + 유격수", role_desc: "속도 우위를 만든다",
     flavor: "노래로 아군을 가속하고 적을 느리게 한다.",
     tags: ["가속", "속도조절"], status: "구현" },
@@ -7539,14 +8053,14 @@ const CODEX_ENTRIES = [
     combo: "도적 + 궁수", role_desc: "전열을 찌르며 후열까지 꿰뚫는다",
     flavor: "한 번 박힌 창은 두 명을 꿰뚫는다. 적을 끊으면 다시 자세를 잡는다.",
     tags: ["관통", "처형", "연속 행동"], status: "구현" },
-  { id: "sage",     name: "현자", tier: "tier3", base: "사제 종착지", role: "back",
-    combo: "지혜의 길", role_desc: "치유와 지식을 합한다",
-    flavor: "큰 후광과 책. 모든 흐름을 읽는 결.",
-    tags: ["지혜", "회복"], status: "v1.0" },
-  { id: "sovereign",name: "성왕", tier: "tier3", base: "궁수 종착지", role: "front",
-    combo: "통치의 길", role_desc: "성스러운 왕의 보호",
-    flavor: "왕관과 큰 방패. 모두를 보호하는 마지막 결.",
-    tags: ["왕", "보호"], status: "v1.0" },
+  { id: "sage",     name: "현자", tier: "tier3", base: "마도+유격수", role: "back",
+    combo: "마도 + 유격수", role_desc: "집중하며 아군 박자를 앞당기고 전장을 쓸어버린다",
+    flavor: "지팡이는 천천히 들리지만, 그 동안 아군의 발은 빨라진다. 발동될 땐 전장이 흔들린다.",
+    tags: ["광역 마법", "아군 가속"], status: "구현" },
+  { id: "sovereign",name: "성황", tier: "tier3", base: "선봉+수호자", role: "front",
+    combo: "선봉 + 수호자", role_desc: "전열에서 버티며 파티 전선을 다시 세운다",
+    flavor: "혼자 강해지지 않는다. 위기가 깊어지면 모두에게 얇은 빛의 막이 두른다.",
+    tags: ["전열 유지", "위기 시 성역"], status: "구현" },
 ];
 
 /* ============================================================
