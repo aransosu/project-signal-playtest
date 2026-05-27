@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.6.3</title>
+<title>Project Signal Mk.II v0.3.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -809,15 +809,17 @@ body {
   /* v0.3.6.1: iOS Safari 호환 결
      - 자기 overflow X (페이지 스크롤에 맡김)
      - confirm-bar가 sticky로 박힘 → 그 높이만큼 padding-bottom 필요 X
-     - 단, sticky 위 contents 안 잘리게 약간만 박음 */
-  padding: 20px 16px 24px;
+     - 단, sticky 위 contents 안 잘리게 약간만 박음
+     v0.3.7: 모바일 세로 한 화면 결 — 상단 패딩 줄임
+  */
+  padding: 12px 12px 16px;
 }
 
 .trait-header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 2px;
+  margin-bottom: 4px;
 }
 
 .trait-header .step {
@@ -829,17 +831,17 @@ body {
 
 .trait-header h2 {
   font-weight: 900;
-  font-size: 22px;
+  font-size: 18px;
   letter-spacing: -0.01em;
   color: var(--text);
   line-height: 1.2;
 }
 
 .trait-header p {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-dim);
-  line-height: 1.6;
-  margin-top: 4px;
+  line-height: 1.4;
+  margin-top: 2px;
 }
 
 /* 직업별 섹션 */
@@ -918,25 +920,26 @@ body {
   border-color: var(--job-archer-dark);
 }
 
-/* 행동방침 카드 2개 (좌/우) */
+/* 행동방침 카드 2개 (좌/우)
+   v0.3.7: 모바일 세로 6장(2x3) 한 화면 결 — min-height/padding/gap 줄임 */
 .trait-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 6px;
 }
 
 .trait-card {
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 12px 11px;
+  padding: 8px 9px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   position: relative;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
-  min-height: 130px;
+  min-height: 96px;
 }
 
 .trait-card:active {
@@ -960,12 +963,12 @@ body {
 .trait-card .trait-card-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 4px;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 .trait-card .trait-card-head .job-avatar-mini {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1.5px solid;
   display: flex;
@@ -977,7 +980,7 @@ body {
 
 .trait-card .trait-name {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
   color: var(--text);
   letter-spacing: -0.01em;
 }
@@ -987,9 +990,9 @@ body {
 }
 
 .trait-card .trait-desc {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dim);
-  line-height: 1.5;
+  line-height: 1.35;
   flex: 1;
 }
 
@@ -2858,6 +2861,90 @@ body {
   flex-shrink: 0;
 }
 
+/* v0.3.7: 내 파티 현황 — 합체 결과 + 현재 파티 한눈 */
+.party-status {
+  margin-top: 16px;
+  padding: 12px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.party-status .ps-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--signal-dim);
+  text-transform: uppercase;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 6px;
+}
+
+.party-status .ps-fusion {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.party-status .ps-fusion .ps-fusion-result {
+  color: var(--signal);
+  font-weight: 700;
+}
+
+.party-status .ps-fusion .ps-fusion-arrow {
+  color: var(--text-faint);
+  margin: 0 4px;
+}
+
+.party-status .ps-line {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.party-status .ps-line-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+
+.party-status .ps-line-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.party-status .ps-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text);
+  padding: 2px 6px 2px 4px;
+  background: var(--bg-3);
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.party-status .ps-unit.ps-empty {
+  color: var(--text-faint);
+  font-style: italic;
+  background: transparent;
+  border-style: dashed;
+}
+
+.party-status .ps-unit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 
 </style>
 </head>
@@ -2871,7 +2958,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.6.3</div>
+      <div class="title-version">MK.II — v0.3.7</div>
     </div>
 
     <p class="title-tagline">
@@ -2919,7 +3006,7 @@ body {
     <div class="trait-header">
       <div class="step">STEP 01 / CHOOSE YOUR PARTY</div>
       <h2>기본 직업을 정한다</h2>
-      <p>6개의 기본 직업 중 세 명을 골라 출발한다.<br>같은 직업은 한 파티에 한 명만.</p>
+      <p>6개 직업 중 3명 선택 · 같은 직업은 한 명만</p>
     </div>
 
     <!-- 기본 직업 6종 카드는 JS로 렌더 -->
@@ -2991,12 +3078,13 @@ body {
         <div class="battle-controls">
           <button class="battle-btn battle-btn-exit" id="btn-exit" onclick="confirmExitRun()" title="모험 종료">✕</button>
           <button class="battle-btn" id="btn-pause" onclick="togglePause()">⏸</button>
-          <button class="battle-btn active" id="btn-x1" onclick="setSpeed(2)">x1</button>
-          <button class="battle-btn" id="btn-x2" onclick="setSpeed(4)">x2</button>
-          <button class="battle-btn" id="btn-x3" onclick="setSpeed(6)">x3</button>
-          <!-- 디버그 전용 x8 — UI 숨김 (개발용)
-          <button class="battle-btn" id="btn-x8" onclick="setSpeed(8)">x8</button>
+          <!-- v0.3.7: 속도 버튼 재구성 — x1/x3/x6
+               내부값: x1=2 (기본), x3=6 (이전 x3과 동일), x6=12 (디버그 최대)
+               x6은 게이지 증가 배수만 ×2 — tick/사망/타겟팅 결 불변 (로직 안전)
           -->
+          <button class="battle-btn active" id="btn-x1" onclick="setSpeed(2)">x1</button>
+          <button class="battle-btn" id="btn-x3" onclick="setSpeed(6)">x3</button>
+          <button class="battle-btn" id="btn-x6" onclick="setSpeed(12)">x6</button>
         </div>
       </div>
     </div>
@@ -3058,6 +3146,8 @@ body {
       <p id="companion-desc">합체로 빈 자리가 생겼어. 같이 갈 직업을 골라줘.</p>
     </div>
     <div class="choice-list" id="companion-choices"></div>
+    <!-- v0.3.7: 내 파티 현황 — 합체 결과 + 현재 파티 한눈 -->
+    <div class="party-status" id="party-status"></div>
   </section>
 
   <!-- ============================================================
@@ -4243,14 +4333,11 @@ function renderTraitSections() {
     `;
   }
 
+  // v0.3.7: 전열/후열 섹션 헤더 제거 — 모바일 세로 한 화면에 6장 다 들어오게
+  // 전열(3) → 후열(3) 순서는 유지 (위치 인지는 카드 안 라벨로)
   container.innerHTML = `
     <div class="job-section">
-      <div class="job-section-head"><div class="job-section-info"><div class="name">전열 — 앞에서 버틴다</div></div></div>
-      <div class="trait-cards">${frontJobs.map(cardOf).join("")}</div>
-    </div>
-    <div class="job-section">
-      <div class="job-section-head"><div class="job-section-info"><div class="name">후열 — 뒤에서 받친다</div></div></div>
-      <div class="trait-cards">${backJobs.map(cardOf).join("")}</div>
+      <div class="trait-cards">${frontJobs.concat(backJobs).map(cardOf).join("")}</div>
     </div>
   `;
 }
@@ -4335,7 +4422,8 @@ function updateConfirmBar() {
 
   if (count === 3) {
     btn.classList.add("ready");
-    btn.textContent = "▸ 파티 편성 확인";
+    // v0.3.7: 파티 편성 확인 → 모험 시작 (작전 편성 확인 페이지 제거)
+    btn.textContent = "▸ 모험 시작";
     btn.disabled = false;
   } else {
     btn.classList.remove("ready");
@@ -4347,8 +4435,9 @@ function updateConfirmBar() {
 function confirmTraits() {
   const count = partyState.slots.filter(Boolean).length;
   if (count !== 3) return;
-  renderReview();
-  showScreen("screen-review");
+  // v0.3.7: 작전 편성 확인 페이지 제거 → 바로 전투 진입
+  // (renderReview / screen-review 거치지 않음. 댑스 하나 줄임)
+  startBattle();
 }
 
 /* ============================================================
@@ -6100,13 +6189,12 @@ function showFusionCompanion() {
   //   - 영입 후보 = 기본 직업 6종 중 파티에 없는 것
   //   - 그 중 랜덤 3택 노출 (없으면 있는 만큼)
   //   - 1차 직업은 영입에 안 나옴 — 합체로만 도달
-  const presentJobIds = new Set(
-    runState.units.filter(u => u.kind === "trait").map(u => u.traitId)
+  // v0.3.7: 중복 결 제거 — renderRecruitCandidates로 통합 (party-status 자동 박힘)
+  const ok = renderRecruitCandidates(
+    "새 동료를 영입한다",
+    "남은 기본 직업 중 3명이 손을 든다. 부족한 역할을 채워줘."
   );
-  const pool = TRAITS.filter(t => !presentJobIds.has(t.id));
-
-  // ─── 가드: 영입 후보 0명이면 자동 진행 ───
-  if (pool.length === 0) {
+  if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
     runState.pendingFourthMember = false;
     runState.stage++;
@@ -6114,36 +6202,6 @@ function showFusionCompanion() {
     enterBattleScreen();
     return;
   }
-
-  // 랜덤 3택 (pool이 3 이하면 다 보여줌)
-  const shuffled = pool.slice().sort(() => Math.random() - 0.5);
-  const candidates = shuffled.slice(0, Math.min(3, shuffled.length));
-
-  document.getElementById("companion-title").textContent = "새 동료를 영입한다";
-  document.getElementById("companion-desc").textContent = "남은 기본 직업 중 3명이 손을 든다. 부족한 역할을 채워줘.";
-
-  const container = document.getElementById("companion-choices");
-  container.innerHTML = candidates.map(t => {
-    const positionTag = t.role === "front" ? "전열" : "후열";
-    const traitColor = `var(--job-${t.id})`;
-    return `
-      <div class="choice-card companion-card" onclick="pickCompanionDirect('${t.id}')">
-        <div class="companion-card-row">
-          <div class="companion-avatar" style="border-color: ${traitColor}; color: ${traitColor};">
-            ${avatarMiniSVG(t.id)}
-          </div>
-          <div class="companion-info">
-            <div class="companion-name">
-              <span class="companion-trait">${t.name}</span>
-            </div>
-            <div class="companion-desc">${t.desc.replace(/\n/g, " · ")}</div>
-          </div>
-          <div class="companion-pos">${positionTag}</div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
   showScreen("screen-fusion-companion");
 }
 
@@ -6195,7 +6253,96 @@ function renderRecruitCandidates(title, desc) {
       </div>
     `;
   }).join("");
+
+  // v0.3.7: 내 파티 현황 — 합체 직후면 합체 정보 함께, 아니면 현재 파티만
+  renderPartyStatus({ showFusionInfo: true });
   return true;
+}
+
+/* v0.3.7: 합체 후 영입 화면 — 내 파티 현황 박는 자리
+   - 합체 결과 (마지막 합체) → 결과 직업 / 소비된 재료
+   - 전열 / 후열 분리해서 현재 파티
+   - 빈 자리도 보여줌 (목표 인원 - 현재)
+   유키 등대 결: "한 화면에서 판단 가능"
+*/
+function renderPartyStatus(opts = {}) {
+  const container = document.getElementById("party-status");
+  if (!container) return;
+
+  // 직업 이름/색 찾기 헬퍼
+  const nameOf = (id) => {
+    const t = TRAITS.find(x => x.id === id);
+    if (t) return t.name;
+    const f = FUSIONS.find(x => x.id === id);
+    return f ? f.name : id;
+  };
+  const colorOf = (unit) => {
+    if (unit.kind === "trait")  return `var(--job-${unit.traitId})`;
+    if (unit.kind === "fusion") return `var(--job-${unit.fusionId})`;
+    return "var(--signal-dim)";
+  };
+
+  // 1) 합체 결과 (마지막 합체) — opts.showFusionInfo=true일 때만
+  let fusionHTML = "";
+  if (opts.showFusionInfo && runState.fusionHistory && runState.fusionHistory.length > 0) {
+    const last = runState.fusionHistory[runState.fusionHistory.length - 1];
+    const fusion = FUSIONS.find(f => f.id === last.fusionId);
+    if (fusion) {
+      const consumedNames = last.consumed.map(nameOf).join(" + ");
+      fusionHTML = `
+        <div class="ps-fusion">
+          합체: <span>${consumedNames}</span>
+          <span class="ps-fusion-arrow">→</span>
+          <span class="ps-fusion-result">${fusion.name}</span>
+        </div>
+      `;
+    }
+  }
+
+  // 2) 현재 파티 — 전열/후열로 나눔
+  const aliveUnits = runState.units.filter(u => u.alive);
+  const front = aliveUnits.filter(u => u.role === "front");
+  const back  = aliveUnits.filter(u => u.role === "back");
+  const target = getTargetPartySize();
+  const emptySlots = Math.max(0, target - aliveUnits.length);
+
+  const unitChip = (u) => `
+    <span class="ps-unit">
+      <span class="ps-unit-dot" style="background: ${colorOf(u)};"></span>
+      ${u.name}
+    </span>
+  `;
+
+  const emptyChip = `<span class="ps-unit ps-empty">빈 자리</span>`;
+
+  const frontHTML = front.length > 0
+    ? front.map(unitChip).join("")
+    : `<span class="ps-unit ps-empty">없음</span>`;
+  const backHTML  = back.length > 0
+    ? back.map(unitChip).join("")
+    : `<span class="ps-unit ps-empty">없음</span>`;
+
+  // 빈 자리는 *영입 화면이니까* 표시 의미가 큼
+  const emptyHTML = emptySlots > 0
+    ? `<div class="ps-line">
+         <div class="ps-line-label">▸ 비어있음</div>
+         <div class="ps-line-units">${Array(emptySlots).fill(emptyChip).join("")}</div>
+       </div>`
+    : "";
+
+  container.innerHTML = `
+    <div class="ps-head">▸ 내 파티 현황</div>
+    ${fusionHTML}
+    <div class="ps-line">
+      <div class="ps-line-label">▸ 전열</div>
+      <div class="ps-line-units">${frontHTML}</div>
+    </div>
+    <div class="ps-line">
+      <div class="ps-line-label">▸ 후열</div>
+      <div class="ps-line-units">${backHTML}</div>
+    </div>
+    ${emptyHTML}
+  `;
 }
 
 /* ---------- STAGE 10 — 4번째 동료 영입 (Mk.II 중반 분기) ---------- */
@@ -7053,11 +7200,14 @@ function renderTacticSummary() {
 /* ---------- 속도 / 일시정지 ---------- */
 
 function setSpeed(s) {
-  battleState.speed = s;
-  // 속도값 → UI 버튼 id 매핑 (mk2 새 박자: x1=2, x2=4, x3=6)
-  const speedToBtn = { 2: "btn-x1", 4: "btn-x2", 6: "btn-x3", 8: "btn-x8" };
+  // v0.3.7: 안전 clamp — 게이지 증가 배수만 곱하므로 로직은 안전하지만
+  // 표시 결을 분명히 박음. 내부값: 2 / 6 / 12.
+  const safeMax = 12;
+  battleState.speed = Math.min(s, safeMax);
+  // 속도값 → UI 버튼 id 매핑 (v0.3.7: x1=2, x3=6, x6=12)
+  const speedToBtn = { 2: "btn-x1", 6: "btn-x3", 12: "btn-x6" };
   document.querySelectorAll(".battle-btn").forEach(b => b.classList.remove("active"));
-  const btn = document.getElementById(speedToBtn[s]);
+  const btn = document.getElementById(speedToBtn[battleState.speed]);
   if (btn) btn.classList.add("active");
 }
 
