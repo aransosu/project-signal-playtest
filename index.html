@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.6.2</title>
+<title>Project Signal Mk.II v0.3.6.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2871,7 +2871,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.6.2</div>
+      <div class="title-version">MK.II — v0.3.6.3</div>
     </div>
 
     <p class="title-tagline">
@@ -6581,15 +6581,26 @@ function syncBattleSvg() {
   return true;
 }
 
-function getUnitCenter(uid) {
-  const el = document.querySelector(`[data-uid="${uid}"] .unit-portrait`);
+/* v0.3.6.3 유키 진단 자리: getUnitCenter 중복 선언 → 호이스팅 결로 뒤쪽이 앞쪽 덮어씀.
+   - drawLine은 uid 문자열을 넘김
+   - drawCenterPulse는 unit 객체를 넘김
+   → 양쪽 다 받게 호환 함수로 단일화.
+   → 뒤쪽 중복 선언은 제거 (아래 drawCenterPulse 다음 자리).
+   셀렉터: .unit-portrait 우선 (캐릭터 그림 중심), 없으면 .unit 자체 fallback.
+*/
+function getUnitCenter(unitOrUid) {
+  const uid = (typeof unitOrUid === "string") ? unitOrUid : unitOrUid?.uid;
+  if (!uid) return null;
+  const el =
+    document.querySelector(`[data-uid="${uid}"] .unit-portrait`) ||
+    document.querySelector(`[data-uid="${uid}"]`);
   if (!el) return null;
   const svg = document.getElementById("battle-svg");
   if (!svg) return null;
   const svgRect = svg.getBoundingClientRect();
   const r = el.getBoundingClientRect();
   // 가드: 0 좌표면 (아직 렌더 안 됨) null
-  if (svgRect.width <= 0 || r.width <= 0) return null;
+  if (svgRect.width <= 0 || svgRect.height <= 0 || r.width <= 0 || r.height <= 0) return null;
   return {
     x: r.left + r.width / 2 - svgRect.left,
     y: r.top + r.height / 2 - svgRect.top,
@@ -6990,19 +7001,11 @@ function drawCenterPulse(actor, targets, kind = "magic") {
   setTimeout(() => pulseGroup.remove(), 1400);
 }
 
-/* 헬퍼: 유닛 화면 중심점 */
-function getUnitCenter(unit) {
-  const el = document.querySelector(`[data-uid="${unit.uid}"]`);
-  if (!el) return null;
-  const svg = document.getElementById("battle-svg");
-  if (!svg) return null;
-  const rect = el.getBoundingClientRect();
-  const svgRect = svg.getBoundingClientRect();
-  return {
-    x: rect.left + rect.width / 2 - svgRect.left,
-    y: rect.top + rect.height / 2 - svgRect.top,
-  };
-}
+/* v0.3.6.3: 중복 선언 제거됨.
+   원래 이 자리에 function getUnitCenter(unit) { ... } 박혀 있었음.
+   호이스팅 결로 위쪽 getUnitCenter(uid)를 덮어쓰면서 drawLine의 좌표가 항상 null로 빠졌음.
+   유키 PD 진단으로 자리 박힘. 단일 호환 함수는 syncBattleSvg 다음 자리에.
+*/
 
 /* ---------- 이벤트 피드 ---------- */
 
