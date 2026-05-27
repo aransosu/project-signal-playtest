@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.6.1</title>
+<title>Project Signal Mk.II v0.3.6.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -1599,6 +1599,7 @@ body {
 .event-line.taunt  { color: var(--signal); font-weight: 500; }
 
 /* 전장 — 적/충돌선/아군이 *비율로* 배분 */
+/* v0.3.6.2: contain: layout style 제거 — iOS Safari PWA에서 자식 SVG 렌더 격리 결 의심 */
 .battlefield {
   flex: 1;
   min-height: 0; /* flex 자식이 늘어날 수 있게 */
@@ -1606,16 +1607,20 @@ body {
   padding: 12px 12px 16px;
   display: flex;
   flex-direction: column;
-  contain: layout style;
   overflow: hidden;
 }
 
 /* SVG 오버레이 — 유닛 위에 떠야 함 */
+/* v0.3.6.2: width/height 100% 박음. setAttribute 의존 줄임 (CSS 우선) */
 .battle-svg {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 8;
+  /* iOS Safari 강건성: GPU 합성 레이어로 박음 — paint 누락 자리 방지 */
+  transform: translateZ(0);
 }
 
 /* 적/아군 영역 — flex 비율로 균등 박음 */
@@ -2866,7 +2871,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.6.1</div>
+      <div class="title-version">MK.II — v0.3.6.2</div>
     </div>
 
     <p class="title-tagline">
@@ -3559,6 +3564,13 @@ const partyState = {
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  // v0.3.6.2: 전투 화면 진입 시 paint 후 SVG viewBox 잡기
+  // RAF 두 번 박아서 iOS Safari layout 안정화 보장
+  if (id === "screen-battle") {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      syncBattleSvg();
+    }));
+  }
 }
 
 function startGame() {
@@ -6540,25 +6552,33 @@ function showActionLabel(unit, text, kind = "default") {
    - getUnitCenter에 가드
 */
 
-// resize 시 SVG 재동기화
-window.addEventListener("resize", () => {
+// v0.3.6.2: resize + orientationchange + visualViewport 모두 SVG 재동기화
+// PWA 환경에서 standalone viewport 변동 시 좌표 결 어긋남 방지
+function _resyncBattleSvgIfActive() {
   if (document.getElementById("screen-battle")?.classList.contains("active")) {
-    syncBattleSvg();
+    // RAF 두 번 박음 — iOS Safari layout 안정화 보장
+    requestAnimationFrame(() => requestAnimationFrame(syncBattleSvg));
   }
-});
+}
+window.addEventListener("resize", _resyncBattleSvgIfActive);
+window.addEventListener("orientationchange", _resyncBattleSvgIfActive);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", _resyncBattleSvgIfActive);
+}
 
 function syncBattleSvg() {
-  // SVG viewBox를 부모(battlefield)의 실제 픽셀 크기와 1:1로 동기화
+  // v0.3.6.2: width/height 속성은 CSS에 맡김 (100%). viewBox만 동기화.
+  // SVG viewBox를 부모(battlefield)의 실제 픽셀 크기와 1:1로 박음
   // → SVG 내부 좌표 = 픽셀 좌표
   const svg = document.getElementById("battle-svg");
   const battlefield = document.getElementById("battlefield");
-  if (!svg || !battlefield) return;
+  if (!svg || !battlefield) return false;
   const rect = battlefield.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return;
+  if (rect.width <= 0 || rect.height <= 0) return false;
   svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
   svg.setAttribute("preserveAspectRatio", "none");
-  svg.setAttribute("width", rect.width);
-  svg.setAttribute("height", rect.height);
+  // width/height setAttribute 제거 — CSS 100%로 통일 (iOS Safari 강건성)
+  return true;
 }
 
 function getUnitCenter(uid) {
@@ -6576,20 +6596,120 @@ function getUnitCenter(uid) {
   };
 }
 
+/* v0.3.6.2 디버그 패널 — iPhone PWA에서 행동선 자리 진단용
+   상단 작은 텍스트 1줄로 표시:
+   - svgRect width × height
+   - battlefieldRect width × height
+   - 최근 drawLine 호출: kind / from(x,y) / to(x,y) / line 생성 여부
+   - 누적 호출 수
+   유키 등대 결: "미생성 / 좌표 밖 / 생성 후 즉시 사라짐" 구분 가능해야 함
+*/
+const DEBUG_LINE = {
+  enabled: true,
+  callCount: 0,
+  lastKind: "-",
+  lastFrom: "-",
+  lastTo: "-",
+  lastStatus: "-",
+  lastSvgRect: "-",
+  lastBfRect: "-",
+};
+
+// v0.3.6.2: 디버그 토글 — 콘솔에서 toggleDebugLine() 또는 패널 탭으로 OFF
+window.toggleDebugLine = function() {
+  DEBUG_LINE.enabled = !DEBUG_LINE.enabled;
+  const panel = document.getElementById("debug-line-panel");
+  if (panel) panel.style.display = DEBUG_LINE.enabled ? "block" : "none";
+  return DEBUG_LINE.enabled;
+};
+
+function ensureDebugPanel() {
+  if (!DEBUG_LINE.enabled) return null;
+  let panel = document.getElementById("debug-line-panel");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "debug-line-panel";
+    panel.style.cssText = [
+      "position: fixed",
+      "top: 0",
+      "left: 0",
+      "right: 0",
+      "z-index: 9999",
+      "background: rgba(0,0,0,0.85)",
+      "color: #ffc94a",
+      "font-family: monospace",
+      "font-size: 9px",
+      "padding: 2px 6px",
+      "line-height: 1.2",
+      // v0.3.6.2: 패널 탭 시 OFF (PWA 환경에서 콘솔 못 열 때 대비)
+      "pointer-events: auto",
+      "cursor: pointer",
+      "white-space: nowrap",
+      "overflow: hidden",
+      "text-overflow: ellipsis",
+    ].join(";");
+    panel.title = "탭하면 디버그 OFF";
+    panel.addEventListener("click", () => {
+      DEBUG_LINE.enabled = false;
+      panel.style.display = "none";
+    });
+    document.body.appendChild(panel);
+  }
+  return panel;
+}
+
+function updateDebugPanel() {
+  const panel = ensureDebugPanel();
+  if (!panel) return;
+  panel.textContent =
+    `[L#${DEBUG_LINE.callCount} ${DEBUG_LINE.lastKind}] ` +
+    `svg:${DEBUG_LINE.lastSvgRect} bf:${DEBUG_LINE.lastBfRect} ` +
+    `${DEBUG_LINE.lastFrom}→${DEBUG_LINE.lastTo} ${DEBUG_LINE.lastStatus}`;
+}
+
 function drawLine(actor, target, kind) {
   const svg = document.getElementById("battle-svg");
-  if (!svg) return;
-  // SVG viewBox를 현재 픽셀 크기와 동기화 (좌표 정확성 보장)
-  syncBattleSvg();
+  const battlefield = document.getElementById("battlefield");
+  if (!svg) {
+    DEBUG_LINE.callCount++;
+    DEBUG_LINE.lastKind = kind;
+    DEBUG_LINE.lastStatus = "NO-SVG";
+    updateDebugPanel();
+    return;
+  }
+  // v0.3.6.2: viewBox 동기화 (CSS 크기는 100%로 자동)
+  const synced = syncBattleSvg();
+
+  // 디버그: 현재 rect 자리 잡기
+  const svgR = svg.getBoundingClientRect();
+  const bfR = battlefield ? battlefield.getBoundingClientRect() : { width: 0, height: 0 };
+  DEBUG_LINE.callCount++;
+  DEBUG_LINE.lastKind = kind;
+  DEBUG_LINE.lastSvgRect = `${Math.round(svgR.width)}x${Math.round(svgR.height)}`;
+  DEBUG_LINE.lastBfRect = `${Math.round(bfR.width)}x${Math.round(bfR.height)}`;
+
   const a = getUnitCenter(actor.uid);
   const t = getUnitCenter(target.uid);
   if (!a || !t) {
+    DEBUG_LINE.lastFrom = a ? `(${Math.round(a.x)},${Math.round(a.y)})` : "NULL";
+    DEBUG_LINE.lastTo   = t ? `(${Math.round(t.x)},${Math.round(t.y)})` : "NULL";
+    DEBUG_LINE.lastStatus = "COORD-NULL";
+    updateDebugPanel();
     console.warn(`[drawLine] 좌표 누락: actor=${actor?.uid}(${!!a}) target=${target?.uid}(${!!t})`);
     return;
   }
+  DEBUG_LINE.lastFrom = `(${Math.round(a.x)},${Math.round(a.y)})`;
+  DEBUG_LINE.lastTo   = `(${Math.round(t.x)},${Math.round(t.y)})`;
+
   if (Math.abs(a.x - t.x) < 1 && Math.abs(a.y - t.y) < 1) {
+    DEBUG_LINE.lastStatus = "SAME-POINT";
+    updateDebugPanel();
     console.warn(`[drawLine] 두 점이 동일`);
     return;
+  }
+  if (!synced) {
+    DEBUG_LINE.lastStatus = "NO-VIEWBOX";
+    // 그래도 그려본다 — CSS 100%면 SVG 자체는 보일 수 있음
   }
 
   // ─── 행동별 곡률 (자연스러운 부드러움 + 강한 휨) ───
@@ -6770,6 +6890,13 @@ function drawLine(actor, target, kind) {
   }
 
   svg.appendChild(group);
+
+  // v0.3.6.2: 디버그 — 그려진 후 좌표가 SVG 영역 안인지 결 체크
+  const inBounds = (a.x >= 0 && a.x <= svgR.width && a.y >= 0 && a.y <= svgR.height
+                    && t.x >= 0 && t.x <= svgR.width && t.y >= 0 && t.y <= svgR.height);
+  DEBUG_LINE.lastStatus = inBounds ? "OK" : "OUT-OF-BOUNDS";
+  updateDebugPanel();
+
   // 페이드 아웃: 마지막 25%는 사라지는 시간
   const fadeStart = Math.max(100, duration - 150);
   setTimeout(() => { group.style.opacity = "0"; group.style.transition = "opacity 0.18s"; }, fadeStart);
