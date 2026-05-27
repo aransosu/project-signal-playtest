@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7</title>
+<title>Project Signal Mk.II v0.3.7.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2861,7 +2861,10 @@ body {
   flex-shrink: 0;
 }
 
-/* v0.3.7: 내 파티 현황 — 합체 결과 + 현재 파티 한눈 */
+/* v0.3.7.1: 내 파티 현황 — 카드/슬롯 UI 결 (텍스트 나열 폐기)
+   - 헤더 + 합체 결과 한 줄 (있을 때만)
+   - 3슬롯 grid: 현재 파티 칩 + 빈 자리 (영입 대기)
+   - 처음 직업 선택 화면 카드 톤과 결 통일 */
 .party-status {
   margin-top: 16px;
   padding: 12px 12px;
@@ -2879,14 +2882,16 @@ body {
   letter-spacing: 0.2em;
   color: var(--signal-dim);
   text-transform: uppercase;
-  border-bottom: 1px dashed var(--line);
-  padding-bottom: 6px;
 }
 
 .party-status .ps-fusion {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-dim);
-  line-height: 1.5;
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: var(--bg-3);
+  border-radius: 4px;
+  border: 1px dashed var(--line);
 }
 
 .party-status .ps-fusion .ps-fusion-result {
@@ -2899,50 +2904,96 @@ body {
   margin: 0 4px;
 }
 
-.party-status .ps-line {
+/* 슬롯 grid — 슬롯 수에 따라 결 다름
+   v0.3.7.2:
+     - 3슬롯 이하: 한 줄 (1fr 반복)
+     - 4슬롯: 2x2 (모바일 좁아도 가독성)
+*/
+.party-status .ps-slots {
+  display: grid;
+  gap: 6px;
+}
+.party-status .ps-slots[data-count="1"] { grid-template-columns: 1fr; }
+.party-status .ps-slots[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.party-status .ps-slots[data-count="3"] { grid-template-columns: 1fr 1fr 1fr; }
+.party-status .ps-slots[data-count="4"] { grid-template-columns: 1fr 1fr; }
+
+.party-status .ps-slot {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.party-status .ps-line-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  color: var(--text-faint);
-  text-transform: uppercase;
-}
-
-.party-status .ps-line-units {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-
-.party-status .ps-unit {
-  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  min-height: 88px;
+}
+
+.party-status .ps-slot.ps-slot-empty {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.7;
+}
+
+.party-status .ps-slot.ps-slot-new {
+  border-color: var(--signal);
+  background: linear-gradient(180deg, rgba(255,201,74,0.08), rgba(255,201,74,0.02));
+  box-shadow: 0 0 0 1px var(--signal), 0 0 14px rgba(255,201,74,0.18);
+}
+
+.party-status .ps-slot-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-2);
+}
+
+.party-status .ps-slot-avatar.ps-slot-avatar-empty {
+  border: 1.5px dashed var(--text-faint);
+  color: var(--text-faint);
+  font-size: 16px;
+  background: transparent;
+}
+
+.party-status .ps-slot-name {
+  font-weight: 700;
   font-size: 12px;
   color: var(--text);
-  padding: 2px 6px 2px 4px;
-  background: var(--bg-3);
-  border-radius: 4px;
+  letter-spacing: -0.01em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.party-status .ps-slot.ps-slot-empty .ps-slot-name {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.party-status .ps-slot-pos {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: var(--bg-2);
   border: 1px solid var(--line);
 }
 
-.party-status .ps-unit.ps-empty {
-  color: var(--text-faint);
-  font-style: italic;
-  background: transparent;
-  border-style: dashed;
+.party-status .ps-slot.ps-slot-new .ps-slot-name {
+  color: var(--signal);
 }
 
-.party-status .ps-unit-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.party-status .ps-slot.ps-slot-new .ps-slot-pos {
+  color: var(--signal);
+  border-color: var(--signal-dim);
 }
 
 
@@ -2958,7 +3009,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7</div>
+      <div class="title-version">MK.II — v0.3.7.3</div>
     </div>
 
     <p class="title-tagline">
@@ -5899,11 +5950,31 @@ function onStageClear() {
   }
 
   if (phase === "fusion") {
-    // 합체 가능 시 합체, 아니면 그냥 다음
-    if (canOfferFusion()) {
+    // v0.3.7.3: 유키 PD 진단 결 — fusion phase에서 *항상 dump 박음*
+    // 1) 콘솔 — 유닛 dump + 합체 분석
+    const dump = dumpUnits();
+    const inspect = inspectFusion();
+    console.log(`[onStageClear] STAGE ${stageNum} phase=fusion`);
+    console.log(`[onStageClear] units dump:`, dump);
+    console.log(`[onStageClear] fusionCheck ids=${JSON.stringify(inspect.aliveIds)} matched=${JSON.stringify(inspect.matched.map(m => `${m.name}: ${m.requires.join("+")}`))} canOffer=${inspect.canOffer}`);
+
+    // 2) 이벤트 피드 — 손맛으로 잡히게 (유키 결: "강하게 남겨")
+    pushEvent(`▸ STAGE ${stageNum} 합체 진단 ─ alive: ${inspect.aliveIds.join(", ")}`, "system");
+    if (inspect.canOffer) {
+      const matchedStr = inspect.matched.map(m => `${m.name}(${m.requires.join("+")})`).join(", ");
+      pushEvent(`▸ 매칭된 합체: ${matchedStr}`, "system");
+    } else {
+      pushEvent(`▸ 매칭된 합체 없음 — 합체 화면 안 박힘`, "death");
+    }
+
+    // 3) 분기 결
+    if (inspect.canOffer) {
+      console.log(`[onStageClear] → showFusionChoice() 호출`);
+      pushEvent(`▸ 합체 화면 진입`, "system");
       showFusionChoice();
     } else {
-      pushEvent("합체 가능 자리 없음 — 다음 스테이지로", "system");
+      // v0.3.7.3 방어 결 — 조용한 스킵 금지. 이벤트 피드에 또렷이.
+      pushEvent(`▸ STAGE ${stageNum} 합체 가능 자리 없음 — 다음 스테이지로`, "system");
       proceedToNextStage();
     }
     return;
@@ -5938,23 +6009,67 @@ function getTargetPartySize() {
 
 /* 합체 제안 가능 여부 (v0.3.2: 2차 직업도 포함)
    기본 + 기본 / 1차 + 기본 / 1차 + 1차 — 어떤 조합이든 FUSIONS의 requires가 맞으면 박힘
+   v0.3.7.3: inspectFusion 결로 본체 박음. 진단 결 함께.
 */
 function canOfferFusion() {
+  return inspectFusion().canOffer;
+}
+
+/* v0.3.7.3: 합체 가능성 진단 결 — 유키 PD 요청 (S13 미노출 추적)
+   반환:
+     - aliveIds: 살아있는 유닛 ID 풀 (kind=fusion이면 fusionId, 아니면 traitId)
+     - matched: 매칭된 FUSION 목록 [{id, name, requires}]
+     - canOffer: 매칭 > 0
+*/
+function inspectFusion() {
   const aliveIds = runState.units
     .filter(u => u.alive)
     .map(u => u.kind === "fusion" ? u.fusionId : u.traitId);
-  // 살아있는 ID 풀에서 어떤 FUSION이라도 requires가 다 만족되면 가능
-  return FUSIONS.some(f => {
-    const needed = [...f.requires];
+  const matched = [];
+  for (const f of FUSIONS) {
     const pool = [...aliveIds];
-    return needed.every(req => {
+    const ok = f.requires.every(req => {
       const idx = pool.indexOf(req);
       if (idx < 0) return false;
-      pool.splice(idx, 1);  // 한 번 소비 (중복 카운트 방지)
+      pool.splice(idx, 1);
       return true;
     });
-  });
+    if (ok) {
+      matched.push({ id: f.id, name: f.name, requires: f.requires });
+    }
+  }
+  return { aliveIds, matched, canOffer: matched.length > 0 };
 }
+
+/* v0.3.7.3: 유닛 상태 dump — 유키 PD 요청 형식
+   필드: name / id (=fusionId or traitId) / traitId / kind / alive / row / source(=baseJob)
+*/
+function dumpUnits() {
+  return runState.units.map(u => ({
+    name: u.name,
+    id: u.kind === "fusion" ? u.fusionId : u.traitId,
+    traitId: u.traitId,
+    kind: u.kind,
+    alive: u.alive,
+    row: u.role,                                    // front / back
+    source: u.legacyBaseJob || u.baseJob || null,   // 기본 직업 출처 결
+  }));
+}
+
+// v0.3.7.3: 전역 진단 함수 — 콘솔에서 한 번에 dump
+// PWA에서 콘솔 못 여는 환경이면 이벤트 피드에 박힘 (onStageClear fusion 분기)
+window.dumpFusionState = function() {
+  const dump = dumpUnits();
+  const inspect = inspectFusion();
+  console.log("=== Fusion State Dump ===");
+  console.log("stage:", runState.stage);
+  console.log("units:", dump);
+  console.log("aliveIds:", inspect.aliveIds);
+  console.log("matched fusions:", inspect.matched);
+  console.log("canOffer:", inspect.canOffer);
+  console.log("========================");
+  return { stage: runState.stage, units: dump, ...inspect };
+};
 
 /* 분기 없이 바로 다음 스테이지 */
 function proceedToNextStage() {
@@ -6031,6 +6146,9 @@ function continueAfterPreview() {
 /* ---------- 합체 선택 화면 (STAGE 4 클리어 후) ---------- */
 
 function showFusionChoice() {
+  // v0.3.7.3: 진입 로그 (유키 PD 요청 — 분기 vs 렌더 회귀 가르기)
+  console.log(`[showFusionChoice] ENTER stage=${runState.stage}`);
+
   const container = document.getElementById("fusion-choices");
 
   // v0.3.2: 살아있는 모든 유닛 ID 풀 (기본 직업 + 1차 직업)
@@ -6049,7 +6167,15 @@ function showFusionChoice() {
     });
   });
 
+  // v0.3.7.3: 진입 시점 합체 후보 결도 콘솔에 박음
+  console.log(`[showFusionChoice] alivePool=${JSON.stringify(alivePool)} availableFusions=${availableFusions.length}개`);
+
   if (availableFusions.length === 0) {
+    // v0.3.7.3: 호출자(onStageClear)는 canOffer=true 확인 후 들어왔는데도
+    //          여기서 0개라면 = 상태 결이 호출 사이에 변했다는 결. 진단 결 강하게 박음.
+    console.warn(`[showFusionChoice] availableFusions=0 — onStageClear와 결 불일치 가능성`);
+    pushEvent(`▸ showFusionChoice: 후보 0개 (진단 — onStageClear와 불일치)`, "death");
+
     // v0.3.3: 기준 인원 < 일 때 영입 (S10 recruit + 합체 가능 자리 없음 자리)
     const target = getTargetPartySize();
     if (runState.units.length < target) {
@@ -6113,6 +6239,8 @@ function showFusionChoice() {
   `;
 
   showScreen("screen-fusion");
+  // v0.3.7.3: 렌더 완료 로그 — *진입 로그* 보이는데 화면 안 뜨면 UI 자리 의심
+  console.log(`[showFusionChoice] showScreen("screen-fusion") 호출 완료, 후보=${availableFusions.length}개`);
 }
 
 function pickFusion(fusionId) {
@@ -6190,9 +6318,11 @@ function showFusionCompanion() {
   //   - 그 중 랜덤 3택 노출 (없으면 있는 만큼)
   //   - 1차 직업은 영입에 안 나옴 — 합체로만 도달
   // v0.3.7: 중복 결 제거 — renderRecruitCandidates로 통합 (party-status 자동 박힘)
+  // v0.3.7.2: showFusionInfo: true — 합체 직후이므로 합체 결과 노출
   const ok = renderRecruitCandidates(
     "새 동료를 영입한다",
-    "남은 기본 직업 중 3명이 손을 든다. 부족한 역할을 채워줘."
+    "남은 기본 직업 중 3명이 손을 든다. 부족한 역할을 채워줘.",
+    { showFusionInfo: true }
   );
   if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
@@ -6218,8 +6348,12 @@ function pickCompanionDirect(traitId) {
   proceedToNextStage();
 }
 
-/* ---------- v0.3.0 영입 카드 공통 렌더 (랜덤 3택) ---------- */
-function renderRecruitCandidates(title, desc) {
+/* ---------- v0.3.0 영입 카드 공통 렌더 (랜덤 3택)
+   v0.3.7.2: opts.showFusionInfo 결 — 합체 후 영입 vs S10/S15 영입 분리
+     - 합체 후 영입: showFusionInfo=true → 합체 결과 한 줄 + 현재 파티
+     - S10/S15 영입: showFusionInfo=false → 현재 파티만 (합체 정보 X)
+*/
+function renderRecruitCandidates(title, desc, opts = {}) {
   const presentJobIds = new Set(
     runState.units.filter(u => u.kind === "trait").map(u => u.traitId)
   );
@@ -6254,44 +6388,53 @@ function renderRecruitCandidates(title, desc) {
     `;
   }).join("");
 
-  // v0.3.7: 내 파티 현황 — 합체 직후면 합체 정보 함께, 아니면 현재 파티만
-  renderPartyStatus({ showFusionInfo: true });
+  // v0.3.7.2: 호출자가 결을 정함 (기본 false — 합체 정보 노출 X)
+  renderPartyStatus({ showFusionInfo: !!opts.showFusionInfo });
   return true;
 }
 
-/* v0.3.7: 합체 후 영입 화면 — 내 파티 현황 박는 자리
-   - 합체 결과 (마지막 합체) → 결과 직업 / 소비된 재료
-   - 전열 / 후열 분리해서 현재 파티
-   - 빈 자리도 보여줌 (목표 인원 - 현재)
-   유키 등대 결: "한 화면에서 판단 가능"
+/* v0.3.7.1: 합체 후 영입 화면 — 내 파티 현황 (카드 슬롯 결)
+   - 합체 결과 한 줄 (마지막 합체, opts.showFusionInfo=true일 때)
+   - 3슬롯 grid: 현재 살아있는 파티 칩 + 빈 자리 (영입 대기)
+   - 합체 결과 직업 슬롯은 *new* 강조 박음
+   유키 등대 결: "텍스트 설명 페이지가 아니라, 합체 후 전략 선택 화면"
 */
 function renderPartyStatus(opts = {}) {
   const container = document.getElementById("party-status");
   if (!container) return;
 
-  // 직업 이름/색 찾기 헬퍼
+  // 직업 이름 헬퍼
   const nameOf = (id) => {
     const t = TRAITS.find(x => x.id === id);
     if (t) return t.name;
     const f = FUSIONS.find(x => x.id === id);
     return f ? f.name : id;
   };
+  // 직업 색 헬퍼 (avatar 테두리)
   const colorOf = (unit) => {
     if (unit.kind === "trait")  return `var(--job-${unit.traitId})`;
     if (unit.kind === "fusion") return `var(--job-${unit.fusionId})`;
     return "var(--signal-dim)";
   };
+  // avatar SVG 헬퍼 (기본 직업 / 1차 직업 / 2차 직업 다 박힘)
+  const avatarOf = (unit) => {
+    if (unit.kind === "trait")  return avatarMiniSVG(unit.traitId);
+    if (unit.kind === "fusion") return avatarMiniSVG(unit.fusionId);
+    return "";
+  };
 
-  // 1) 합체 결과 (마지막 합체) — opts.showFusionInfo=true일 때만
-  let fusionHTML = "";
+  // 1) 합체 결과 한 줄 (있을 때만)
+  let fusionLineHTML = "";
+  let newFusionId = null;  // 새로 박힌 합체 결과 — 슬롯 강조용
   if (opts.showFusionInfo && runState.fusionHistory && runState.fusionHistory.length > 0) {
     const last = runState.fusionHistory[runState.fusionHistory.length - 1];
     const fusion = FUSIONS.find(f => f.id === last.fusionId);
     if (fusion) {
+      newFusionId = last.fusionId;
       const consumedNames = last.consumed.map(nameOf).join(" + ");
-      fusionHTML = `
+      fusionLineHTML = `
         <div class="ps-fusion">
-          합체: <span>${consumedNames}</span>
+          합체: ${consumedNames}
           <span class="ps-fusion-arrow">→</span>
           <span class="ps-fusion-result">${fusion.name}</span>
         </div>
@@ -6299,57 +6442,57 @@ function renderPartyStatus(opts = {}) {
     }
   }
 
-  // 2) 현재 파티 — 전열/후열로 나눔
+  // 2) 슬롯 결 — 살아있는 파티원 + 빈 자리 1개 (영입 직전이니까)
+  //    v0.3.7.2: 슬롯 수 동적 결
+  //      - 합체 후 영입: 3인(혹은 합체로 2인 등) + 빈 자리 1 → 영입하면 다시 채워짐
+  //      - S10 영입: 3인 + 빈 자리 1 = 4슬롯
+  //    슬롯이 너무 많으면 모바일 결이 깨지니까 최대 4슬롯으로 cap.
   const aliveUnits = runState.units.filter(u => u.alive);
-  const front = aliveUnits.filter(u => u.role === "front");
-  const back  = aliveUnits.filter(u => u.role === "back");
-  const target = getTargetPartySize();
-  const emptySlots = Math.max(0, target - aliveUnits.length);
+  const slotCount = Math.min(4, aliveUnits.length + 1);  // +1 = 영입 빈 자리
+  const emptyCount = Math.max(0, slotCount - aliveUnits.length);
 
-  const unitChip = (u) => `
-    <span class="ps-unit">
-      <span class="ps-unit-dot" style="background: ${colorOf(u)};"></span>
-      ${u.name}
-    </span>
+  const slotHTML = (unit) => {
+    const isNew = newFusionId && unit.kind === "fusion" && unit.fusionId === newFusionId;
+    const posLabel = unit.role === "front" ? "전열" : "후열";
+    return `
+      <div class="ps-slot${isNew ? " ps-slot-new" : ""}">
+        <div class="ps-slot-avatar" style="border-color: ${colorOf(unit)}; color: ${colorOf(unit)};">
+          ${avatarOf(unit)}
+        </div>
+        <div class="ps-slot-name">${unit.name}</div>
+        <div class="ps-slot-pos">${posLabel}</div>
+      </div>
+    `;
+  };
+
+  const emptySlotHTML = `
+    <div class="ps-slot ps-slot-empty">
+      <div class="ps-slot-avatar ps-slot-avatar-empty">+</div>
+      <div class="ps-slot-name">빈 자리</div>
+      <div class="ps-slot-pos">영입 대기</div>
+    </div>
   `;
 
-  const emptyChip = `<span class="ps-unit ps-empty">빈 자리</span>`;
-
-  const frontHTML = front.length > 0
-    ? front.map(unitChip).join("")
-    : `<span class="ps-unit ps-empty">없음</span>`;
-  const backHTML  = back.length > 0
-    ? back.map(unitChip).join("")
-    : `<span class="ps-unit ps-empty">없음</span>`;
-
-  // 빈 자리는 *영입 화면이니까* 표시 의미가 큼
-  const emptyHTML = emptySlots > 0
-    ? `<div class="ps-line">
-         <div class="ps-line-label">▸ 비어있음</div>
-         <div class="ps-line-units">${Array(emptySlots).fill(emptyChip).join("")}</div>
-       </div>`
-    : "";
+  const slotsHTML =
+    aliveUnits.map(slotHTML).join("") +
+    Array(emptyCount).fill(emptySlotHTML).join("");
 
   container.innerHTML = `
     <div class="ps-head">▸ 내 파티 현황</div>
-    ${fusionHTML}
-    <div class="ps-line">
-      <div class="ps-line-label">▸ 전열</div>
-      <div class="ps-line-units">${frontHTML}</div>
-    </div>
-    <div class="ps-line">
-      <div class="ps-line-label">▸ 후열</div>
-      <div class="ps-line-units">${backHTML}</div>
-    </div>
-    ${emptyHTML}
+    ${fusionLineHTML}
+    <div class="ps-slots" data-count="${slotCount}">${slotsHTML}</div>
   `;
 }
 
-/* ---------- STAGE 10 — 4번째 동료 영입 (Mk.II 중반 분기) ---------- */
+/* ---------- STAGE 10 — 4번째 동료 영입 (Mk.II 중반 분기)
+   v0.3.7.2: 합체 안 한 영입이므로 합체 정보 노출 X.
+             "현재 파티 + 영입 후보 3명" 결로 박음.
+*/
 function showFourthMember() {
   const ok = renderRecruitCandidates(
-    "새로운 동료가 합류한다",
-    "긴 여정을 위해 한 명 더. 남은 기본 직업 중 3명이 손을 든다."
+    "새 동료가 합류합니다",
+    "현재 파티에 새 동료 한 명을 추가합니다.",
+    { showFusionInfo: false }
   );
   if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
@@ -6362,11 +6505,14 @@ function showFourthMember() {
   showScreen("screen-fusion-companion");
 }
 
-/* ---------- 동행 단독 보너스 (15 클리어 — 합체 없이 새 친구) ---------- */
+/* ---------- 동행 단독 보너스 (15 클리어 — 합체 없이 새 친구)
+   v0.3.7.2: 현재 onStageClear에서 호출되지 않는 legacy 결. showFusionInfo: false로 박아둠.
+*/
 function showCompanionChoice() {
   const ok = renderRecruitCandidates(
     "동료를 한 명 더",
-    `STAGE ${runState.stage} 보상. 남은 기본 직업 중 3명이 손을 든다.`
+    `STAGE ${runState.stage} 보상. 남은 기본 직업 중 3명이 손을 든다.`,
+    { showFusionInfo: false }
   );
   if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
@@ -6761,9 +6907,12 @@ function getUnitCenter(unitOrUid) {
    - 최근 drawLine 호출: kind / from(x,y) / to(x,y) / line 생성 여부
    - 누적 호출 수
    유키 등대 결: "미생성 / 좌표 밖 / 생성 후 즉시 사라짐" 구분 가능해야 함
+
+   v0.3.7.1: 행동선 복구 박혀서 기본 OFF 박음.
+   로직은 살아있음 — 콘솔에서 toggleDebugLine() 또는 window.DEBUG_LINE.enabled = true로 켤 수 있음.
 */
 const DEBUG_LINE = {
-  enabled: true,
+  enabled: false,
   callCount: 0,
   lastKind: "-",
   lastFrom: "-",
