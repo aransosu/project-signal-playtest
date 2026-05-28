@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.17</title>
+<title>Project Signal Mk.II v0.3.7.19</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2079,87 +2079,82 @@ body {
   box-shadow: 0 0 14px rgba(255,201,74,0.6), inset 0 0 8px rgba(255,201,74,0.2);
 }
 
-/* 사망 — v0.3.7.16: fade + scale 결 박음 (퐁! 결) */
+/* 사망 — v0.3.7.18: 비석 마커가 본체. ✕는 제거 (비석이 그 자리)
+   * 사망 순간: scale 부풀고 → 사그라지며 *살짝 아래로 가라앉음* ("쿠쿠쿵")
+   * 이후: grayscale 유지 + 비석 마커 표시
+*/
 .unit.dead .unit-portrait {
   filter: grayscale(1) brightness(0.5);
-  animation: unit-death-fade 0.42s ease-out forwards;
-}
-.unit.dead .unit-portrait::after {
-  content: '✕';
-  position: absolute;
-  font-size: 32px;
-  color: var(--danger);
-  font-weight: 900;
-  text-shadow: 0 0 6px rgba(0,0,0,0.8);
+  animation: unit-death-fade 0.5s ease-out forwards;
 }
 @keyframes unit-death-fade {
-  0%   { transform: scale(1);    opacity: 1; }
-  35%  { transform: scale(1.08); opacity: 1; }   /* 살짝 부풀고 — "잡혔다!" 결 */
-  100% { transform: scale(0.85); opacity: 0.55; }
+  0%   { transform: translateY(0)   scale(1);    opacity: 1; }
+  18%  { transform: translateY(-2px) scale(1.08); opacity: 1; }   /* 살짝 부풀고 */
+  45%  { transform: translateY(4px)  scale(0.92); opacity: 0.85; } /* 쿵 가라앉음 */
+  100% { transform: translateY(6px)  scale(0.85); opacity: 0.5; }
 }
 
-/* v0.3.7.16: 처치 라벨 — 행동 라벨과 다른 자리 (위쪽 더 멀리, 강조)
-   유키 결: "치명타는 눈이 가야 하고, 처치는 손맛이 나야 한다."
+/* v0.3.7.18: 사망 아이콘 — 큰 텍스트 라벨 X. 작은 해골 팝업.
+   유키 결: "사망은 텍스트보다 아이콘과 비석으로 직관적으로"
+   * 사망 *순간*에만 짧게 (~600ms)
+   * 캐릭터 위 작은 자리, 화면 밖으로 잘리지 않게 조심
 */
-.kill-label {
+.kill-icon {
   position: absolute;
   left: 50%;
-  top: -38px;
-  transform: translateX(-50%) scale(0.7);
-  font-family: 'Noto Sans KR', sans-serif;
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  padding: 4px 12px;
-  border-radius: 12px;
-  white-space: nowrap;
+  top: -18px;
+  transform: translateX(-50%) scale(0.6);
+  font-size: 22px;
   pointer-events: none;
   z-index: 22;
   opacity: 0;
-  animation: kill-label-pop 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  animation: kill-icon-pop 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  text-shadow: 0 0 6px rgba(0,0,0,0.95), 0 2px 4px rgba(0,0,0,0.7);
 }
-.kill-label.kind-basic {
-  background: #2a2014;
-  color: var(--signal);
-  border: 1px solid var(--signal-dim);
-  box-shadow: 0 0 12px rgba(255,201,74,0.5), 0 2px 6px rgba(0,0,0,0.6);
+/* 사망 원인별 색감 — 아이콘 자체 색이 아니라 글로우/text-shadow로 결 차이 */
+.kill-icon.kind-critical {
+  text-shadow: 0 0 8px rgba(255,176,102,0.95), 0 0 14px rgba(255,120,60,0.6), 0 2px 4px rgba(0,0,0,0.7);
 }
-.kill-label.kind-critical {
-  background: linear-gradient(180deg, #ff9148, #d8602a);
-  color: #1a0a04;
-  border: 1px solid #ffb066;
-  font-size: 14px;
-  box-shadow: 0 0 16px rgba(255,145,72,0.85), 0 2px 6px rgba(0,0,0,0.6);
+.kill-icon.kind-execute {
+  text-shadow: 0 0 8px rgba(255,120,120,0.95), 0 0 14px rgba(255,60,60,0.6), 0 2px 4px rgba(0,0,0,0.7);
 }
-.kill-label.kind-execute {
-  background: linear-gradient(180deg, #ff6868, #c83232);
-  color: #1a0404;
-  border: 1px solid #ff8080;
-  font-size: 14px;
-  box-shadow: 0 0 16px rgba(255,90,90,0.85), 0 2px 6px rgba(0,0,0,0.6);
+.kill-icon.kind-poison {
+  text-shadow: 0 0 8px rgba(168,125,224,0.95), 0 0 14px rgba(140,90,200,0.6), 0 2px 4px rgba(0,0,0,0.7);
 }
-.kill-label.kind-poison {
-  background: linear-gradient(180deg, #b890e0, #7a5ab8);
-  color: #1a0a20;
-  border: 1px solid #c8a0f0;
-  box-shadow: 0 0 12px rgba(168,125,224,0.7), 0 2px 6px rgba(0,0,0,0.6);
+.kill-icon.kind-reflect {
+  text-shadow: 0 0 8px rgba(216,200,168,0.95), 0 0 14px rgba(180,160,120,0.6), 0 2px 4px rgba(0,0,0,0.7);
 }
-.kill-label.kind-reflect {
-  background: linear-gradient(180deg, #e6cf90, #b09058);
-  color: #1a1408;
-  border: 1px solid #f0d8a0;
-  box-shadow: 0 0 12px rgba(230,207,144,0.75), 0 2px 6px rgba(0,0,0,0.6);
-}
-@keyframes kill-label-pop {
-  0%   { transform: translateX(-50%) translateY(0)     scale(0.7); opacity: 0; }
-  20%  { transform: translateX(-50%) translateY(-4px)  scale(1.18); opacity: 1; }
-  35%  { transform: translateX(-50%) translateY(-4px)  scale(1.0);  opacity: 1; }
-  85%  { transform: translateX(-50%) translateY(-4px)  scale(1.0);  opacity: 1; }
-  100% { transform: translateX(-50%) translateY(-14px) scale(0.95); opacity: 0; }
+@keyframes kill-icon-pop {
+  0%   { transform: translateX(-50%) translateY(0)    scale(0.4); opacity: 0; }
+  25%  { transform: translateX(-50%) translateY(-2px) scale(1.0); opacity: 1; }
+  70%  { transform: translateX(-50%) translateY(-2px) scale(1.0); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-8px) scale(0.85); opacity: 0; }
 }
 
-/* v0.3.7.16: 치명 흔들림 강화 결 (기존 hit-critical과 별도) */
+/* v0.3.7.18: 비석 마커 — dead 유닛 자리에 *전투 종료까지 유지*
+   살아있는 유닛 / 죽은 유닛 한눈에 구분.
+   기존 grayscale + ✕ 결과 보완.
+*/
+.tombstone-marker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  pointer-events: none;
+  z-index: 8;          /* unit-portrait 안쪽, 큰 텍스트보다 아래 */
+  opacity: 0;
+  animation: tombstone-settle 0.5s 0.2s ease-out forwards;
+  text-shadow: 0 0 4px rgba(0,0,0,0.95), 0 2px 4px rgba(0,0,0,0.7);
+  filter: grayscale(0.6) brightness(0.85);
+}
+@keyframes tombstone-settle {
+  0%   { opacity: 0; transform: translate(-50%, -80%) scale(0.6); }
+  60%  { opacity: 1; transform: translate(-50%, -45%) scale(1.05); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* v0.3.7.16/18: 치명 흔들림 강화 결 (기존 hit-critical과 별도) */
 .unit.hit-critical-strong {
   animation: hit-critical-strong 0.46s cubic-bezier(0.36, 0, 0.66, 1);
 }
@@ -2272,21 +2267,23 @@ body {
 .float-number.heal { color: var(--heal-color); }
 .float-number.shield { color: var(--shield-color); font-size: 18px; }
 .float-number.poison { color: #c8a0f0; font-size: 18px; text-shadow: 0 0 6px rgba(168,125,224,0.7), 0 0 10px rgba(0,0,0,0.9); }
-/* v0.3.7.15/17: 치명 결 — 일반 피해보다 또렷하되 캐릭터 덮지 않게
-   v0.3.7.17 보정: font-size 26 → 20 (캐릭터 폭에 맞춤), 위치는 캐릭터 상단 바깥 (showResultText에서 top 박음)
+/* v0.3.7.18: 치명 결 보정 — 큰 별도 텍스트 X. 강화된 피해 숫자로 (치명 -48 한 묶음)
+   일반 damage(22)보다 살짝 크고 굵게. 색은 주황 강조.
 */
 .float-number.critical {
   color: #ffb066;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 900;
-  text-shadow: 0 0 6px rgba(255,176,102,0.95), 0 0 12px rgba(255,120,60,0.6), 0 1px 2px rgba(0,0,0,0.95);
+  letter-spacing: -0.03em;
+  text-shadow: 0 0 5px rgba(255,176,102,0.9), 0 0 10px rgba(255,120,60,0.55), 0 1px 2px rgba(0,0,0,0.95);
 }
-/* v0.3.7.16/17: 처형 결 — 빨강 강조 (도적의 결) */
+/* v0.3.7.18: 처형 결 — 빨강 강조 (도적의 결) */
 .float-number.execute {
-  color: #ff7878;
-  font-size: 20px;
+  color: #ff8888;
+  font-size: 24px;
   font-weight: 900;
-  text-shadow: 0 0 6px rgba(255,120,120,0.95), 0 0 12px rgba(255,60,60,0.7), 0 1px 2px rgba(0,0,0,0.95);
+  letter-spacing: -0.03em;
+  text-shadow: 0 0 5px rgba(255,120,120,0.95), 0 0 10px rgba(255,60,60,0.6), 0 1px 2px rgba(0,0,0,0.95);
 }
 
 @keyframes float-up {
@@ -3175,7 +3172,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.17</div>
+      <div class="title-version">MK.II — v0.3.7.19</div>
     </div>
 
     <p class="title-tagline">
@@ -5176,6 +5173,8 @@ function loadStage(stageNum) {
   document.querySelectorAll(".unit.arcane-charging").forEach(el => el.classList.remove("arcane-charging"));
   // v0.3.7.12: 지난 스테이지의 dead 클래스 정리
   document.querySelectorAll(".unit.dead").forEach(el => el.classList.remove("dead"));
+  // v0.3.7.18: 지난 스테이지의 비석 마커 / 사망 아이콘 정리
+  document.querySelectorAll(".tombstone-marker, .kill-icon, .kill-label").forEach(el => el.remove());
   // v0.3.7.13: 지난 스테이지의 행동선 잔상 정리
   if (typeof clearAllActionLines === "function") clearAllActionLines();
 
@@ -5591,8 +5590,12 @@ function actFusion(actor) {
       const isExecution = (target.hp / target.maxHp) < 0.5;
       const dmg = isExecution ? Math.floor(actor.atk * 1.6) : Math.floor(actor.atk * 1.0);
 
-      // v0.3.7.16: 처형 결을 dealDamage에 전달 → 결과 텍스트/처치 라벨 분기
-      showActionText(actor, isExecution ? "처형!" : "독칼!", { kind: isExecution ? "crit" : "control" });
+      // v0.3.7.16: 처형 결을 dealDamage에 전달 → 결과 텍스트(처형 -X) / 처치 아이콘 분기
+      // v0.3.7.19 핫픽스: 큰 "처형!" 행동 라벨 제거.
+      //   행동 라벨은 *도적의 기본 행동명*(독칼)만 박고,
+      //   "처형" 결은 *result text prefix* + *사망 시 해골 글로우*로 표현.
+      //   유키 결: "처형은 큰 간판이 아니라 result text prefix."
+      showActionText(actor, "독칼!", { kind: "control" });
       dealDamage(actor, target, dmg, { isExecute: isExecution });
       drawLine(actor, target, isExecution ? "attack" : "debuff");
 
@@ -7918,11 +7921,12 @@ function _emitResultText(target, payload, seq = 0) {
   const cappedSeq = Math.min(seq, 4);
 
   // 텍스트 포맷 결
+  // v0.3.7.18: 치명/처형은 큰 별도 텍스트가 아닌 *prefix + 숫자* 한 묶음
   let text;
   if (type === "critical") {
-    text = `치명! -${amount}`;
+    text = `치명 -${amount}`;
   } else if (type === "execute") {
-    text = `처형! -${amount}`;
+    text = `처형 -${amount}`;
   } else if (type === "damage") {
     text = `-${amount}`;
   } else if (type === "heal") {
@@ -7940,16 +7944,14 @@ function _emitResultText(target, payload, seq = 0) {
   float.textContent = text;
 
   // 위치 결
+  // v0.3.7.18: 치명/처형도 일반 result lane으로 (캐릭터 위 -4px). 크기/색으로 강조.
   if (opts && opts.self) {
-    // self 결은 CSS 결로 박힘 (left:70%, top:-4px). seq 오프셋만 박음.
     if (cappedSeq > 0) {
       float.style.top = `${-4 - (cappedSeq * _RESULT_TEXT_OFFSET_STEP)}px`;
     }
   } else {
     float.style.left = "50%";
-    // v0.3.7.17: 치명/처형은 캐릭터 상단 바깥쪽으로 더 위 (캐릭터 안 가림)
-    const baseTop = (type === "critical" || type === "execute") ? -26 : -4;
-    // seq > 0이면 위로 더 살짝씩 박힘 (anti-collision)
+    const baseTop = -4;
     const stackOffset = cappedSeq * _RESULT_TEXT_OFFSET_STEP;
     float.style.top = `${baseTop - stackOffset}px`;
   }
@@ -7971,35 +7973,57 @@ function showStatusText(target, label, opts = {}) {
   setTimeout(() => status.remove(), 1400);
 }
 
-/* v0.3.7.16: 처치 라벨 — 사망 순간에만 짧게 박음
+/* v0.3.7.16/18: 사망 표시 — 텍스트 라벨 X. 작은 아이콘 + 비석 마커.
 
-  유키 결: "치명타는 눈이 가야 하고, 처치는 손맛이 나야 한다."
+  유키 결: "사망은 텍스트보다 아이콘과 비석으로 직관적으로 보이게."
 
-  원인별 분기:
-   - "execute"  → 처형!   (도적의 처형 결)
-   - "critical" → 치명 처치! (치명타로 마무리)
-   - "poison"   → 중독 처치 (독으로 사망)
-   - "reflect"  → 반격 처치 (금제 반사 / 전가 사망)
-   - "basic"    → 처치!    (일반)
+  두 단계:
+   1) showKillIcon — 사망 순간 짧게 팝업 (~600ms)
+   2) placeTombstone — 죽은 자리에 *전투 종료까지 유지*되는 비석 마커
+
+  원인별 분기 (아이콘 글로우 색만 다름):
+   - "execute"  → 빨강 (도적의 처형 결)
+   - "critical" → 주황 (치명타로 마무리)
+   - "poison"   → 보라 (독으로 사망)
+   - "reflect"  → 금색 (금제 반사 / 전가 사망)
+   - "basic"    → 일반
 */
+// 호환 alias — 기존 호출자가 showKillLabel을 부르면 showKillIcon으로 위임
 function showKillLabel(unit, kind = "basic") {
+  showKillIcon(unit, kind);
+  placeTombstone(unit);
+}
+
+function showKillIcon(unit, kind = "basic") {
   if (!unit || !unit.uid) return;
   const el = document.querySelector(`[data-uid="${unit.uid}"] .unit-portrait`);
   if (!el) return;
   // 한 유닛에 두 번 박히지 않게 (death gate가 1번만 호출하지만 안전)
-  el.querySelectorAll(".kill-label").forEach(l => l.remove());
-  const label = document.createElement("div");
-  label.className = `kill-label kind-${kind}`;
-  const textMap = {
-    basic:    "처치!",
-    critical: "치명 처치!",
-    execute:  "처형!",
-    poison:   "중독 처치",
-    reflect:  "반격 처치",
-  };
-  label.textContent = textMap[kind] || "처치!";
-  el.appendChild(label);
-  setTimeout(() => label.remove(), 1300);
+  el.querySelectorAll(".kill-icon").forEach(l => l.remove());
+  const icon = document.createElement("div");
+  icon.className = `kill-icon kind-${kind}`;
+  // 해골 아이콘 — 원인별 모양 같음, 글로우 색 결로 분기
+  icon.textContent = "💀";
+  el.appendChild(icon);
+  setTimeout(() => icon.remove(), 700);
+}
+
+/* v0.3.7.18: 비석 마커 — dead 유닛 자리에 *전투 종료까지 유지*
+
+  살아있는 유닛과 죽은 유닛을 한눈에 구분.
+  loadStage / clearAllActionLines와 함께 정리됨.
+*/
+function placeTombstone(unit) {
+  if (!unit || !unit.uid) return;
+  const el = document.querySelector(`[data-uid="${unit.uid}"] .unit-portrait`);
+  if (!el) return;
+  // 이미 비석 있으면 새로 박지 않음 (중복 방지)
+  if (el.querySelector(".tombstone-marker")) return;
+  const stone = document.createElement("div");
+  stone.className = "tombstone-marker";
+  // 비석 이모지 — 깔끔하고 작게
+  stone.textContent = "🪦";
+  el.appendChild(stone);
 }
 
 /* ---------- 타겟 라인 / 광역 파동 (SVG) ----------
