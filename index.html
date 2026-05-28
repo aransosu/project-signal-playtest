@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.19</title>
+<title>Project Signal Mk.II v0.3.7.23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2210,6 +2210,92 @@ body {
   50% { opacity: 0.5; }
 }
 
+/* v0.3.7.21: 상태 아이콘 줄
+   v0.3.7.22 결 보정: HP+gauge 묶음 *아래*에 별도 보조 정보 레이어로 박힘
+   유키 결: "체력과 속도는 기본 정보 묶음, 상태 아이콘은 그 아래 보조 정보 레이어"
+
+   기본 결:
+    - HP/gauge 묶음 아래 위치 (HP바 폭과 정렬)
+    - 작은 아이콘 (font 11px, badge 14x14)
+    - 최대 4개 표시 + 나머지는 +N
+    - 우선순위: bind > shield > poison > slow > rhythm
+    - 새로 박힐 때 작은 "뿅"
+    - dead 시 자동 숨김
+*/
+.status-icons {
+  width: 64px;
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  /* v0.3.7.22: gauge에서 살짝 떨어진 보조 정보 결 (flex gap 5px + 추가 2px = 실효 7px) */
+  margin-top: 2px;
+  margin-bottom: 0;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 14px;
+  pointer-events: none;
+}
+.unit.dead .status-icons { display: none; }   /* 묘비 결: 상태 안 보임 */
+
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: -0.02em;
+  border: 1px solid;
+  white-space: nowrap;
+  animation: status-icon-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.7);
+}
+.status-icon .si-glyph { font-size: 10px; line-height: 1; }
+.status-icon .si-count { font-size: 9px; line-height: 1; opacity: 0.95; }
+
+/* 상태 종류별 색 결 */
+.status-icon.si-bind {
+  background: rgba(216,200,168,0.20);
+  color: #f0d8a8;
+  border-color: rgba(216,200,168,0.55);
+}
+.status-icon.si-shield {
+  background: rgba(127,226,200,0.18);
+  color: #9febd0;
+  border-color: rgba(127,226,200,0.55);
+}
+.status-icon.si-poison {
+  background: rgba(168,125,224,0.22);
+  color: #d8b8f0;
+  border-color: rgba(168,125,224,0.55);
+}
+.status-icon.si-slow {
+  background: rgba(127,226,200,0.14);
+  color: #9febd0;
+  border-color: rgba(127,226,200,0.45);
+}
+.status-icon.si-rhythm {
+  background: rgba(255,201,74,0.18);
+  color: #ffd97a;
+  border-color: rgba(255,201,74,0.55);
+}
+.status-icon.si-more {
+  background: rgba(160,160,160,0.18);
+  color: #c0c0c0;
+  border-color: rgba(160,160,160,0.45);
+}
+
+@keyframes status-icon-pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+
 /* 게이지 바 */
 .gauge-bar {
   width: 64px;
@@ -2217,6 +2303,8 @@ body {
   background: var(--bg-3);
   border-radius: 1.5px;
   overflow: hidden;
+  /* v0.3.7.22: HP바와 한 묶음으로 읽히게 살짝 더 붙임 (flex gap 5px → 실효 3px) */
+  margin-top: -2px;
 }
 
 .gauge-bar-fill {
@@ -2723,6 +2811,135 @@ body {
   text-shadow: 0 0 3px rgba(255,201,74,0.6);
 }
 
+/* v0.3.7.23: 전투 종료 분석 리포트
+   유키 결: "전투 중에는 전장이 말하고, 전투 후에는 숫자가 증명한다."
+
+   3단 구조:
+    - .report-section-title (작은 헤더)
+    - .report-highlights (하이라이트 줄: 최고 피해/치유/보호/처치)
+    - .hero-cards (영웅별 카드 리스트)
+*/
+.result-report {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.report-section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  margin-bottom: -2px;
+}
+
+/* 하이라이트 줄 — 그리드형 */
+.report-highlights {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.highlight-cell {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.highlight-cell .hc-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+.highlight-cell .hc-val {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--signal);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.highlight-cell .hc-val .hc-name { color: var(--text); }
+.highlight-cell .hc-val .hc-num  { color: var(--signal); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.highlight-cell.is-empty .hc-val { color: var(--text-faint); font-size: 11px; font-weight: 400; }
+
+/* 영웅별 카드 */
+.hero-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hero-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--signal);
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hero-card.dead {
+  border-left-color: rgba(168,168,168,0.4);
+  opacity: 0.65;
+  filter: grayscale(0.4);
+}
+.hero-card .hc-row1 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hero-card .hc-jobname {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.hero-card .hc-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+.hero-card.dead .hc-status { color: #ff8888; }
+.hero-card .hc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.hero-card .hc-stats .stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.hero-card .hc-stats .stat .label {
+  color: var(--text-faint);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+.hero-card .hc-stats .stat .num {
+  color: var(--text);
+  font-weight: 700;
+}
+/* 결정타 강조 */
+.hero-card.final-blow {
+  border-left-color: #ffb066;
+  background: linear-gradient(90deg, rgba(255,176,102,0.08), var(--bg-2) 30%);
+}
+
 .result-buttons {
   display: flex;
   flex-direction: column;
@@ -3172,7 +3389,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.19</div>
+      <div class="title-version">MK.II — v0.3.7.23</div>
     </div>
 
     <p class="title-tagline">
@@ -3374,6 +3591,10 @@ body {
       <div class="result-subtitle" id="result-subtitle"></div>
     </div>
     <div class="result-summary" id="result-summary"></div>
+
+    <!-- v0.3.7.23: 분석 리포트 — 하이라이트 + 영웅별 카드 -->
+    <div class="result-report" id="result-report"></div>
+
     <div class="result-buttons">
       <button class="btn-replay" onclick="replayRun()">같은 파티로 다시</button>
       <button class="btn-home" onclick="backToTitle()">처음으로</button>
@@ -4911,6 +5132,11 @@ const runState = {
   // 도발 상태 — 용맹 발동 시 채워짐. 가장 최근 도발자가 적의 우선 타겟
   taunts: [],         // [{ tauntorUid, expireAt: tick }]
   tickCount: 0,       // 전역 tick (도발 만료용)
+  // v0.3.7.23: 런 전체 누적 stats — 모든 스테이지 합산. 결과 분석 리포트 결.
+  runStats: {
+    perUnit: {},      // uid → { name, jobLabel, damageDealt, healDone, ... }
+    finalBlowUid: null,
+  },
 };
 
 /* ---------- 전투 상태 ---------- */
@@ -5129,9 +5355,50 @@ function initRunFromParty() {
   runState.fusionHistory = [];
   runState.result = null;
   runState.pendingFourthMember = false;
+  // v0.3.7.23: 런 전체 stats 리셋
+  runState.runStats = { perUnit: {}, finalBlowUid: null };
   runState.units = partyState.slots
     .filter(Boolean)
     .map(jobId => makeAllyUnit(jobId));
+  // v0.3.7.23: 시작 파티 unit들 stats 자리 박음
+  runState.units.forEach(u => ensureRunStatsForUnit(u));
+}
+
+/* v0.3.7.23: 분석 리포트용 stats 자리 보장
+   - 모든 누적 자리 0으로 박음
+   - 합체로 새 fusion이 생기면 그 fusion에 새 자리
+   - 합체로 사라지는 unit의 stats는 *남겨둠* (분석 카드에 표시)
+*/
+function ensureRunStatsForUnit(u) {
+  if (!u || !u.uid) return;
+  if (!runState.runStats) runState.runStats = { perUnit: {}, finalBlowUid: null };
+  if (runState.runStats.perUnit[u.uid]) return;
+  runState.runStats.perUnit[u.uid] = {
+    uid: u.uid,
+    name: u.name || "?",
+    kind: u.kind || "trait",        // "trait" | "fusion"
+    jobId: u.kind === "fusion" ? u.fusionId : u.traitId,
+    role: u.role || null,
+    diedAt: null,                    // 사망 stage (살아남으면 null)
+    // 기본 누적
+    damageDealt: 0,
+    healDone: 0,
+    shieldGiven: 0,
+    shieldBlocked: 0,
+    kills: 0,
+    criticals: 0,
+    executes: 0,
+    poisonDamage: 0,
+    reflectDamage: 0,
+    actionsTaken: 0,
+  };
+}
+
+/* v0.3.7.23: stats 누적 헬퍼 — null 안전 결 */
+function statsBump(uid, key, n = 1) {
+  if (!uid || !runState.runStats || !runState.runStats.perUnit[uid]) return;
+  const s = runState.runStats.perUnit[uid];
+  s[key] = (s[key] || 0) + n;
 }
 
 function loadStage(stageNum) {
@@ -5443,6 +5710,8 @@ function actTaunt(actor) {
   actor.shield = Math.max(actor.shield, 12 + actor.level * 3);
   // v0.3.7.15: 자기 결과는 self 결 (행동 라벨과 겹침 회피)
   showResultText(actor, 12 + actor.level * 3, "shield", { self: true });
+  // v0.3.7.23: 보호막 부여 누적 (자기에게)
+  if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", 12 + actor.level * 3);
 
   // 가까운 적 1명 공격
   const target = pickEnemyTarget(actor, "any");
@@ -5471,6 +5740,8 @@ function actHarden(actor) {
   actor.shield = Math.max(actor.shield, 18 + actor.level * 4);
   // v0.3.7.15: 자기 결과는 self 결 (행동 라벨과 겹침 회피)
   showResultText(actor, 18 + actor.level * 4, "shield", { self: true });
+  // v0.3.7.23: 보호막 부여 누적
+  if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", 18 + actor.level * 4);
   showActionText(actor, "방어↑", { kind: "shield" });
   const target = pickEnemyTarget(actor, "any");
   if (target) {
@@ -6080,6 +6351,8 @@ function actFusion(actor) {
         const wounded = aliveAllies[0];
         const shieldAmount = Math.floor(actor.atk * 0.45);  // 검증용 기본값
         wounded.shield = Math.max(wounded.shield || 0, shieldAmount);
+        // v0.3.7.23: 보호막 부여 누적
+        if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmount);
         drawLine(actor, wounded, "shield");
         reactReceive(wounded, "shield");
         pushEvent(`<b>${actor.name}</b> 보호 — <b>${wounded.name}</b>에게 ◇${shieldAmount}`, "heal");
@@ -6352,6 +6625,8 @@ function actFusion(actor) {
           ally.shield = Math.max(ally.shield || 0, shieldAmount);
           reactReceive(ally, "shield");
         });
+        // v0.3.7.23: 파티 전체 보호막 부여 — 인원 × 양만큼 누적
+        if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmount * aliveAllies.length);
         actor._sanctuaryCooldown = 3;     // 자기 턴 기준 3턴 쿨다운
         pushEvent(`<b>${actor.name}</b> 성역 발동 — 파티 전체 ◇${shieldAmount}`, "system");
       }
@@ -6536,7 +6811,11 @@ function dealDamage(actor, target, amount, opts = {}) {
     const absorbed = Math.min(target.shield, dmg);
     target.shield -= absorbed;
     dmg -= absorbed;
-    if (absorbed > 0) showFloat(target, `+${absorbed}`, "shield");
+    if (absorbed > 0) {
+      showFloat(target, `+${absorbed}`, "shield");
+      // v0.3.7.23: 보호막이 막은 피해 누적 (대상 기준 — 시전자 추적은 다음 패스)
+      if (target.side === "ally") statsBump(target.uid, "shieldBlocked", absorbed);
+    }
   }
 
   if (dmg > 0) {
@@ -6571,6 +6850,15 @@ function dealDamage(actor, target, amount, opts = {}) {
       }
     }
     battleState.stats.damageDealt[actor.uid] = (battleState.stats.damageDealt[actor.uid] || 0) + dmg;
+    // v0.3.7.23: 런 전체 stats 누적 (아군 시전자만)
+    if (actor && actor.side === "ally") {
+      statsBump(actor.uid, "damageDealt", dmg);
+      if (opts.isCritical) statsBump(actor.uid, "criticals", 1);
+      if (opts.isExecute)  statsBump(actor.uid, "executes",  1);
+      if (opts.reason === "reflect" || opts.reason === "binder_reflect") {
+        statsBump(actor.uid, "reflectDamage", dmg);
+      }
+    }
   } else if (target.shield <= 0) {
     // 데미지 0 (예: 보호막 흡수 100%) — 약한 흔들림
     if (target.alive) shakeUnit(target, "mild");
@@ -6628,6 +6916,25 @@ function markIfDead(unit, opts = {}) {
   // 3) kill stat 누적 (killer 정해진 경우만)
   if (opts.killerUid && battleState && battleState.stats) {
     battleState.stats.kills[opts.killerUid] = (battleState.stats.kills[opts.killerUid] || 0) + 1;
+  }
+  // v0.3.7.23: 런 전체 stats 누적 + 결정타 결
+  if (runState.runStats) {
+    // 적이 죽으면 → 아군 killer의 kills 누적 + finalBlow 추적
+    if (unit.side === "enemy" && opts.killerUid) {
+      const killer = runState.units.find(u => u.uid === opts.killerUid);
+      if (killer && killer.side === "ally") {
+        statsBump(opts.killerUid, "kills", 1);
+        // 마지막 적이면 결정타
+        const enemiesLeft = runState.enemies.filter(e => e.alive && e.uid !== unit.uid).length;
+        if (enemiesLeft === 0) {
+          runState.runStats.finalBlowUid = opts.killerUid;
+        }
+      }
+    }
+    // 아군이 죽으면 → diedAt 기록 (살아남으면 null 유지)
+    if (unit.side === "ally" && runState.runStats.perUnit[unit.uid]) {
+      runState.runStats.perUnit[unit.uid].diedAt = runState.stage;
+    }
   }
 
   // 4) 사망 이벤트 1번만 (중복 방지 플래그)
@@ -6752,6 +7059,10 @@ function doHeal(actor, target, amount) {
     showResultText(target, healed, "heal", { self: isSelf });
     reactReceive(target, "heal");
     battleState.stats.healDone[actor.uid] = (battleState.stats.healDone[actor.uid] || 0) + healed;
+    // v0.3.7.23: 런 전체 stats 누적 (아군 시전자만)
+    if (actor && actor.side === "ally") {
+      statsBump(actor.uid, "healDone", healed);
+    }
   }
 }
 
@@ -7250,6 +7561,28 @@ function pickFusion(fusionId) {
   // 합체 유닛 추가
   const fusionUnit = makeFusionUnit(fusionId);
   runState.units.push(fusionUnit);
+  // v0.3.7.23: 분석 리포트용 stats 자리 박음
+  ensureRunStatsForUnit(fusionUnit);
+  // v0.3.7.23: 재료 unit의 stats를 fusion unit에 이관 — 합체 = 선택의 누적
+  //   "내 선택이 진화해서 새 직업이 됐다"는 결을 stats로도 박음
+  //   재료의 카드는 사라지고, 누적은 fusion이 받는다.
+  if (runState.runStats && runState.runStats.perUnit) {
+    const mergedStatKeys = ["damageDealt","healDone","shieldGiven","shieldBlocked","kills","criticals","executes","poisonDamage","reflectDamage","actionsTaken"];
+    const fusionStats = runState.runStats.perUnit[fusionUnit.uid];
+    toRemove.forEach(consumedUid => {
+      const src = runState.runStats.perUnit[consumedUid];
+      if (!src || !fusionStats) return;
+      mergedStatKeys.forEach(k => {
+        fusionStats[k] = (fusionStats[k] || 0) + (src[k] || 0);
+      });
+      // 재료 stats 제거 (카드에서 사라짐)
+      delete runState.runStats.perUnit[consumedUid];
+      // finalBlowUid도 연쇄 이관 (재료가 결정타였으면 fusion이 받음)
+      if (runState.runStats.finalBlowUid === consumedUid) {
+        runState.runStats.finalBlowUid = fusionUnit.uid;
+      }
+    });
+  }
   runState.fusionHistory.push({ stage: runState.stage, fusionId: fusionId, consumed: consumed });
 
   // 이름 찾기 (기본/1차 모두)
@@ -7318,6 +7651,8 @@ function pickCompanionDirect(traitId) {
   // 1단계로 즉시 합류
   const newUnit = makeAllyUnit(traitId);
   runState.units.push(newUnit);
+  // v0.3.7.23: 분석 리포트용 stats 자리 박음
+  ensureRunStatsForUnit(newUnit);
   pushEvent(`▸ ${newUnit.name} 합류`, "system");
 
   // v0.3.1: pendingFourthMember 연쇄 더 박지 않음
@@ -7544,7 +7879,136 @@ function showResult() {
     <div class="row"><span class="key">생존자</span><span class="val">${survivors}</span></div>
   `;
 
+  // v0.3.7.23: 분석 리포트 렌더
+  renderResultReport();
+
   showScreen("screen-result");
+}
+
+/* ---------- v0.3.7.23: 전투 종료 분석 리포트 ----------
+
+  유키 결: "Project Signal은 조합의 게임이니까,
+            리포트는 누가 딜을 많이 했나가 아니라
+            각 직업이 어떤 역할을 했는지 보여주는 화면이어야 한다."
+
+  3단 구조:
+   1. 결과 요약 (기존 result-summary로 이미 박혀있음)
+   2. 하이라이트 줄 — 최고 피해 / 치유 / 보호 / 처치 (+결정타)
+   3. 영웅별 카드 — 모든 아군 (생존/사망 포함)
+*/
+function renderResultReport() {
+  const container = document.getElementById("result-report");
+  if (!container) return;
+  if (!runState.runStats || !runState.runStats.perUnit) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const allUnits = Object.values(runState.runStats.perUnit);
+  if (allUnits.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  // ── 하이라이트 계산 ──
+  function topBy(key) {
+    let best = null;
+    for (const u of allUnits) {
+      if (!u[key] || u[key] <= 0) continue;
+      if (!best || u[key] > best[key]) best = u;
+    }
+    return best;
+  }
+  const topDmg    = topBy("damageDealt");
+  const topHeal   = topBy("healDone");
+  const topShield = topBy("shieldGiven");
+  const topKills  = topBy("kills");
+
+  const finalBlowUid = runState.runStats.finalBlowUid;
+  const finalBlowUnit = finalBlowUid ? runState.runStats.perUnit[finalBlowUid] : null;
+
+  function highlightCell(label, unit, key, suffix = "") {
+    if (!unit) {
+      return `<div class="highlight-cell is-empty">
+        <div class="hc-key">${label}</div>
+        <div class="hc-val">—</div>
+      </div>`;
+    }
+    return `<div class="highlight-cell">
+      <div class="hc-key">${label}</div>
+      <div class="hc-val">
+        <span class="hc-name">${unit.name}</span>
+        <span class="hc-num">${unit[key]}${suffix}</span>
+      </div>
+    </div>`;
+  }
+
+  let highlightsHTML = `
+    <div class="report-highlights">
+      ${highlightCell("최고 피해", topDmg, "damageDealt")}
+      ${highlightCell("최고 치유", topHeal, "healDone")}
+      ${highlightCell("최고 보호", topShield, "shieldGiven")}
+      ${highlightCell("최다 처치", topKills, "kills")}
+    </div>
+  `;
+
+  // 결정타 — 별도 한 줄
+  let finalBlowHTML = "";
+  if (finalBlowUnit) {
+    finalBlowHTML = `<div class="report-highlights" style="grid-template-columns: 1fr;">
+      <div class="highlight-cell" style="border-color: rgba(255,176,102,0.55); background: rgba(255,176,102,0.08);">
+        <div class="hc-key">결정타</div>
+        <div class="hc-val"><span class="hc-name">${finalBlowUnit.name}</span></div>
+      </div>
+    </div>`;
+  }
+
+  // ── 영웅별 카드 ──
+  // 정렬: 생존자 먼저 (피해 내림차순), 그 다음 사망자
+  const sorted = allUnits.slice().sort((a, b) => {
+    const aDead = a.diedAt !== null;
+    const bDead = b.diedAt !== null;
+    if (aDead !== bDead) return aDead ? 1 : -1;  // 생존자 먼저
+    return (b.damageDealt || 0) - (a.damageDealt || 0);
+  });
+
+  function statSpan(label, num) {
+    if (!num || num <= 0) return "";
+    return `<span class="stat"><span class="label">${label}</span><span class="num">${num}</span></span>`;
+  }
+
+  const cardsHTML = sorted.map(u => {
+    const isDead = u.diedAt !== null;
+    const isFinalBlow = u.uid === finalBlowUid;
+    const cls = `hero-card${isDead ? " dead" : ""}${isFinalBlow ? " final-blow" : ""}`;
+    const statusLabel = isDead ? `STAGE ${u.diedAt} 전투불능` : "생존";
+    return `
+      <div class="${cls}">
+        <div class="hc-row1">
+          <div class="hc-jobname">${u.name}</div>
+          <div class="hc-status">${statusLabel}</div>
+        </div>
+        <div class="hc-stats">
+          ${statSpan("피해", u.damageDealt)}
+          ${statSpan("치유", u.healDone)}
+          ${statSpan("보호", u.shieldGiven)}
+          ${statSpan("막음", u.shieldBlocked)}
+          ${statSpan("처치", u.kills)}
+          ${statSpan("치명", u.criticals)}
+          ${statSpan("처형", u.executes)}
+          ${statSpan("반격", u.reflectDamage)}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="report-section-title">▸ 오늘의 하이라이트</div>
+    ${highlightsHTML}
+    ${finalBlowHTML}
+    <div class="report-section-title">▸ 영웅별 기여도</div>
+    <div class="hero-cards">${cardsHTML}</div>
+  `;
 }
 
 function replayRun() {
@@ -7592,6 +8056,118 @@ function initBattlefield() {
   setLane("lane-ally-front", allyFront);
   setLane("lane-ally-back",  allyBack);
 }
+
+/* ---------- v0.3.7.21: 상태 아이콘 시스템 ----------
+
+  유키 결: "행동선은 이번 행동, 전투 텍스트는 방금 결과,
+            상태 아이콘은 지금 전투의 조건을 보여줘야 한다."
+
+  표시 결:
+   - HP바와 gauge-bar 사이 줄
+   - 최대 4개 + 나머지는 +N
+   - 우선순위 정렬 (행동 제한 > 생존 > 지속 피해 > 속도 > 버프)
+   - 상태 변화만 DOM 변경 (재생성 X — diff 결)
+
+  지원 상태:
+   - bind   (속박/금제) — 🔗 + 남은 턴
+   - shield (보호막)    — ⛨ + 수치
+   - poison (중독)      — ☠ + 남은 턴
+   - slow   (감속)      — 🐌 + 남은 턴
+   - rhythm (리듬 버프) — ♪ + 스택
+*/
+
+// 상태 정의 결 — type, glyph, priority
+const STATUS_DEFS = {
+  bind:    { priority: 1, glyph: "🔗" },
+  shield:  { priority: 2, glyph: "⛨"  },
+  poison:  { priority: 3, glyph: "☠"  },
+  slow:    { priority: 4, glyph: "🐌" },
+  rhythm:  { priority: 5, glyph: "♪"  },
+};
+
+// 유닛에서 현재 활성 상태 추출 — 우선순위로 정렬된 배열
+function getUnitStatuses(u) {
+  if (!u || !u.alive) return [];
+  const out = [];
+
+  // 금제: _bindingTargetUid + _bindingTurns (시전자 측)
+  if (u._bindingTargetUid && u._bindingTurns > 0) {
+    out.push({ type: "bind", count: u._bindingTurns });
+  }
+  // 보호막
+  if (u.shield && u.shield > 0) {
+    out.push({ type: "shield", count: u.shield });
+  }
+  // 중독
+  if (u.poisoned && u.poisoned > 0) {
+    out.push({ type: "poison", count: u.poisoned });
+  }
+  // 감속 — _slowedTurns > 0
+  if (u._slowedTurns && u._slowedTurns > 0) {
+    out.push({ type: "slow", count: u._slowedTurns });
+  }
+  // 리듬 버프 — 스택 결
+  if (u._rhythmBuffStacks && u._rhythmBuffStacks > 0) {
+    out.push({ type: "rhythm", count: u._rhythmBuffStacks });
+  }
+
+  // 우선순위 정렬
+  out.sort((a, b) => (STATUS_DEFS[a.type].priority || 99) - (STATUS_DEFS[b.type].priority || 99));
+  return out;
+}
+
+// 상태 아이콘 줄 갱신 — diff 결로 깜빡임 회피
+function renderStatusIcons(u) {
+  const el = document.querySelector(`[data-uid="${u.uid}"]`);
+  if (!el) return;
+  const container = el.querySelector(".status-icons");
+  if (!container) return;
+
+  // 사망 유닛: 즉시 비움 (CSS도 display:none 박혀있음, 안전 결)
+  if (!u.alive) {
+    if (container.children.length > 0) container.innerHTML = "";
+    return;
+  }
+
+  const statuses = getUnitStatuses(u);
+  const MAX = 4;
+  const visible = statuses.slice(0, MAX);
+  const overflow = statuses.length - visible.length;
+
+  // 현재 DOM에 박힌 결: data-key 로 식별
+  //   key = type + ":" + count
+  const desiredKeys = visible.map(s => `${s.type}:${s.count}`);
+  if (overflow > 0) desiredKeys.push(`more:${overflow}`);
+
+  const existingKeys = Array.from(container.children).map(c => c.getAttribute("data-key"));
+
+  // 변경 없으면 skip (깜빡임 결 회피)
+  if (existingKeys.length === desiredKeys.length
+      && existingKeys.every((k, i) => k === desiredKeys[i])) {
+    return;
+  }
+
+  // 변경 있음 — 박힌 결 정리하고 새로 박음
+  // (간단한 결: 전체 재생성. 단, key 같으면 위에서 skip됨)
+  container.innerHTML = "";
+  visible.forEach(s => {
+    const def = STATUS_DEFS[s.type];
+    if (!def) return;
+    const icon = document.createElement("span");
+    icon.className = `status-icon si-${s.type}`;
+    icon.setAttribute("data-key", `${s.type}:${s.count}`);
+    icon.innerHTML = `<span class="si-glyph">${def.glyph}</span><span class="si-count">${s.count}</span>`;
+    container.appendChild(icon);
+  });
+  if (overflow > 0) {
+    const more = document.createElement("span");
+    more.className = "status-icon si-more";
+    more.setAttribute("data-key", `more:${overflow}`);
+    more.innerHTML = `<span class="si-count">+${overflow}</span>`;
+    container.appendChild(more);
+  }
+}
+
 
 function updateBattlefield() {
   // 매 tick — DOM 재생성 없이 속성만 갱신
@@ -7672,6 +8248,9 @@ function updateBattlefield() {
         existingPoison.remove();
       }
     }
+
+    // v0.3.7.21: 상태 아이콘 줄 갱신
+    renderStatusIcons(u);
   });
 }
 
@@ -7750,6 +8329,7 @@ function renderUnitHTML(u) {
       <div class="gauge-bar">
         <div class="gauge-bar-fill" style="width: ${gaugePct}%"></div>
       </div>
+      <div class="status-icons"></div>
     </div>
   `;
 }
@@ -7944,16 +8524,29 @@ function _emitResultText(target, payload, seq = 0) {
   float.textContent = text;
 
   // 위치 결
-  // v0.3.7.18: 치명/처형도 일반 result lane으로 (캐릭터 위 -4px). 크기/색으로 강조.
+  // v0.3.7.20 핫픽스: 시작 y 누적 제거.
+  //   "애니메이션은 누적되어도, 시작 위치는 누적되면 안 된다."
+  //   - y는 항상 고정 (-4px) — 대상 머리 위 같은 자리
+  //   - x lane offset으로 anti-collision (좌우로 살짝 분산)
+  //   - 시간차(stagger)는 유지 — 주르륵 결의 본체
+  //
+  //   x lane 패턴 (cappedSeq 기반):
+  //     seq 0 → 가운데 (0)
+  //     seq 1 → 살짝 왼쪽 (-10)
+  //     seq 2 → 살짝 오른쪽 (+10)
+  //     seq 3 → 더 왼쪽 (-18)
+  //     seq 4 → 더 오른쪽 (+18)
+  const laneOffsets = [0, -10, 10, -18, 18];
+  const laneX = laneOffsets[cappedSeq] || 0;
+
   if (opts && opts.self) {
-    if (cappedSeq > 0) {
-      float.style.top = `${-4 - (cappedSeq * _RESULT_TEXT_OFFSET_STEP)}px`;
+    // self 결: CSS 결로 left:70%, top:-4px. lane offset만 박음.
+    if (laneX !== 0) {
+      float.style.left = `calc(70% + ${laneX}px)`;
     }
   } else {
-    float.style.left = "50%";
-    const baseTop = -4;
-    const stackOffset = cappedSeq * _RESULT_TEXT_OFFSET_STEP;
-    float.style.top = `${baseTop - stackOffset}px`;
+    float.style.left = `calc(50% + ${laneX}px)`;
+    float.style.top = "-4px";  // 항상 고정
   }
   el.appendChild(float);
   setTimeout(() => float.remove(), 900);
