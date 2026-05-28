@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.23</title>
+<title>Project Signal Mk.II v0.3.7.24</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2356,19 +2356,20 @@ body {
 .float-number.shield { color: var(--shield-color); font-size: 18px; }
 .float-number.poison { color: #c8a0f0; font-size: 18px; text-shadow: 0 0 6px rgba(168,125,224,0.7), 0 0 10px rgba(0,0,0,0.9); }
 /* v0.3.7.18: 치명 결 보정 — 큰 별도 텍스트 X. 강화된 피해 숫자로 (치명 -48 한 묶음)
-   일반 damage(22)보다 살짝 크고 굵게. 색은 주황 강조.
+   v0.3.7.24: 캐릭터 덜 가리게 15% 축소 (font 24 → 20).
+              bold / 색 / glow / animation은 그대로 — 손맛 유지.
 */
 .float-number.critical {
   color: #ffb066;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 900;
   letter-spacing: -0.03em;
   text-shadow: 0 0 5px rgba(255,176,102,0.9), 0 0 10px rgba(255,120,60,0.55), 0 1px 2px rgba(0,0,0,0.95);
 }
-/* v0.3.7.18: 처형 결 — 빨강 강조 (도적의 결) */
+/* v0.3.7.18/24: 처형 결 — 빨강 강조 (도적의 결), 15% 축소 */
 .float-number.execute {
   color: #ff8888;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 900;
   letter-spacing: -0.03em;
   text-shadow: 0 0 5px rgba(255,120,120,0.95), 0 0 10px rgba(255,60,60,0.6), 0 1px 2px rgba(0,0,0,0.95);
@@ -3389,7 +3390,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.23</div>
+      <div class="title-version">MK.II — v0.3.7.24</div>
     </div>
 
     <p class="title-tagline">
@@ -4067,6 +4068,31 @@ const ROLE_SYMBOLS = {
   special: "✦",
   healer:  "✚",
 };
+
+/* ---------- v0.3.7.24: Stage 13+ 테스트 완화 플래그 ----------
+
+  ⚠ 이건 정식 너프가 아니라, Stage 13 이후 조합 테스트를 위한 임시 완화다.
+
+  의도:
+   - 덫꾼 없이도 13 이후 구간을 볼 수 있게
+   - 다양한 20스테이지 조합 가능성 확인
+   - 어떤 파티가 13 이후에서 무너지는지 데이터 수집
+
+  속도는 건드리지 않음 (전투 리듬 / 직업 체감 유지).
+  스킬 / 등장 구성 / 보스 구조 / 아군 밸런스도 건드리지 않음.
+
+  되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
+*/
+const ENABLE_STAGE13_TEST_SOFTENING = true;
+
+// stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
+function getEnemyStatMultiplier(stage) {
+  if (!ENABLE_STAGE13_TEST_SOFTENING) return 1.0;
+  if (stage <= 12) return 1.0;
+  if (stage <= 15) return 0.92;  // S13~15: -8%
+  if (stage <= 18) return 0.90;  // S16~18: -10%
+  return 0.88;                    // S19~20: -12%
+}
 
 /* 적 템플릿 — 종족 + 역할 + 스탯 */
 const ENEMY_TEMPLATES = {
@@ -5309,6 +5335,12 @@ function makeEnemyUnit(templateId) {
   const atk = Math.floor(tpl.atk * atkMult * phaseMult);
   const def = Math.floor(tpl.def * defMult);  // DEF는 phase에 안 흔들림 (체감 안정)
 
+  // v0.3.7.24: Stage 13+ 테스트 완화 — HP/ATK만 곱함 (속도/DEF X)
+  //   임시 테스트 빌드. ENABLE_STAGE13_TEST_SOFTENING으로 ON/OFF.
+  const testMult = getEnemyStatMultiplier(stageNum);
+  const finalHp  = Math.floor(hp  * testMult);
+  const finalAtk = Math.floor(atk * testMult);
+
   return {
     uid: nextUid(),
     side: "enemy",
@@ -5319,8 +5351,8 @@ function makeEnemyUnit(templateId) {
     role: role,
     templateId: templateId,
     poisonOnHit: tpl.poisonOnHit || 0,  // v0.3.4: 독 몬스터 검증 환경
-    hp: hp, maxHp: hp,
-    atk: atk, def: def, spd: tpl.spd,
+    hp: finalHp, maxHp: finalHp,
+    atk: finalAtk, def: def, spd: tpl.spd,
     shield: 0, gauge: 0, alive: true,
     _deathReported: false,  // v0.3.7.12: 사망 보고 플래그
     offsetSeed: Math.floor(Math.random() * 100000),
