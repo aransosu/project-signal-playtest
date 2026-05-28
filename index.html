@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.24</title>
+<title>Project Signal Mk.II v0.3.7.26</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -630,6 +630,255 @@ body {
 
 .codex-card-pos.front { color: var(--job-warrior); background: rgba(192,138,74,0.12); border: 0.5px solid rgba(192,138,74,0.4); }
 .codex-card-pos.back  { color: var(--job-archer);  background: rgba(111,168,96,0.12); border: 0.5px solid rgba(111,168,96,0.4); }
+
+/* ===== v0.3.7.25: 발자취 화면 =====
+   "발자취는 기록 기능이 아니라, 선택이 사라지지 않게 하는 기능이다."
+*/
+.title-footprints { margin-top: 8px; }
+.title-footprints:hover { color: #ff9ec6; border-color: #ff9ec6; background: rgba(255,158,198,0.08); }
+
+#screen-footprints { padding-bottom: 32px; }
+
+.footprints-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 16px;
+}
+
+.footprints-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-faint);
+  font-family: 'Noto Sans KR', sans-serif;
+  line-height: 1.8;
+}
+.footprints-empty .pet {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+.footprints-empty .msg-1 { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
+.footprints-empty .msg-2 { font-size: 12px; opacity: 0.7; }
+
+.footprint-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--signal-dim);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.footprint-card.is-clear {
+  border-left-color: #ff9ec6;
+  background: linear-gradient(90deg, rgba(255,158,198,0.06), var(--bg-2) 40%);
+}
+.footprint-card.is-defeat {
+  border-left-color: rgba(168,168,168,0.4);
+  opacity: 0.92;
+}
+
+.footprint-card .fp-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.footprint-card .fp-result {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.footprint-card.is-clear .fp-result { color: #ff9ec6; }
+.footprint-card.is-defeat .fp-result { color: #ff8888; }
+.footprint-card .fp-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.footprint-card .fp-summary {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-dim);
+  letter-spacing: -0.005em;
+}
+
+.footprint-card .fp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.footprint-card .fp-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+.footprint-card .fp-text {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.footprint-card .fp-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.footprint-card .fp-highlights .h-key { color: var(--text-faint); font-size: 9px; letter-spacing: 0.04em; margin-right: 2px; }
+.footprint-card .fp-highlights .h-name { color: var(--text); }
+.footprint-card .fp-highlights .h-num { color: var(--signal); margin-left: 2px; }
+
+.footprints-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* 테스트 도구 토글 */
+.dev-tools-toggle {
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  align-self: center;
+}
+.dev-tools-toggle:hover {
+  color: var(--text-dim);
+  border-color: var(--text-faint);
+}
+
+.dev-tools-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.dev-tools-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dev-btn {
+  padding: 8px 14px;
+  background: var(--bg-3);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+.dev-btn:hover { border-color: var(--signal-dim); color: var(--signal); }
+.dev-btn.primary {
+  background: rgba(255,201,74,0.12);
+  border-color: var(--signal-dim);
+  color: var(--signal);
+}
+.dev-btn.primary:hover {
+  background: rgba(255,201,74,0.22);
+  border-color: var(--signal);
+}
+.dev-btn.danger {
+  color: var(--text-faint);
+}
+.dev-btn.danger:hover {
+  color: #ff8888;
+  border-color: rgba(255,136,136,0.5);
+}
+.dev-btn.small {
+  padding: 5px 10px;
+  font-size: 10px;
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.export-feedback {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11.5px;
+  line-height: 1.5;
+  min-height: 16px;
+  padding: 4px 0;
+  letter-spacing: -0.005em;
+}
+.export-feedback.ok { color: var(--heal-color); }
+.export-feedback.warn { color: #ffaa66; }
+.export-feedback.info { color: var(--text-dim); }
+
+.export-textarea-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.export-ta-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+.export-textarea-wrap textarea {
+  width: 100%;
+  min-height: 200px;
+  max-height: 320px;
+  padding: 10px;
+  background: var(--bg-1);
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  line-height: 1.45;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  resize: vertical;
+  box-sizing: border-box;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* (legacy) 기존 btn-footprints-clear는 dev-btn.danger로 위임 */
+.btn-footprints-clear {
+  padding: 8px 18px;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-footprints-clear:hover {
+  color: #ff8888;
+  border-color: rgba(255,136,136,0.5);
+}
 
 /* ===== 도감 상세 모달 ===== */
 .codex-detail-overlay {
@@ -3390,7 +3639,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.24</div>
+      <div class="title-version">MK.II — v0.3.7.26</div>
     </div>
 
     <p class="title-tagline">
@@ -3401,6 +3650,7 @@ body {
     <button class="title-start" onclick="startGame()">새 작전 시작</button>
 
     <button class="title-codex" onclick="openCodex()">📖 영웅 도감</button>
+    <button class="title-codex title-footprints" onclick="openFootprints()">🌸 발자취</button>
 
     <div class="title-foot">
       Phase 1 · 2 Build<br>
@@ -3430,6 +3680,43 @@ body {
   <div class="codex-detail-overlay" id="codex-detail" onclick="closeCodexDetail(event)">
     <div class="codex-detail-card" id="codex-detail-card"></div>
   </div>
+
+  <!-- ============================================================
+       v0.3.7.25: 발자취 화면
+       "발자취는 기록 기능이 아니라, 선택이 사라지지 않게 하는 기능이다."
+       ============================================================ -->
+  <section class="screen" id="screen-footprints">
+    <div class="codex-header">
+      <button class="codex-back" onclick="backToTitle()">◂ 돌아가기</button>
+      <div class="codex-title-wrap">
+        <div class="codex-tag">FOOTPRINTS</div>
+        <h2>발자취</h2>
+        <p>당신의 선택이 남긴 전투의 흔적</p>
+      </div>
+    </div>
+
+    <div class="footprints-body" id="footprints-body"></div>
+
+    <div class="footprints-foot" id="footprints-foot">
+      <button class="dev-tools-toggle" onclick="toggleDevTools()">
+        테스트 도구 <span id="dev-tools-arrow">▼</span>
+      </button>
+      <div class="dev-tools-panel" id="dev-tools-panel" style="display:none;">
+        <div class="dev-tools-buttons">
+          <button class="dev-btn primary" onclick="copyBalanceExportToClipboard()">밸런스 데이터 복사</button>
+          <button class="dev-btn" onclick="showBalanceExportText()">데이터 펼쳐보기</button>
+          <button class="dev-btn" onclick="downloadBalanceExportJson()">JSON 파일 저장</button>
+          <button class="dev-btn danger" onclick="clearFootprintsWithConfirm()">발자취 초기화</button>
+        </div>
+        <div class="export-feedback" id="export-feedback"></div>
+        <div class="export-textarea-wrap" id="export-textarea-wrap" style="display:none;">
+          <div class="export-ta-label">아래 데이터를 길게 눌러 전체 선택 후 복사:</div>
+          <textarea id="export-textarea" readonly></textarea>
+          <button class="dev-btn small" onclick="hideBalanceExportText()">접기</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ============================================================
        기본 직업 선택 화면 (v0.3.0: "행동방침 선택" → "기본 직업 선택")
@@ -4083,6 +4370,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
+const BUILD_VERSION = "v0.3.7.26";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -5389,6 +5677,8 @@ function initRunFromParty() {
   runState.pendingFourthMember = false;
   // v0.3.7.23: 런 전체 stats 리셋
   runState.runStats = { perUnit: {}, finalBlowUid: null };
+  // v0.3.7.25: 발자취 저장 플래그 리셋
+  runState._footprintSaved = false;
   runState.units = partyState.slots
     .filter(Boolean)
     .map(jobId => makeAllyUnit(jobId));
@@ -7914,6 +8204,17 @@ function showResult() {
   // v0.3.7.23: 분석 리포트 렌더
   renderResultReport();
 
+  // v0.3.7.25: 발자취 저장 — 한 런에 1번만 (showResult가 여러 번 호출돼도 중복 방지)
+  if (!runState._footprintSaved) {
+    runState._footprintSaved = true;
+    try {
+      const fp = createFootprintFromRun();
+      if (fp) saveFootprint(fp);
+    } catch (e) {
+      console.warn("[footprints] 저장 실패:", e);
+    }
+  }
+
   showScreen("screen-result");
 }
 
@@ -8041,6 +8342,504 @@ function renderResultReport() {
     <div class="report-section-title">▸ 영웅별 기여도</div>
     <div class="hero-cards">${cardsHTML}</div>
   `;
+}
+
+/* ---------- v0.3.7.25: 발자취 (FOOTPRINTS) 시스템 ----------
+
+  유키 결: "발자취는 기록 기능이 아니라, 선택이 사라지지 않게 하는 기능이다."
+
+  구조:
+   - localStorage에 최근 10개 발자취 저장
+   - 런 종료 시 자동 저장 (showResult에서 1번)
+   - 타이틀의 [발자취] 버튼으로 조회
+   - 같은 런 중복 저장 방지
+
+  발자취 객체 결:
+   {
+     id, ts, result, stageReached, stageFinal,
+     survivors, totalActions, fusionsCount,
+     startParty: [name, ...],
+     finalParty: [{ name, alive, diedAt }, ...],
+     fusions:   [{ stage, fusionId, fusionName, consumedNames }, ...],
+     highlights: { topDmg, topHeal, topShield, topKills, finalBlow, totalCriticals, totalExecutes },
+     summary:    "한 줄 요약 (자동 생성)"
+   }
+
+  추후 확장:
+   - 시뮬레이션 결과도 같은 구조로 박을 수 있음 (시뮬 vs 유저 발자취)
+   - 상세 모달
+*/
+const FOOTPRINT_STORAGE_KEY = "project_signal_footprints_v1";
+const MAX_FOOTPRINTS = 10;
+
+/* 저장된 발자취 목록 읽기 — 오류 시 빈 배열 */
+function loadFootprints() {
+  try {
+    const raw = localStorage.getItem(FOOTPRINT_STORAGE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    console.warn("[footprints] load 실패:", e);
+    return [];
+  }
+}
+
+/* 저장 — try/catch (오류 시 게임 안 멈춤) */
+function saveFootprints(arr) {
+  try {
+    localStorage.setItem(FOOTPRINT_STORAGE_KEY, JSON.stringify(arr));
+    return true;
+  } catch (e) {
+    console.warn("[footprints] save 실패:", e);
+    return false;
+  }
+}
+
+/* 현재 런에서 발자취 객체 생성 */
+function createFootprintFromRun() {
+  if (!runState.runStats || !runState.runStats.perUnit) return null;
+
+  const result = runState.result === "win" ? "CLEAR" : "DEFEAT";
+  const stageReached = runState.stage;
+  const allyAliveCount = runState.units.filter(u => u.alive).length;
+  const allyTotalCount = runState.units.length;
+
+  // perUnit에서 결 모음
+  const perUnit = runState.runStats.perUnit;
+  const finalParty = runState.units.map(u => ({
+    name: u.name,
+    alive: u.alive,
+    diedAt: perUnit[u.uid] ? perUnit[u.uid].diedAt : null,
+  }));
+
+  // 시작 파티 — partyState.slots (런 시작 시점 결)
+  const startParty = (partyState && partyState.slots)
+    ? partyState.slots.filter(Boolean).map(jobId => {
+        const t = TRAITS.find(x => x.id === jobId);
+        return t ? t.name : jobId;
+      })
+    : [];
+
+  // 합체 기록
+  const fusions = (runState.fusionHistory || []).map(f => {
+    const fu = FUSIONS.find(x => x.id === f.fusionId);
+    const consumedNames = (f.consumed || []).map(cid => {
+      const t = TRAITS.find(x => x.id === cid);
+      if (t) return t.name;
+      const fc = FUSIONS.find(x => x.id === cid);
+      return fc ? fc.name : cid;
+    });
+    return {
+      stage: f.stage,
+      fusionId: f.fusionId,
+      fusionName: fu ? fu.name : f.fusionId,
+      consumedNames,
+    };
+  });
+
+  // 하이라이트 — runStats에서 추출
+  function topBy(key) {
+    let best = null;
+    for (const u of Object.values(perUnit)) {
+      if (!u[key] || u[key] <= 0) continue;
+      if (!best || u[key] > best[key]) best = u;
+    }
+    return best ? { name: best.name, num: best[key] } : null;
+  }
+  const topDmg    = topBy("damageDealt");
+  const topHeal   = topBy("healDone");
+  const topShield = topBy("shieldGiven");
+  const topKills  = topBy("kills");
+  let totalCriticals = 0, totalExecutes = 0, totalActions = 0;
+  Object.values(perUnit).forEach(u => {
+    totalCriticals += u.criticals || 0;
+    totalExecutes  += u.executes  || 0;
+    totalActions   += u.actionsTaken || 0;
+  });
+  const finalBlowUid = runState.runStats.finalBlowUid;
+  const finalBlow = finalBlowUid && perUnit[finalBlowUid]
+    ? { name: perUnit[finalBlowUid].name }
+    : null;
+
+  const highlights = {
+    topDmg, topHeal, topShield, topKills,
+    finalBlow, totalCriticals, totalExecutes,
+  };
+
+  // v0.3.7.26: 영웅별 풀 stats — export용 raw 결
+  //   highlights는 카드 표시용, unitStats는 분석용
+  const unitStats = Object.values(perUnit).map(u => ({
+    uid: u.uid,
+    name: u.name,
+    kind: u.kind || "trait",
+    jobId: u.jobId || null,
+    role: u.role || null,
+    diedAt: u.diedAt,
+    damageDealt: u.damageDealt || 0,
+    healDone: u.healDone || 0,
+    shieldGiven: u.shieldGiven || 0,
+    shieldBlocked: u.shieldBlocked || 0,
+    kills: u.kills || 0,
+    criticals: u.criticals || 0,
+    executes: u.executes || 0,
+    reflectDamage: u.reflectDamage || 0,
+    poisonDamage: u.poisonDamage || 0,
+    actionsTaken: u.actionsTaken || 0,
+  }));
+
+  // 총합 결 (분석 보조)
+  let totalDmg = 0, totalHeal = 0, totalShieldGiven = 0, totalShieldBlocked = 0;
+  unitStats.forEach(u => {
+    totalDmg += u.damageDealt;
+    totalHeal += u.healDone;
+    totalShieldGiven += u.shieldGiven;
+    totalShieldBlocked += u.shieldBlocked;
+  });
+
+  // 한 줄 요약 — 규칙 기반
+  const summary = generateFootprintSummary({
+    result, stageReached,
+    highlights,
+  });
+
+  return {
+    id: "fp_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+    ts: Date.now(),
+    result,
+    stageReached,
+    stageFinal: stageReached,
+    survivors: `${allyAliveCount}/${allyTotalCount}`,
+    totalActions,
+    fusionsCount: fusions.length,
+    startParty,
+    finalParty,
+    fusions,
+    highlights,
+    summary,
+    // v0.3.7.26: export용 분석 결
+    unitStats,
+    totals: {
+      damageDealt: totalDmg,
+      healDone: totalHeal,
+      shieldGiven: totalShieldGiven,
+      shieldBlocked: totalShieldBlocked,
+      criticals: totalCriticals,
+      executes: totalExecutes,
+      actions: totalActions,
+    },
+  };
+}
+
+/* 한 줄 요약 자동 생성 — 감성 결 */
+function generateFootprintSummary({ result, stageReached, highlights }) {
+  if (result === "CLEAR") {
+    return "끝까지 이어진 모험";
+  }
+  // 패배
+  if (stageReached <= 5) {
+    return "첫 발걸음에서 멈춘 모험";
+  }
+  if (stageReached < 13) {
+    return "초반 벽에 막힌 모험";
+  }
+  // 13 이상 패배 — 활약한 결로 분류
+  const dmg    = highlights.topDmg    ? highlights.topDmg.num    : 0;
+  const heal   = highlights.topHeal   ? highlights.topHeal.num   : 0;
+  const shield = highlights.topShield ? highlights.topShield.num : 0;
+  const kills  = highlights.topKills  ? highlights.topKills.num  : 0;
+  const execs  = highlights.totalExecutes || 0;
+
+  // 최우세 결 추출
+  const maxVal = Math.max(dmg, heal, shield);
+  if (execs >= 4 && execs >= kills * 0.5) {
+    return "처형으로 길을 연 모험";
+  }
+  if (shield > 0 && shield === maxVal) {
+    return "보호막으로 버틴 모험";
+  }
+  if (heal > 0 && heal === maxVal) {
+    return "치유로 버틴 모험";
+  }
+  if (dmg > 0 && dmg === maxVal) {
+    return "화력으로 밀어붙인 모험";
+  }
+  return "후반 문턱까지 닿은 모험";
+}
+
+/* 저장 (push + 최근 10개 유지) */
+function saveFootprint(fp) {
+  if (!fp) return;
+  const list = loadFootprints();
+  list.unshift(fp);                   // 최신 위
+  while (list.length > MAX_FOOTPRINTS) list.pop();
+  saveFootprints(list);
+}
+
+/* 발자취 화면 열기 */
+function openFootprints() {
+  renderFootprints();
+  showScreen("screen-footprints");
+}
+
+/* 발자취 렌더 */
+function renderFootprints() {
+  const body = document.getElementById("footprints-body");
+  if (!body) return;
+  const list = loadFootprints();
+
+  if (list.length === 0) {
+    body.innerHTML = `
+      <div class="footprints-empty">
+        <div class="pet">🌸</div>
+        <div class="msg-1">아직 남겨진 발자취가 없습니다.</div>
+        <div class="msg-2">첫 모험이 끝나면, 이곳에 당신의 선택이 기록됩니다.</div>
+      </div>
+    `;
+    return;
+  }
+
+  function fmtDate(ts) {
+    try {
+      const d = new Date(ts);
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return `${m}/${day} ${hh}:${mm}`;
+    } catch (e) { return ""; }
+  }
+
+  function highlightHTML(label, h, suffix = "") {
+    if (!h) return "";
+    return `<span><span class="h-key">${label}</span><span class="h-name">${h.name}</span><span class="h-num">${h.num}${suffix}</span></span>`;
+  }
+
+  const cardsHTML = list.map(fp => {
+    const isClear = fp.result === "CLEAR";
+    const cls = isClear ? "is-clear" : "is-defeat";
+    const dateStr = fmtDate(fp.ts);
+
+    const finalPartyText = (fp.finalParty || []).map(u => {
+      const tag = u.alive ? "" : ` <span style="color:#ff8888;font-size:10px;">✕</span>`;
+      return `${u.name}${tag}`;
+    }).join(" · ");
+
+    const fusionsText = (fp.fusions && fp.fusions.length > 0)
+      ? fp.fusions.map(f => `${(f.consumedNames || []).join("+")} → ${f.fusionName}`).join(", ")
+      : "—";
+
+    const h = fp.highlights || {};
+    const highlightsLine = [
+      highlightHTML("피해", h.topDmg),
+      highlightHTML("치유", h.topHeal),
+      highlightHTML("보호", h.topShield),
+      highlightHTML("처치", h.topKills),
+    ].filter(Boolean).join("");
+
+    const finalBlowLine = h.finalBlow
+      ? `<div class="fp-section"><div class="fp-label">결정타</div><div class="fp-text">${h.finalBlow.name}</div></div>`
+      : "";
+
+    return `
+      <div class="footprint-card ${cls}">
+        <div class="fp-row1">
+          <div class="fp-result">STAGE ${fp.stageReached} · ${isClear ? "CLEAR" : "패배"}</div>
+          <div class="fp-date">${dateStr}</div>
+        </div>
+
+        <div class="fp-summary">"${fp.summary}"</div>
+
+        <div class="fp-section">
+          <div class="fp-label">최종 파티</div>
+          <div class="fp-text">${finalPartyText || "—"}</div>
+        </div>
+
+        ${(fp.fusions && fp.fusions.length > 0) ? `
+        <div class="fp-section">
+          <div class="fp-label">합체 (${fp.fusions.length})</div>
+          <div class="fp-text">${fusionsText}</div>
+        </div>` : ""}
+
+        ${highlightsLine ? `
+        <div class="fp-section">
+          <div class="fp-label">주요 활약</div>
+          <div class="fp-highlights">${highlightsLine}</div>
+        </div>` : ""}
+
+        ${finalBlowLine}
+      </div>
+    `;
+  }).join("");
+
+  body.innerHTML = cardsHTML;
+}
+
+/* 발자취 초기화 — confirm 후 삭제 */
+function clearFootprintsWithConfirm() {
+  const ok = confirm("발자취 기록을 모두 삭제할까요?\n되돌릴 수 없습니다.");
+  if (!ok) return;
+  try {
+    localStorage.removeItem(FOOTPRINT_STORAGE_KEY);
+  } catch (e) {
+    console.warn("[footprints] clear 실패:", e);
+  }
+  renderFootprints();
+}
+
+/* ---------- v0.3.7.26: 발자취 export (밸런스 분석 도구) ----------
+
+  유키 결: "루다의 1000회보다 먼저, 나라님의 10회를 읽을 수 있게 만들자."
+
+  목적:
+   - iPhone PWA에서 플레이한 발자취를 JSON으로 뽑아 유키/루다에게 전달
+   - 정량 밸런스 분석의 원료
+   - 시뮬레이션 자동화 전 단계 — 인간 손맛 데이터
+
+  iOS Safari / PWA 결:
+   - navigator.clipboard.writeText() 시도
+   - 실패 시 textarea fallback (긴 줄 직접 선택)
+*/
+
+// export 페이로드 빌드 — JSON 직렬화 가능한 plain object
+function buildBalanceExportPayload() {
+  const list = loadFootprints();
+
+  // 빌드 결 — 어느 빌드에서 나온 데이터인지
+  const build = {
+    version: BUILD_VERSION,
+    stage13Softening: !!ENABLE_STAGE13_TEST_SOFTENING,
+    notes: ENABLE_STAGE13_TEST_SOFTENING
+      ? "Stage13+ test softening build (HP/ATK multiplier applied to enemies stage 13+)"
+      : "Standard build",
+  };
+
+  // 적용 배율 — 테스트 완화 박힌 경우만 (가독성)
+  if (ENABLE_STAGE13_TEST_SOFTENING) {
+    build.stage13_15_mult = 0.92;
+    build.stage16_18_mult = 0.90;
+    build.stage19_20_mult = 0.88;
+  }
+
+  return {
+    exportType: "project_signal_balance_footprints",
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    build,
+    footprintCount: list.length,
+    footprints: list,
+  };
+}
+
+// JSON 문자열 — pretty print (분석 가독성)
+function buildBalanceExportJson() {
+  return JSON.stringify(buildBalanceExportPayload(), null, 2);
+}
+
+// 피드백 메시지 박기
+function _setExportFeedback(text, kind = "info") {
+  const el = document.getElementById("export-feedback");
+  if (!el) return;
+  el.textContent = text;
+  el.className = `export-feedback ${kind}`;
+  // 5초 후 자동 fade
+  clearTimeout(_setExportFeedback._t);
+  _setExportFeedback._t = setTimeout(() => {
+    if (el) { el.textContent = ""; el.className = "export-feedback"; }
+  }, 5000);
+}
+
+// 클립보드 복사 시도
+async function copyBalanceExportToClipboard() {
+  const list = loadFootprints();
+  if (list.length === 0) {
+    _setExportFeedback("아직 저장된 발자취가 없습니다. 모험이 끝나면 데이터가 쌓입니다.", "warn");
+    return;
+  }
+  const json = buildBalanceExportJson();
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(json);
+      _setExportFeedback("✓ 밸런스 데이터가 복사되었습니다. 유키에게 붙여넣어 분석할 수 있습니다.", "ok");
+      return;
+    }
+    throw new Error("Clipboard API 없음");
+  } catch (e) {
+    console.warn("[export] clipboard 실패, fallback 진입:", e);
+    _setExportFeedback("자동 복사가 실패했습니다. [데이터 펼쳐보기]로 직접 복사해주세요.", "warn");
+    // 자동으로 펼쳐보기도 박음 (편의)
+    showBalanceExportText(true);
+  }
+}
+
+// 텍스트 영역으로 펼쳐 보이기 (수동 복사용)
+function showBalanceExportText(autoSelect = false) {
+  const list = loadFootprints();
+  const container = document.getElementById("export-textarea-wrap");
+  const ta = document.getElementById("export-textarea");
+  if (!container || !ta) return;
+  if (list.length === 0) {
+    _setExportFeedback("아직 저장된 발자취가 없습니다. 모험이 끝나면 데이터가 쌓입니다.", "warn");
+    return;
+  }
+  const json = buildBalanceExportJson();
+  ta.value = json;
+  container.style.display = "block";
+  if (autoSelect) {
+    try {
+      ta.focus();
+      ta.setSelectionRange(0, json.length);
+    } catch (e) { /* noop */ }
+  }
+  // 안내
+  if (!autoSelect) {
+    _setExportFeedback("아래 데이터를 길게 눌러 전체 선택 후 복사해주세요.", "info");
+  }
+}
+
+// 펼쳐보기 영역 접기
+function hideBalanceExportText() {
+  const container = document.getElementById("export-textarea-wrap");
+  if (container) container.style.display = "none";
+}
+
+// JSON 파일 다운로드 (Blob)
+function downloadBalanceExportJson() {
+  const list = loadFootprints();
+  if (list.length === 0) {
+    _setExportFeedback("아직 저장된 발자취가 없습니다.", "warn");
+    return;
+  }
+  try {
+    const json = buildBalanceExportJson();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+    a.href = url;
+    a.download = `project-signal-footprints-${ymd}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      try { document.body.removeChild(a); } catch (e) {}
+      try { URL.revokeObjectURL(url); } catch (e) {}
+    }, 100);
+    _setExportFeedback("JSON 파일을 저장했습니다.", "ok");
+  } catch (e) {
+    console.warn("[export] download 실패:", e);
+    _setExportFeedback("파일 저장이 실패했습니다. [데이터 펼쳐보기]를 사용해주세요.", "warn");
+  }
+}
+
+// 테스트 도구 토글
+function toggleDevTools() {
+  const panel = document.getElementById("dev-tools-panel");
+  const arrow = document.getElementById("dev-tools-arrow");
+  if (!panel) return;
+  const isOpen = panel.style.display === "block";
+  panel.style.display = isOpen ? "none" : "block";
+  if (arrow) arrow.textContent = isOpen ? "▼" : "▲";
 }
 
 function replayRun() {
