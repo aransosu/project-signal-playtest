@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.26</title>
+<title>Project Signal Mk.II v0.3.7.27</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -3639,7 +3639,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.26</div>
+      <div class="title-version">MK.II — v0.3.7.27</div>
     </div>
 
     <p class="title-tagline">
@@ -4370,7 +4370,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.7.26";
+const BUILD_VERSION = "v0.3.7.27";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -5909,6 +5909,12 @@ function executeAction(actor) {
   }
 
   battleState.stats.actionsTaken[actor.uid] = (battleState.stats.actionsTaken[actor.uid] || 0) + 1;
+  // v0.3.7.27 핫픽스: 런 전체 stats에도 누적 (export에 actions 0으로 박히던 결 수정)
+  //   기준: "한 번 턴을 잡고 executeAction에 들어간 것 = 1 action"
+  //   아군만 누적 (적은 분석 대상 X)
+  if (actor && actor.side === "ally") {
+    statsBump(actor.uid, "actionsTaken", 1);
+  }
 
   // v0.3.7.12: 행동 묶음 종료 게이트 — sweep + cleanup + endcheck
   finishAction(actor);
@@ -8402,16 +8408,44 @@ function createFootprintFromRun() {
 
   const result = runState.result === "win" ? "CLEAR" : "DEFEAT";
   const stageReached = runState.stage;
-  const allyAliveCount = runState.units.filter(u => u.alive).length;
-  const allyTotalCount = runState.units.length;
 
   // perUnit에서 결 모음
   const perUnit = runState.runStats.perUnit;
-  const finalParty = runState.units.map(u => ({
-    name: u.name,
-    alive: u.alive,
-    diedAt: perUnit[u.uid] ? perUnit[u.uid].diedAt : null,
-  }));
+
+  // v0.3.7.27 핫픽스: alive / diedAt 정합성 잠금
+  //   - 살아있음: alive=true, diedAt=null (덮어씀)
+  //   - 죽음:     alive=false, diedAt=숫자 (없으면 최종 stage)
+  //   "alive=true + diedAt=숫자" 같은 충돌이 export로 새지 않게.
+  const finalParty = runState.units.map(u => {
+    const stats = perUnit[u.uid];
+    let isAlive = !!u.alive;
+    let diedAt = stats ? stats.diedAt : null;
+
+    // 정합성 잠금
+    if (isAlive) {
+      diedAt = null;          // 살아있으면 diedAt은 무조건 null
+    } else {
+      if (diedAt === null || typeof diedAt !== "number") {
+        diedAt = stageReached; // 죽었는데 기록 없으면 최종 stage로 박음
+      }
+    }
+
+    return {
+      name: u.name,
+      alive: isAlive,
+      diedAt,
+    };
+  });
+
+  // v0.3.7.27 핫픽스: survivors는 finalParty의 실제 alive로 다시 계산
+  const allyAliveCount = finalParty.filter(p => p.alive).length;
+  const allyTotalCount = finalParty.length;
+
+  // v0.3.7.27: defeatReason — 1차 패스 (party_wipe만 명확히 구분)
+  let defeatReason = null;
+  if (result === "DEFEAT") {
+    defeatReason = (allyAliveCount === 0) ? "party_wipe" : "unknown";
+  }
 
   // 시작 파티 — partyState.slots (런 시작 시점 결)
   const startParty = (partyState && partyState.slots)
@@ -8458,6 +8492,9 @@ function createFootprintFromRun() {
     totalActions   += u.actionsTaken || 0;
   });
   const finalBlowUid = runState.runStats.finalBlowUid;
+  // v0.3.7.27 메모: finalBlow는 "마지막 적을 처치한 아군".
+  //   CLEAR 시 = 결정타 (런 종료를 만든 처치)
+  //   DEFEAT 시 = 패배 직전 마지막으로 적을 잡은 아군 (의미 약함 — 다음 패스에서 lastKillBy로 분리 가능)
   const finalBlow = finalBlowUid && perUnit[finalBlowUid]
     ? { name: perUnit[finalBlowUid].name }
     : null;
@@ -8468,25 +8505,42 @@ function createFootprintFromRun() {
   };
 
   // v0.3.7.26: 영웅별 풀 stats — export용 raw 결
-  //   highlights는 카드 표시용, unitStats는 분석용
-  const unitStats = Object.values(perUnit).map(u => ({
-    uid: u.uid,
-    name: u.name,
-    kind: u.kind || "trait",
-    jobId: u.jobId || null,
-    role: u.role || null,
-    diedAt: u.diedAt,
-    damageDealt: u.damageDealt || 0,
-    healDone: u.healDone || 0,
-    shieldGiven: u.shieldGiven || 0,
-    shieldBlocked: u.shieldBlocked || 0,
-    kills: u.kills || 0,
-    criticals: u.criticals || 0,
-    executes: u.executes || 0,
-    reflectDamage: u.reflectDamage || 0,
-    poisonDamage: u.poisonDamage || 0,
-    actionsTaken: u.actionsTaken || 0,
-  }));
+  //   v0.3.7.27: alive/diedAt 정합성 동일 잠금
+  const unitStats = Object.values(perUnit).map(u => {
+    // 해당 unit이 runState.units에 살아있는지 확인 (합체로 사라진 경우 false)
+    const liveUnit = runState.units.find(x => x.uid === u.uid);
+    let isAlive = liveUnit ? !!liveUnit.alive : false;  // units에서 사라졌으면 사망/합체 처리
+    let diedAt = u.diedAt;
+    // 정합성 잠금
+    if (isAlive) {
+      diedAt = null;
+    } else {
+      if (diedAt === null || typeof diedAt !== "number") {
+        // units에서 사라졌는데 diedAt 없으면 — 합체로 흡수됐을 가능성
+        // 이 경우 perUnit에서 이미 제거됐을 텐데, 남아있다면 stageReached로 박음
+        diedAt = stageReached;
+      }
+    }
+    return {
+      uid: u.uid,
+      name: u.name,
+      kind: u.kind || "trait",
+      jobId: u.jobId || null,
+      role: u.role || null,
+      alive: isAlive,
+      diedAt,
+      damageDealt: u.damageDealt || 0,
+      healDone: u.healDone || 0,
+      shieldGiven: u.shieldGiven || 0,
+      shieldBlocked: u.shieldBlocked || 0,
+      kills: u.kills || 0,
+      criticals: u.criticals || 0,
+      executes: u.executes || 0,
+      reflectDamage: u.reflectDamage || 0,
+      poisonDamage: u.poisonDamage || 0,
+      actionsTaken: u.actionsTaken || 0,
+    };
+  });
 
   // 총합 결 (분석 보조)
   let totalDmg = 0, totalHeal = 0, totalShieldGiven = 0, totalShieldBlocked = 0;
@@ -8503,13 +8557,16 @@ function createFootprintFromRun() {
     highlights,
   });
 
-  return {
+  const fp = {
     id: "fp_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
     ts: Date.now(),
     result,
     stageReached,
     stageFinal: stageReached,
     survivors: `${allyAliveCount}/${allyTotalCount}`,
+    survivorsAlive: allyAliveCount,
+    survivorsTotal: allyTotalCount,
+    defeatReason,
     totalActions,
     fusionsCount: fusions.length,
     startParty,
@@ -8529,6 +8586,62 @@ function createFootprintFromRun() {
       actions: totalActions,
     },
   };
+
+  // v0.3.7.27: 정합성 검증 (게임 안 멈춤, console.warn만)
+  validateFootprintIntegrity(fp);
+
+  return fp;
+}
+
+/* v0.3.7.27: footprint 정합성 검증 — 의심 자리 console.warn */
+function validateFootprintIntegrity(fp) {
+  if (!fp) return;
+  const issues = [];
+
+  // alive ↔ diedAt
+  (fp.finalParty || []).forEach((p, i) => {
+    if (p.alive === true && p.diedAt !== null) {
+      issues.push(`finalParty[${i}] ${p.name}: alive=true인데 diedAt=${p.diedAt}`);
+    }
+    if (p.alive === false && (p.diedAt === null || typeof p.diedAt !== "number")) {
+      issues.push(`finalParty[${i}] ${p.name}: alive=false인데 diedAt=${p.diedAt}`);
+    }
+  });
+  (fp.unitStats || []).forEach((u, i) => {
+    if (u.alive === true && u.diedAt !== null) {
+      issues.push(`unitStats[${i}] ${u.name}: alive=true인데 diedAt=${u.diedAt}`);
+    }
+    if (u.alive === false && (u.diedAt === null || typeof u.diedAt !== "number")) {
+      issues.push(`unitStats[${i}] ${u.name}: alive=false인데 diedAt=${u.diedAt}`);
+    }
+  });
+
+  // survivors ↔ finalParty
+  const aliveCount = (fp.finalParty || []).filter(p => p.alive).length;
+  if (aliveCount !== fp.survivorsAlive) {
+    issues.push(`survivors mismatch: finalParty alive=${aliveCount}, survivorsAlive=${fp.survivorsAlive}`);
+  }
+
+  // 패배인데 전원 생존?
+  if (fp.result === "DEFEAT" && aliveCount === fp.survivorsTotal && fp.survivorsTotal > 0) {
+    issues.push(`DEFEAT인데 전원 생존 (${aliveCount}/${fp.survivorsTotal}) — defeatReason 점검 필요`);
+  }
+
+  // 전투가 진행됐는데 actions 0?
+  if (fp.stageReached >= 3 && fp.totalActions === 0) {
+    issues.push(`stage ${fp.stageReached}까지 진행했는데 totalActions=0`);
+  }
+
+  // totals.actions ↔ unitStats actionsTaken 합
+  const unitActionsSum = (fp.unitStats || []).reduce((s, u) => s + (u.actionsTaken || 0), 0);
+  if (fp.totals && Math.abs(fp.totals.actions - unitActionsSum) > 0) {
+    issues.push(`totals.actions(${fp.totals.actions}) ≠ unitStats합(${unitActionsSum})`);
+  }
+
+  if (issues.length > 0) {
+    console.warn("[footprint integrity] " + issues.length + "개 의심 자리:");
+    issues.forEach(i => console.warn("  · " + i));
+  }
 }
 
 /* 한 줄 요약 자동 생성 — 감성 결 */
