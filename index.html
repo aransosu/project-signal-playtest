@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.13</title>
+<title>Project Signal Mk.II v0.3.7.16</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2079,9 +2079,10 @@ body {
   box-shadow: 0 0 14px rgba(255,201,74,0.6), inset 0 0 8px rgba(255,201,74,0.2);
 }
 
-/* 사망 */
+/* 사망 — v0.3.7.16: fade + scale 결 박음 (퐁! 결) */
 .unit.dead .unit-portrait {
   filter: grayscale(1) brightness(0.5);
+  animation: unit-death-fade 0.42s ease-out forwards;
 }
 .unit.dead .unit-portrait::after {
   content: '✕';
@@ -2090,6 +2091,85 @@ body {
   color: var(--danger);
   font-weight: 900;
   text-shadow: 0 0 6px rgba(0,0,0,0.8);
+}
+@keyframes unit-death-fade {
+  0%   { transform: scale(1);    opacity: 1; }
+  35%  { transform: scale(1.08); opacity: 1; }   /* 살짝 부풀고 — "잡혔다!" 결 */
+  100% { transform: scale(0.85); opacity: 0.55; }
+}
+
+/* v0.3.7.16: 처치 라벨 — 행동 라벨과 다른 자리 (위쪽 더 멀리, 강조)
+   유키 결: "치명타는 눈이 가야 하고, 처치는 손맛이 나야 한다."
+*/
+.kill-label {
+  position: absolute;
+  left: 50%;
+  top: -38px;
+  transform: translateX(-50%) scale(0.7);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 22;
+  opacity: 0;
+  animation: kill-label-pop 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.kill-label.kind-basic {
+  background: #2a2014;
+  color: var(--signal);
+  border: 1px solid var(--signal-dim);
+  box-shadow: 0 0 12px rgba(255,201,74,0.5), 0 2px 6px rgba(0,0,0,0.6);
+}
+.kill-label.kind-critical {
+  background: linear-gradient(180deg, #ff9148, #d8602a);
+  color: #1a0a04;
+  border: 1px solid #ffb066;
+  font-size: 14px;
+  box-shadow: 0 0 16px rgba(255,145,72,0.85), 0 2px 6px rgba(0,0,0,0.6);
+}
+.kill-label.kind-execute {
+  background: linear-gradient(180deg, #ff6868, #c83232);
+  color: #1a0404;
+  border: 1px solid #ff8080;
+  font-size: 14px;
+  box-shadow: 0 0 16px rgba(255,90,90,0.85), 0 2px 6px rgba(0,0,0,0.6);
+}
+.kill-label.kind-poison {
+  background: linear-gradient(180deg, #b890e0, #7a5ab8);
+  color: #1a0a20;
+  border: 1px solid #c8a0f0;
+  box-shadow: 0 0 12px rgba(168,125,224,0.7), 0 2px 6px rgba(0,0,0,0.6);
+}
+.kill-label.kind-reflect {
+  background: linear-gradient(180deg, #e6cf90, #b09058);
+  color: #1a1408;
+  border: 1px solid #f0d8a0;
+  box-shadow: 0 0 12px rgba(230,207,144,0.75), 0 2px 6px rgba(0,0,0,0.6);
+}
+@keyframes kill-label-pop {
+  0%   { transform: translateX(-50%) translateY(0)     scale(0.7); opacity: 0; }
+  20%  { transform: translateX(-50%) translateY(-4px)  scale(1.18); opacity: 1; }
+  35%  { transform: translateX(-50%) translateY(-4px)  scale(1.0);  opacity: 1; }
+  85%  { transform: translateX(-50%) translateY(-4px)  scale(1.0);  opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-14px) scale(0.95); opacity: 0; }
+}
+
+/* v0.3.7.16: 치명 흔들림 강화 결 (기존 hit-critical과 별도) */
+.unit.hit-critical-strong {
+  animation: hit-critical-strong 0.46s cubic-bezier(0.36, 0, 0.66, 1);
+}
+@keyframes hit-critical-strong {
+  0%   { transform: translateX(0)     scale(1); }
+  10%  { transform: translateX(-6px)  scale(1.08); }
+  25%  { transform: translateX(7px)   scale(1.06); }
+  40%  { transform: translateX(-5px)  scale(1.04); }
+  55%  { transform: translateX(4px)   scale(1.02); }
+  100% { transform: translateX(0)     scale(1); }
 }
 
 /* role 배지 (적) */
@@ -2169,7 +2249,11 @@ body {
   white-space: nowrap;
 }
 
-/* Floating 숫자 */
+/* Floating 숫자 — 결과 레인 (v0.3.7.15: 행동 라벨과 분리)
+   유키 결: "행동명은 시전자에게, 결과값은 대상에게"
+   * 행동 라벨(.action-label)은 top: -22px (말풍선 결)
+   * 결과 숫자(.float-number)는 top: -38px (더 위쪽) — 겹침 회피
+*/
 .float-number {
   position: absolute;
   font-family: 'JetBrains Mono', monospace;
@@ -2178,7 +2262,7 @@ body {
   letter-spacing: -0.02em;
   pointer-events: none;
   animation: float-up 1.2s ease-out forwards;
-  z-index: 10;
+  z-index: 11;  /* v0.3.7.15: 라벨 위에 박힘 (라벨 z-index=20인데 라벨은 시전자, 결과는 대상이라 보통 다른 유닛 — 같은 유닛일 때만 미세 겹침 가능) */
   text-shadow: 0 0 6px rgba(0,0,0,0.95), 0 0 10px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.9);
 }
 
@@ -2186,12 +2270,63 @@ body {
 .float-number.heal { color: var(--heal-color); }
 .float-number.shield { color: var(--shield-color); font-size: 18px; }
 .float-number.poison { color: #c8a0f0; font-size: 18px; text-shadow: 0 0 6px rgba(168,125,224,0.7), 0 0 10px rgba(0,0,0,0.9); }
+/* v0.3.7.15: 치명 결 — 일반 피해보다 더 크고 강하게 */
+.float-number.critical {
+  color: #ffb066;
+  font-size: 26px;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(255,176,102,0.9), 0 0 14px rgba(255,120,60,0.6), 0 1px 2px rgba(0,0,0,0.95);
+}
+/* v0.3.7.16: 처형 결 — 빨강 강조 (도적의 결) */
+.float-number.execute {
+  color: #ff7878;
+  font-size: 26px;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(255,120,120,0.95), 0 0 14px rgba(255,60,60,0.7), 0 1px 2px rgba(0,0,0,0.95);
+}
 
 @keyframes float-up {
   0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
   15% { transform: translate(-50%, -4px) scale(1.15); opacity: 1; }
   30% { transform: translate(-50%, -8px) scale(1); opacity: 1; }
   100% { transform: translate(-50%, -42px) scale(1); opacity: 0; }
+}
+
+/* v0.3.7.15: 결과 숫자 — 시전자 본인 결일 때 사용하는 변형 자리
+   행동 라벨이 위에 있으니 결과 숫자는 오른쪽 옆 자리로 박힘 (HP바 옆 결) */
+.float-number.self-result {
+  left: 70%;     /* 오른쪽 옆 자리 */
+  top: -4px;
+}
+/* v0.3.7.15: 상태 텍스트 — HP바 근처에 짧게 박힘 (지속 키워드용) */
+.float-status {
+  position: absolute;
+  left: 50%;
+  top: 100%;     /* HP바 아래 살짝 (HP바가 portrait 바깥에 있으니 작동) */
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  z-index: 9;
+  padding: 2px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  animation: status-fade 1.4s ease-out forwards;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+}
+.float-status.poisoned { background: rgba(168,125,224,0.18); color: #c8a0f0; border: 1px solid rgba(168,125,224,0.4); }
+.float-status.slowed   { background: rgba(127,226,200,0.15); color: #7fe2c8; border: 1px solid rgba(127,226,200,0.4); }
+.float-status.bound    { background: rgba(216,200,168,0.18); color: #d8c8a8; border: 1px solid rgba(216,200,168,0.4); }
+.float-status.rhythm   { background: rgba(255,201,74,0.15);  color: #ffc94a; border: 1px solid rgba(255,201,74,0.4); }
+.float-status.shield   { background: rgba(127,226,200,0.18); color: #7fe2c8; border: 1px solid rgba(127,226,200,0.4); }
+
+@keyframes status-fade {
+  0%   { opacity: 0; transform: translate(-50%, -2px); }
+  15%  { opacity: 1; transform: translate(-50%, 0); }
+  70%  { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 4px); }
 }
 
 /* 행동 라벨 — v0.1.5 signal-badge 결 (말풍선 + 꼬리) */
@@ -3036,7 +3171,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.13</div>
+      <div class="title-version">MK.II — v0.3.7.16</div>
     </div>
 
     <p class="title-tagline">
@@ -5299,7 +5434,8 @@ function actTaunt(actor) {
 
   // 자기 보호막
   actor.shield = Math.max(actor.shield, 12 + actor.level * 3);
-  showFloat(actor, `+${12 + actor.level * 3}`, "shield");
+  // v0.3.7.15: 자기 결과는 self 결 (행동 라벨과 겹침 회피)
+  showResultText(actor, 12 + actor.level * 3, "shield", { self: true });
 
   // 가까운 적 1명 공격
   const target = pickEnemyTarget(actor, "any");
@@ -5309,7 +5445,7 @@ function actTaunt(actor) {
   }
 
   // 도발 라벨
-  showActionLabel(actor, "도발!", "taunt");
+  showActionText(actor, "도발!", { kind: "taunt" });
 
   // 적들의 시선이 용맹에게 *한 번* 끌리는 그림 (펄스 1번)
   // 유키 PD 진단: "도발선은 시선이 끌렸다를 짧게 보여주고 빨리 사라지게"
@@ -5326,8 +5462,9 @@ function actTaunt(actor) {
 function actHarden(actor) {
   // 수호: 자기 보호막 두껍게 + 가까운 적 약공격
   actor.shield = Math.max(actor.shield, 18 + actor.level * 4);
-  showFloat(actor, `+${18 + actor.level * 4}`, "shield");
-  showActionLabel(actor, "방어↑", "shield");
+  // v0.3.7.15: 자기 결과는 self 결 (행동 라벨과 겹침 회피)
+  showResultText(actor, 18 + actor.level * 4, "shield", { self: true });
+  showActionText(actor, "방어↑", { kind: "shield" });
   const target = pickEnemyTarget(actor, "any");
   if (target) {
     dealDamage(actor, target, Math.floor(actor.atk * 0.6));
@@ -5361,15 +5498,18 @@ function actHeal(actor) {
 
 function actAttack(actor) {
   // 저격: 우선순위 타겟 + mk2 v0.2: 후열 대상 +50% 피해
+  // v0.3.7.15: 이 분기는 *저격 발동* 자리. 라벨은 항상 "저격!" (사격!과 중복 회피)
+  //   - decideTraitAction(snipe): 후열 적 / 저HP 적 있을 때만 이 분기 진입
+  //   - 백로우 적 잡으면 데미지 +50% (그대로)
   const target = pickEnemyTarget(actor, "priority");
   if (!target) return;
   const isBackRow = (target.role === "caster" || target.role === "ranged");
   const backRowMult = isBackRow ? 1.5 : 1.0;  // mk2 v0.2: 후열 +50%
   const dmg = Math.floor(actor.atk * (1.0 + actor.level * 0.12) * backRowMult);
-  showActionLabel(actor, isBackRow ? "저격!" : "사격!", "crit");
+  showActionText(actor, "저격!", { kind: "crit" });
   dealDamage(actor, target, dmg);
   drawLine(actor, target, "attack");
-  pushEvent(`<b>${actor.name}</b> ${isBackRow ? "저격" : "사격"} → ${target.name} (${dmg})`, "attack");
+  pushEvent(`<b>${actor.name}</b> 저격 → ${target.name} (${dmg})`, "attack");
 }
 
 function actDebuff(actor) {
@@ -5439,12 +5579,13 @@ function actFusion(actor) {
       const target = pickEnemyTarget(actor, "priority") || pickEnemyByLowestHp();
       if (!target) return;
 
-      // 체력 50% 미만이면 치명타
+      // 체력 50% 미만이면 치명타 (처형)
       const isExecution = (target.hp / target.maxHp) < 0.5;
       const dmg = isExecution ? Math.floor(actor.atk * 1.6) : Math.floor(actor.atk * 1.0);
 
-      showActionLabel(actor, isExecution ? "처형!" : "독칼!", isExecution ? "crit" : "control");
-      dealDamage(actor, target, dmg);
+      // v0.3.7.16: 처형 결을 dealDamage에 전달 → 결과 텍스트/처치 라벨 분기
+      showActionText(actor, isExecution ? "처형!" : "독칼!", { kind: isExecution ? "crit" : "control" });
+      dealDamage(actor, target, dmg, { isExecute: isExecution });
       drawLine(actor, target, isExecution ? "attack" : "debuff");
 
       // 중독 부여 (3턴)
@@ -5472,7 +5613,8 @@ function actFusion(actor) {
       if (infected.length > 0) {
         const target = infected[0];
         const dmg = Math.floor(actor.atk * 1.5);  // 치명타
-        dealDamage(actor, target, dmg);
+        // v0.3.7.16: 치명타 결 박음 (중독 적 = 덫꾼의 치명타 결)
+        dealDamage(actor, target, dmg, { isCritical: true });
         drawLine(actor, target, "attack");
         pushEvent(`<b>${actor.name}</b> 수확! → ${target.name} (${dmg}!)`, "attack");
       } else if (aliveEnemies.length > 0) {
@@ -5533,6 +5675,8 @@ function actFusion(actor) {
         // (c) 시각 피드백
         drawLine(actor, t, "debuff");
         reactReceive(t, "debuff");
+        // v0.3.7.15: 상태 텍스트 — 적용 순간 짧게 (HP바 근처)
+        showStatusText(t, "감속", { kind: "slowed" });
         // (d) 이벤트 피드 — 1명씩 짧게
         pushEvent(
           `<b>${t.name}</b> 속도 저하 — 게이지 ${gaugeBefore} → ${gaugeAfter} · slow 2턴`,
@@ -5584,16 +5728,18 @@ function actFusion(actor) {
 
       // 메인 타격
       let dmg = Math.floor(actor.atk * 1.0);
-      // 리듬 버프 스택 적용
+      // 리듬 버프 스택 적용 — v0.3.7.16: 리듬 강화 = 치명 결
+      let isRhythmBuffed = false;
       if (actor._rhythmBuffStacks && actor._rhythmBuffStacks > 0) {
         dmg = Math.floor(dmg * 1.5);
         actor._rhythmBuffStacks -= 1;
-        showActionLabel(actor, "관통! ★", "attack");
+        isRhythmBuffed = true;
+        showActionText(actor, "관통! ★", { kind: "attack" });
       } else {
-        showActionLabel(actor, "관통!", "attack");
+        showActionText(actor, "관통!", { kind: "attack" });
       }
       const targetWasAlive = target.alive;
-      dealDamage(actor, target, dmg);
+      dealDamage(actor, target, dmg, { isCritical: isRhythmBuffed });
       drawLine(actor, target, "attack");
 
       // 관통: 뒤에 적이 있으면 동일 피해
@@ -6365,8 +6511,9 @@ function dealDamage(actor, target, amount, opts = {}) {
       drawLine(target, linkedEnemy, "binder_link");
       pushEvent(`<b>${target.name}</b> 금제 — <b>${linkedEnemy.name}</b>이(가) 30%를 대신 받는다`, "shield");
       // 금제(원래 대상)와 연결 적 각자 처리 (재귀 없이 직접)
+      // v0.3.7.16: linkedEnemy로 가는 피해는 reflect 결 (반격 처치 분기)
       dealDamage(actor, target,      remainRaw,   { ...opts, skipBinderIntercept: true });
-      dealDamage(actor, linkedEnemy, transferRaw, { ...opts, skipBinderIntercept: true });
+      dealDamage(actor, linkedEnemy, transferRaw, { ...opts, skipBinderIntercept: true, reason: "reflect" });
       return;
     }
   }
@@ -6383,11 +6530,26 @@ function dealDamage(actor, target, amount, opts = {}) {
 
   if (dmg > 0) {
     target.hp = Math.max(0, target.hp - dmg);
-    showFloat(target, `-${dmg}`, "damage");
+    // v0.3.7.16: 치명/처형 결 시각 분기 (showResultText 거침)
+    //   - execute (도적 처형) → 빨강 강조
+    //   - critical (치명타) → 주황 강조
+    //   - 일반 → 기존 damage 결
+    const resultType = opts.isExecute ? "execute"
+                     : opts.isCritical ? "critical"
+                     : "damage";
+    showResultText(target, dmg, resultType);
     if (target.alive) {
       // 리액션 분기 — HP 비율 / 도발 끌림 여부에 따라
+      //   v0.3.7.16: 치명/처형이면 hit-critical-strong 결로 박힘
       const hpPct = (target.hp / target.maxHp) * 100;
-      if (hpPct <= 25) {
+      if (opts.isExecute || opts.isCritical) {
+        // 치명/처형 — 별도 강한 흔들림 (별도 클래스로 박음)
+        const el = document.querySelector(`[data-uid="${target.uid}"]`);
+        if (el) {
+          el.classList.add("hit-critical-strong");
+          setTimeout(() => el.classList.remove("hit-critical-strong"), 460);
+        }
+      } else if (hpPct <= 25) {
         shakeUnit(target, "critical");
       } else if (opts.fromTaunt) {
         shakeUnit(target, "pull");
@@ -6404,12 +6566,15 @@ function dealDamage(actor, target, amount, opts = {}) {
   }
 
   // v0.3.7.12: 공통 사망 게이트 — markIfDead로 통일
-  // (직접 alive=false 박지 않음. 모든 죽음은 같은 문을 통과.)
+  // v0.3.7.16: isCritical / isExecute 결을 markIfDead로 전달
+  //   (직접 alive=false 박지 않음. 모든 죽음은 같은 문을 통과.)
   if (target.hp <= 0 && target.alive) {
     markIfDead(target, {
       killerUid: actor.uid,
-      reason: opts.reason || "attack",
-      damageType: opts.damageType || "physical"
+      reason: opts.reason || (opts.isExecute ? "execute" : "attack"),
+      damageType: opts.damageType || "physical",
+      isCritical: !!opts.isCritical,
+      isExecute: !!opts.isExecute,
     });
   }
 }
@@ -6458,13 +6623,16 @@ function markIfDead(unit, opts = {}) {
   if (!unit._deathReported) {
     unit._deathReported = true;
     const reasonLabel = (opts.reason === "poison") ? "중독으로 쓰러짐"
-                      : (opts.reason === "binder_reflect") ? "금제 반사로 쓰러짐"
+                      : (opts.reason === "binder_reflect" || opts.reason === "reflect") ? "반격 피해로 쓰러짐"
+                      : (opts.reason === "execute") ? "처형당함"
                       : "사망";
     pushEvent(`<b>${unit.name}</b> ${reasonLabel}`, "death", {
       sourceUid: opts.killerUid || null,
       targetUid: unit.uid,
       reason: opts.reason || "attack",
-      damageType: opts.damageType || "physical"
+      damageType: opts.damageType || "physical",
+      isCritical: !!opts.isCritical,
+      isExecute: !!opts.isExecute,
     });
   }
 
@@ -6475,6 +6643,16 @@ function markIfDead(unit, opts = {}) {
     // 차징 시각도 즉시 정리
     el.classList.remove("arcane-charging");
   }
+
+  // v0.3.7.16: 처치 라벨 — 원인별 분기 (showKillLabel)
+  //   우선순위: execute > critical > poison > reflect > basic
+  //   (한 사망에 한 라벨만)
+  let killKind = "basic";
+  if (opts.isExecute || opts.reason === "execute") killKind = "execute";
+  else if (opts.isCritical) killKind = "critical";
+  else if (opts.reason === "poison") killKind = "poison";
+  else if (opts.reason === "reflect" || opts.reason === "binder_reflect") killKind = "reflect";
+  showKillLabel(unit, killKind);
 
   // 6) 해당 유닛이 source 또는 target인 행동선 즉시 제거
   //    (사망 시점에 남은 라인 = 거짓말하는 선)
@@ -6558,7 +6736,9 @@ function doHeal(actor, target, amount) {
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const healed = target.hp - before;
   if (healed > 0) {
-    showFloat(target, `+${healed}`, "heal");
+    // v0.3.7.15: 시전자=대상이면 self 결 (행동 라벨과 위치 겹침 회피)
+    const isSelf = (actor && target && actor.uid === target.uid);
+    showResultText(target, healed, "heal", { self: isSelf });
     reactReceive(target, "heal");
     battleState.stats.healDone[actor.uid] = (battleState.stats.healDone[actor.uid] || 0) + healed;
   }
@@ -6703,12 +6883,66 @@ function getTargetPartySize() {
 /* 합체 제안 가능 여부 (v0.3.2: 2차 직업도 포함)
    기본 + 기본 / 1차 + 기본 / 1차 + 1차 — 어떤 조합이든 FUSIONS의 requires가 맞으면 박힘
    v0.3.7.3: inspectFusion 결로 본체 박음. 진단 결 함께.
+   v0.3.7.14: getAvailableFusions로 통일.
 */
 function canOfferFusion() {
-  return inspectFusion().canOffer;
+  return getAvailableFusions().length > 0;
 }
 
-/* v0.3.7.3: 합체 가능성 진단 결 — 유키 PD 요청 (S13 미노출 추적)
+/* v0.3.7.14: 합체 후보 공통 helper — single source of truth
+
+  유키 결: "합체 후보는 시스템이 대신 골라주는 것이 아니라,
+            가능한 선택지를 모두 보여주고 유저가 고르게 해야 한다."
+
+  규칙:
+   - 살아있는 유닛 풀에서 모든 FUSIONS recipe 검사
+   - 매칭되는 모든 후보 배열 반환 (먼저 발견한 1개만 X)
+   - 결과 직업이 이미 파티에 살아있으면 그 후보 제외 (같은 직업 2명 금지 결)
+   - 각 후보는 { fusion, materials: [unit, unit] } 결로 반환
+
+  사용 자리:
+   - inspectFusion() — 진단용 결
+   - showFusionChoice() — UI 후보 렌더
+   - canOfferFusion() — 합체 가능 여부 boolean
+*/
+function getAvailableFusions() {
+  const aliveUnits = runState.units.filter(u => u.alive);
+
+  // 1) 이미 파티에 살아있는 fusion id 수집 — 중복 결과 방지 결
+  const existingFusionIds = new Set(
+    aliveUnits
+      .filter(u => u.kind === "fusion" && u.fusionId)
+      .map(u => u.fusionId)
+  );
+
+  const candidates = [];
+  for (const f of FUSIONS) {
+    // 2) 결과 직업이 이미 파티에 있으면 제외
+    if (existingFusionIds.has(f.id)) continue;
+
+    // 3) requires가 살아있는 유닛 풀에서 충족되는지 검사
+    //    materials: 각 requires에 매칭되는 유닛 객체 모음
+    const remainingUnits = aliveUnits.slice();
+    const materials = [];
+    let ok = true;
+    for (const req of f.requires) {
+      const idx = remainingUnits.findIndex(u =>
+        (u.kind === "trait"  && u.traitId  === req) ||
+        (u.kind === "fusion" && u.fusionId === req)
+      );
+      if (idx < 0) { ok = false; break; }
+      materials.push(remainingUnits[idx]);
+      remainingUnits.splice(idx, 1);
+    }
+    if (ok) {
+      candidates.push({ fusion: f, materials });
+    }
+  }
+
+  return candidates;
+}
+
+/* v0.3.7.3 / v0.3.7.14: 합체 가능성 진단 결 — 유키 PD 요청
    반환:
      - aliveIds: 살아있는 유닛 ID 풀 (kind=fusion이면 fusionId, 아니면 traitId)
      - matched: 매칭된 FUSION 목록 [{id, name, requires}]
@@ -6718,19 +6952,13 @@ function inspectFusion() {
   const aliveIds = runState.units
     .filter(u => u.alive)
     .map(u => u.kind === "fusion" ? u.fusionId : u.traitId);
-  const matched = [];
-  for (const f of FUSIONS) {
-    const pool = [...aliveIds];
-    const ok = f.requires.every(req => {
-      const idx = pool.indexOf(req);
-      if (idx < 0) return false;
-      pool.splice(idx, 1);
-      return true;
-    });
-    if (ok) {
-      matched.push({ id: f.id, name: f.name, requires: f.requires });
-    }
-  }
+  const candidates = getAvailableFusions();
+  const matched = candidates.map(c => ({
+    id: c.fusion.id,
+    name: c.fusion.name,
+    requires: c.fusion.requires,
+    tier: c.fusion.tier || "tier1"
+  }));
   return { aliveIds, matched, canOffer: matched.length > 0 };
 }
 
@@ -6762,6 +6990,57 @@ window.dumpFusionState = function() {
   console.log("canOffer:", inspect.canOffer);
   console.log("========================");
   return { stage: runState.stage, units: dump, ...inspect };
+};
+
+// v0.3.7.14: FUSIONS 데이터 정합성 검증
+//   - 모든 FUSION의 requires가 유효한 직업 id를 가리키는지
+//   - 중복 id 없는지
+//   - tier 정합성 (tier=secondary면 적어도 한 쪽이 1차여야 결의 의미)
+window.validateFusionData = function() {
+  const traitIds = new Set(TRAITS.map(t => t.id));
+  const fusionIds = new Set(FUSIONS.map(f => f.id));
+  const allIds = new Set([...traitIds, ...fusionIds]);
+  const issues = [];
+  const seen = new Set();
+
+  for (const f of FUSIONS) {
+    // 중복 id
+    if (seen.has(f.id)) {
+      issues.push(`[duplicate id] ${f.id}`);
+    }
+    seen.add(f.id);
+
+    // requires 유효성
+    if (!Array.isArray(f.requires) || f.requires.length < 2) {
+      issues.push(`[bad requires] ${f.id}: ${JSON.stringify(f.requires)}`);
+      continue;
+    }
+    for (const req of f.requires) {
+      if (!allIds.has(req)) {
+        issues.push(`[unknown require] ${f.id}: "${req}" not in TRAITS or FUSIONS`);
+      }
+    }
+
+    // tier 정합성: secondary면 한쪽이라도 fusion이어야 함
+    if (f.tier === "secondary") {
+      const anyFusion = f.requires.some(r => fusionIds.has(r));
+      if (!anyFusion) {
+        issues.push(`[tier inconsistency] ${f.id}: tier=secondary인데 requires 둘 다 기본 직업`);
+      }
+    }
+  }
+
+  // 결과 보고
+  console.log("=== FUSION Data Validation ===");
+  console.log(`TRAITS: ${TRAITS.length}개, FUSIONS: ${FUSIONS.length}개`);
+  if (issues.length === 0) {
+    console.log("✅ 모든 결 정합");
+  } else {
+    console.warn(`⚠ ${issues.length}개 결 의심 자리:`);
+    issues.forEach(i => console.warn("  " + i));
+  }
+  console.log("===============================");
+  return { ok: issues.length === 0, issues, totals: { traits: TRAITS.length, fusions: FUSIONS.length } };
 };
 
 /* 분기 없이 바로 다음 스테이지 */
@@ -6844,24 +7123,20 @@ function showFusionChoice() {
 
   const container = document.getElementById("fusion-choices");
 
-  // v0.3.2: 살아있는 모든 유닛 ID 풀 (기본 직업 + 1차 직업)
+  // v0.3.7.14: 공통 helper 거침 (single source of truth)
+  const candidates = getAvailableFusions();
+  const availableFusions = candidates.map(c => c.fusion);
+
+  // 진단 결 — 살아있는 유닛 풀 + 매칭된 후보 함께 박음
   const alivePool = runState.units
     .filter(u => u.alive)
     .map(u => u.kind === "fusion" ? u.fusionId : u.traitId);
-
-  // 가능한 합체: requires가 alivePool에서 충족되는 모든 FUSION
-  const availableFusions = FUSIONS.filter(f => {
-    const pool = [...alivePool];
-    return f.requires.every(req => {
-      const idx = pool.indexOf(req);
-      if (idx < 0) return false;
-      pool.splice(idx, 1);
-      return true;
-    });
-  });
-
-  // v0.3.7.3: 진입 시점 합체 후보 결도 콘솔에 박음
   console.log(`[showFusionChoice] alivePool=${JSON.stringify(alivePool)} availableFusions=${availableFusions.length}개`);
+  console.log(`[showFusionChoice] candidates:`, availableFusions.map(f => `${f.name}[${f.tier || "tier1"}]=${f.requires.join("+")}`));
+  // v0.3.7.14: PWA 환경 대비 — 이벤트 피드에도 후보 결 박음
+  if (availableFusions.length > 0) {
+    pushEvent(`▸ 합체 후보 ${availableFusions.length}개: ${availableFusions.map(f => f.name).join(" / ")}`, "system");
+  }
 
   if (availableFusions.length === 0) {
     // v0.3.7.3: 호출자(onStageClear)는 canOffer=true 확인 후 들어왔는데도
@@ -7523,12 +7798,119 @@ function showFloat(unit, text, kind) {
 function showActionLabel(unit, text, kind = "default") {
   const el = document.querySelector(`[data-uid="${unit.uid}"] .unit-portrait`);
   if (!el) return;
+  // v0.3.7.15: 중복 라벨 방지 — 같은 유닛에 이미 라벨이 박혀있으면 제거 후 새로 박음
+  //   "한 행동에 대표 라벨 하나만"
+  el.querySelectorAll(".action-label").forEach(l => l.remove());
   const label = document.createElement("div");
   label.className = `action-label action-label-${kind}`;
   label.textContent = text;
   el.appendChild(label);
   const duration = kind === "taunt" ? 2000 : 1600;
   setTimeout(() => label.remove(), duration);
+}
+
+/* ---------- v0.3.7.15: 전투 텍스트 레인 시스템 ----------
+   유키 결: "행동명은 시전자에게, 결과값은 대상에게, 상태는 아이콘/배지로."
+
+   세 레인:
+    - showActionText(actor, label, opts)  → 시전자 위쪽 (말풍선 결)
+    - showResultText(target, amount, type, opts) → 대상 위쪽 (숫자 float)
+    - showStatusText(target, label, opts) → 대상 HP바 근처 (상태 키워드)
+
+   기존 showActionLabel / showFloat은 그대로 살아있음 (호환).
+   새 코드는 가능한 한 이 레인 helper를 거치게.
+*/
+
+// 시전자 레인 — 행동명
+function showActionText(actor, label, opts = {}) {
+  // opts.kind: "attack" | "heal" | "shield" | "crit" | "control" | "taunt" | "default"
+  const kind = opts.kind || "default";
+  showActionLabel(actor, label, kind);
+}
+
+// 대상 결과 레인 — 피해/회복/보호막/독/치명 숫자
+//   type: "damage" | "heal" | "shield" | "poison" | "critical" | "execute"
+//   opts.self: true면 시전자 본인 결 (행동 라벨과 겹치지 않게 위치 옆으로)
+function showResultText(target, amount, type, opts = {}) {
+  if (!target || !target.uid) return;
+  const el = document.querySelector(`[data-uid="${target.uid}"] .unit-portrait`);
+  if (!el) return;
+
+  // 텍스트 포맷 결
+  let text;
+  if (type === "critical") {
+    // v0.3.7.16: 치명! -X (한 묶음)
+    text = `치명! -${amount}`;
+  } else if (type === "execute") {
+    // v0.3.7.16: 처형! -X (도적의 결)
+    text = `처형! -${amount}`;
+  } else if (type === "damage") {
+    text = `-${amount}`;
+  } else if (type === "heal") {
+    text = `+${amount}`;
+  } else if (type === "shield") {
+    text = `+${amount}`;
+  } else if (type === "poison") {
+    text = `-${amount}`;
+  } else {
+    text = String(amount);
+  }
+
+  const float = document.createElement("div");
+  // v0.3.7.15: 자기 자신에게 떴을 때 (예: 성기사 자기 회복) 행동 라벨 위치와 겹치지 않게 옆 자리
+  float.className = `float-number ${type}${opts.self ? " self-result" : ""}`;
+  float.textContent = text;
+  if (!opts.self) {
+    float.style.left = "50%";
+    float.style.top = "-4px";
+  }
+  el.appendChild(float);
+  setTimeout(() => float.remove(), 900);
+}
+
+// 상태 레인 — 짧게 짚어주는 상태 키워드 (적용 순간만)
+//   kind: "poisoned" | "slowed" | "bound" | "rhythm" | "shield"
+function showStatusText(target, label, opts = {}) {
+  if (!target || !target.uid) return;
+  const el = document.querySelector(`[data-uid="${target.uid}"] .unit-portrait`);
+  if (!el) return;
+  const kind = opts.kind || "default";
+  const status = document.createElement("div");
+  status.className = `float-status ${kind}`;
+  status.textContent = label;
+  el.appendChild(status);
+  setTimeout(() => status.remove(), 1400);
+}
+
+/* v0.3.7.16: 처치 라벨 — 사망 순간에만 짧게 박음
+
+  유키 결: "치명타는 눈이 가야 하고, 처치는 손맛이 나야 한다."
+
+  원인별 분기:
+   - "execute"  → 처형!   (도적의 처형 결)
+   - "critical" → 치명 처치! (치명타로 마무리)
+   - "poison"   → 중독 처치 (독으로 사망)
+   - "reflect"  → 반격 처치 (금제 반사 / 전가 사망)
+   - "basic"    → 처치!    (일반)
+*/
+function showKillLabel(unit, kind = "basic") {
+  if (!unit || !unit.uid) return;
+  const el = document.querySelector(`[data-uid="${unit.uid}"] .unit-portrait`);
+  if (!el) return;
+  // 한 유닛에 두 번 박히지 않게 (death gate가 1번만 호출하지만 안전)
+  el.querySelectorAll(".kill-label").forEach(l => l.remove());
+  const label = document.createElement("div");
+  label.className = `kill-label kind-${kind}`;
+  const textMap = {
+    basic:    "처치!",
+    critical: "치명 처치!",
+    execute:  "처형!",
+    poison:   "중독 처치",
+    reflect:  "반격 처치",
+  };
+  label.textContent = textMap[kind] || "처치!";
+  el.appendChild(label);
+  setTimeout(() => label.remove(), 1300);
 }
 
 /* ---------- 타겟 라인 / 광역 파동 (SVG) ----------
