@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.29</title>
+<title>Project Signal Mk.II v0.3.7.30</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -3639,7 +3639,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.29</div>
+      <div class="title-version">MK.II — v0.3.7.30</div>
     </div>
 
     <p class="title-tagline">
@@ -4370,7 +4370,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.7.29";
+const BUILD_VERSION = "v0.3.7.30";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -5479,9 +5479,14 @@ function clearPendingBattleEndTimer() {
 
 // 새 전투 시작 시 락 해제 + 토큰 증가
 //   loadStage, replayRun 등에서 호출
+//   v0.3.7.30: 락 리셋 대칭 보강 — runEnded / resultSnapshot도 명시적으로 풀어
+//     replayRun / initRunFromParty 와 락 리셋 결을 통일 (조용한 비대칭 함정 방지).
+//     실제 코드 상태 구조가 runState.* 이므로 runState. 프리픽스로 박음.
 function beginNewBattleSlot() {
   clearPendingBattleEndTimer();
   runState.battleEnding = false;
+  runState.runEnded = false;
+  runState.resultSnapshot = null;
   runState.battleToken = (runState.battleToken || 0) + 1;
 }
 
