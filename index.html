@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8b-test</title>
+<title>Project Signal Mk.II v0.3.8h-test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -3658,7 +3658,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8b test</div>
+      <div class="title-version">MK.II — v0.3.8h test (25층 관측장)</div>
     </div>
 
     <p class="title-tagline">
@@ -4443,7 +4443,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8b-test";
+const BUILD_VERSION = "v0.3.8h-test";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -5707,7 +5707,8 @@ function pushStageHistory(outcome, extra = {}) {
     survivorsTotal,
     actionsThisStage,
     // extra로 합체/영입 등 박힘
-    fusionHere: !!extra.fusionHere,
+    fusionHere: !!extra.fusionHere,         // 실제 합체 발생 (doFusion이 소급 갱신)
+    fusionOffered: !!extra.fusionOffered,   // 합체 선택지 노출 (phase + canOffer)
     recruitHere: !!extra.recruitHere,
     growthHere: !!extra.growthHere,
   };
@@ -5715,6 +5716,23 @@ function pushStageHistory(outcome, extra = {}) {
   // 다음 스테이지를 위해 baseline 갱신
   runState._stageActionsBaseline = curActions;
   console.log("[stageHistory]", entry);
+}
+
+/* v0.3.8c: 실제 합체가 발생한 순간, 해당 스테이지의 stageHistory 기록을 소급 갱신.
+   onStageClear에서 fusionHere:false로 박힌 뒤, doFusion에서 실제 합체가 일어나면
+   이 함수가 같은 stage의 가장 최근 항목을 찾아 fusionHere=true로 박는다.
+   "기록은 추정이 아니라 실제 발생을 말해야 한다." */
+function markFusionHappenedThisStage(stageNum) {
+  if (!runState.stageHistory) return;
+  // 같은 stage의 가장 최근 항목 (뒤에서부터)
+  for (let i = runState.stageHistory.length - 1; i >= 0; i--) {
+    if (runState.stageHistory[i].stage === stageNum) {
+      runState.stageHistory[i].fusionHere = true;
+      console.log("[stageHistory] fusionHere 소급 갱신 — stage", stageNum);
+      return;
+    }
+  }
+  console.warn("[stageHistory] fusionHere 갱신 대상 없음 — stage", stageNum);
 }
 
 /* ---------- 전투 상태 ---------- */
@@ -5830,6 +5848,9 @@ function makeFusionUnit(fusionId) {
     dragoon:  "warrior",   // v0.3.2: 용창 — 전사 결 (창잡이)
     purifier: "priest",    // v0.3.4: 정화사 — 사제 결 (회복+정화)
     binder:   "warrior",   // v0.3.5: 금제 — 전사 결 (술사기사, 전열 봉인)
+    gatekeeper: "warrior", // v0.3.8: 수문장 — 전사 결 (전열 탱커)
+    cleric:   "priest",    // v0.3.8: 성직자 — 사제 결 (후열 힐러)
+    tracker:  "archer",    // v0.3.8: 추적자 — 궁수 결 (후열 저격)
   };
   const visualBaseJob = baseJobMap[fusionId] || (fusion.role === "front" ? "warrior" : "archer");
 
@@ -6436,16 +6457,49 @@ function actDebuff(actor) {
   pushEvent(`<b>${actor.name}</b> 교란 — ${targets.length}명 속도↓`, "attack");
 }
 
+/* ---------- v0.3.8g: 리듬 = "다음 공격 강화권" (스택 누적 X) ----------
+   ♪N = 남은 공격 강화 횟수. 리듬 대응 공격 시 1 소비 + 위력 ×1.5. ♪0이면 제거.
+
+   리듬은 "basic 공격만"이 아니라 "리듬 대응 공격(rhythm-compatible attack)"을 강화한다.
+   Rhythm empowers registered rhythm-compatible attacks.
+   Current consumers: basic_front, basic_back, dragon_lance_pierce(용창 관통).
+
+   - basic_front / basic_back: 모든 직업의 기본 공격
+   - 용창 관통: 바드+용창 로망 조합 — 숨은 예외가 아니라 *명시된 대응 공격*.
+   비소비: 치유/보호막/도발/정화/조준 등 피해 없는 지원 행동 (consumeRhythmIfCompatibleAttack 호출 안 함).
+   다른 특수공격(저격/처형/광역)은 아직 미등록 — 손맛 본 뒤 확장 여부 판단.
+
+   반환: { mult, consumed, remaining } — mult를 dmg에 곱하고, consumed면 "위력↑" 연출.
+*/
+const RHYTHM_MULT = 1.5;
+// 리듬 대응 공격 명단 (참고/문서용 — 실제 소비는 각 행동이 consumeRhythmIfCompatibleAttack 호출)
+const RHYTHM_COMPATIBLE_ATTACKS = ["basic_front", "basic_back", "dragon_lance_pierce"];
+
+function consumeRhythmIfCompatibleAttack(actor) {
+  // 호출한 행동 자체가 "리듬 대응 공격"이라는 전제 (명단은 RHYTHM_COMPATIBLE_ATTACKS).
+  if (actor._rhythmBuffStacks && actor._rhythmBuffStacks > 0) {
+    actor._rhythmBuffStacks -= 1;
+    return { mult: RHYTHM_MULT, consumed: true, remaining: actor._rhythmBuffStacks };
+  }
+  return { mult: 1.0, consumed: false, remaining: 0 };
+}
+
 /* ---------- mk2 v0.2: 기본 공격 (상황 행동이 발동 안 할 때) ---------- */
 function actBasicFront(actor) {
   // 전열 공격 — 용맹/수호/치유/가호의 기본 행동
   const target = pickEnemyTarget(actor, "any");
   if (!target) return;
-  const dmg = Math.floor(actor.atk * 0.85);
-  showActionLabel(actor, "공격!", "attack");
-  dealDamage(actor, target, dmg);
+  // v0.3.8f: 리듬 강화권 소비 (다음 공격 1회 위력↑)
+  const r = consumeRhythmIfCompatibleAttack(actor);
+  const dmg = Math.floor(actor.atk * 0.85 * r.mult);
+  showActionLabel(actor, r.consumed ? "공격! ♪" : "공격!", "attack");
+  dealDamage(actor, target, dmg, { isCritical: r.consumed });
   drawLine(actor, target, "attack");
-  pushEvent(`<b>${actor.name}</b> 공격 → ${target.name} (${dmg})`, "attack");
+  if (r.consumed) {
+    pushEvent(`<b>${actor.name}</b> ♪리듬 공격 위력↑(×1.5) → ${target.name} (${dmg}) · 남은 ♪${r.remaining}`, "attack");
+  } else {
+    pushEvent(`<b>${actor.name}</b> 공격 → ${target.name} (${dmg})`, "attack");
+  }
 }
 
 function actBasicBack(actor) {
@@ -6453,12 +6507,18 @@ function actBasicBack(actor) {
   const target = pickEnemyTarget(actor, "any");
   if (!target) return;
   const isBackRow = (target.role === "caster" || target.role === "ranged");
+  // v0.3.8f: 리듬 강화권 소비
+  const r = consumeRhythmIfCompatibleAttack(actor);
   // 후열 대상이 있으면 우선, 후열 +20% (저격만큼 강하지 않게)
-  const dmg = Math.floor(actor.atk * 0.95 * (isBackRow ? 1.2 : 1.0));
-  showActionLabel(actor, "사격!", "attack");
-  dealDamage(actor, target, dmg);
+  const dmg = Math.floor(actor.atk * 0.95 * (isBackRow ? 1.2 : 1.0) * r.mult);
+  showActionLabel(actor, r.consumed ? "사격! ♪" : "사격!", "attack");
+  dealDamage(actor, target, dmg, { isCritical: r.consumed });
   drawLine(actor, target, "attack");
-  pushEvent(`<b>${actor.name}</b> 사격 → ${target.name} (${dmg})`, "attack");
+  if (r.consumed) {
+    pushEvent(`<b>${actor.name}</b> ♪리듬 사격 위력↑(×1.5) → ${target.name} (${dmg}) · 남은 ♪${r.remaining}`, "attack");
+  } else {
+    pushEvent(`<b>${actor.name}</b> 사격 → ${target.name} (${dmg})`, "attack");
+  }
 }
 
 function actFusion(actor) {
@@ -6603,11 +6663,14 @@ function actFusion(actor) {
           return b.gauge - a.gauge;
         });
         const target = buffCandidates[0];
-        // 1회성 버프 — 다음 행동 1번에 atk 50% 증가
+        // v0.3.8f: 리듬 = 다음 공격 강화권. ♪N = 남은 강화 횟수 (스택 누적 아님).
         target._rhythmBuffStacks = (target._rhythmBuffStacks || 0) + 1;
+        const charges = target._rhythmBuffStacks;
         drawLine(actor, target, "heal");
         reactReceive(target, "haste");
-        pushEvent(`<b>${actor.name}</b> 리듬 — <b>${target.name}</b>의 다음 공격이 빛난다`, "heal");
+        // 의미가 읽히게 — "다음 공격 N회 위력↑"
+        showStatusText(target, `♪+1`, { kind: "haste" });
+        pushEvent(`<b>${actor.name}</b> 리듬 — <b>${target.name}</b>에게 공격 강화권 부여 · 다음 공격 ♪${charges}회 위력↑`, "heal");
       } else {
         pushEvent(`<b>${actor.name}</b> 리듬 — 받을 아군 없음`, "system");
       }
@@ -6629,13 +6692,16 @@ function actFusion(actor) {
 
       // 메인 타격
       let dmg = Math.floor(actor.atk * 1.0);
-      // 리듬 버프 스택 적용 — v0.3.7.16: 리듬 강화 = 치명 결
+      // 용창 관통 = "리듬 대응 공격"으로 등록됨 (RHYTHM_COMPATIBLE_ATTACKS).
+      //   바드+용창은 의도된 로망 조합 — 숨은 예외가 아니라 명시된 대응 공격.
+      //   다른 특수공격(저격/처형/광역)은 아직 미등록 (손맛 후 확장 판단).
       let isRhythmBuffed = false;
-      if (actor._rhythmBuffStacks && actor._rhythmBuffStacks > 0) {
-        dmg = Math.floor(dmg * 1.5);
-        actor._rhythmBuffStacks -= 1;
+      const rDragoon = consumeRhythmIfCompatibleAttack(actor);
+      if (rDragoon.consumed) {
+        dmg = Math.floor(dmg * rDragoon.mult);
         isRhythmBuffed = true;
         showActionText(actor, "관통! ★", { kind: "attack" });
+        pushEvent(`<b>${actor.name}</b> ♪리듬 발동! — 이번 공격 위력↑(×1.5) · 남은 ♪${rDragoon.remaining}`, "attack");
       } else {
         showActionText(actor, "관통!", { kind: "attack" });
       }
@@ -8013,8 +8079,13 @@ function onStageClear() {
 
   // v0.3.7.29: 스테이지 종료 history push (pacing 분석용)
   //   v0.3.8: boss(S25)가 최종 → outcome "ending"은 boss에서.
+  //   v0.3.8c (피드백): fusionHere = "실제로 합체가 발생했는가" 기준으로 통일.
+  //     합체는 이 시점(onStageClear) *이후* showFusionChoice에서 일어나므로,
+  //     여기선 일단 false로 박고 → 실제 합체 발생(doFusion) 때 소급 갱신한다.
+  //     fusionOffered = "이 스테이지가 합체 선택지가 나올 수 있는 phase였는가" (참고용 분리).
   pushStageHistory(phase === "boss" ? "ending" : "clear", {
-    fusionHere: (phase === "fusion"),
+    fusionHere: false,                               // 실제 합체 발생 시 markFusionHappenedThisStage()가 true로
+    fusionOffered: (phase === "fusion" && canOfferFusion()),  // 선택지 노출 여부 (참고)
     recruitHere: (phase === "recruit"),
     growthHere: (phase === "growth"),
   });
@@ -8141,11 +8212,14 @@ function canOfferFusion() {
    - canOfferFusion() — 합체 가능 여부 boolean
 */
 function getAvailableFusions() {
-  const aliveUnits = runState.units.filter(u => u.alive);
+  // v0.3.8d (나라님 결): 합체 후보는 "살아있는 유닛"이 아니라 "내가 보유한 파티"로.
+  //   전투 중 사망은 전투 결과 변수이지, 합체 선택지(선택의 트리)를 지우는 변수가 아니다.
+  //   핵심 결: "선택은 사라지지 않는다." 직전 전투에서 죽은 재료도 합체에 쓸 수 있다.
+  const rosterUnits = runState.units.slice();   // alive 필터 제거 — 보유 전체
 
-  // 1) 이미 파티에 살아있는 fusion id 수집 — 중복 결과 방지 결
+  // 1) 이미 파티에 있는 fusion id 수집 — 중복 결과 방지 (생존 무관, 보유 기준)
   const existingFusionIds = new Set(
-    aliveUnits
+    rosterUnits
       .filter(u => u.kind === "fusion" && u.fusionId)
       .map(u => u.fusionId)
   );
@@ -8155,9 +8229,8 @@ function getAvailableFusions() {
     // 2) 결과 직업이 이미 파티에 있으면 제외
     if (existingFusionIds.has(f.id)) continue;
 
-    // 3) requires가 살아있는 유닛 풀에서 충족되는지 검사
-    //    materials: 각 requires에 매칭되는 유닛 객체 모음
-    const remainingUnits = aliveUnits.slice();
+    // 3) requires가 보유 유닛 풀에서 충족되는지 검사 (생존 무관)
+    const remainingUnits = rosterUnits.slice();
     const materials = [];
     let ok = true;
     for (const req of f.requires) {
@@ -8456,9 +8529,10 @@ function pickFusion(fusionId) {
   const toRemove = new Set();  // uid 기준
 
   for (const reqId of fusion.requires) {
-    // 매칭되는 살아있는 유닛 찾기 (이미 제거 예정인 건 제외)
+    // v0.3.8d: 재료는 생존 무관, 보유 기준으로 찾는다.
+    //   "선택은 사라지지 않는다" — 죽은 재료도 합체에 쓸 수 있다.
+    //   (이미 제거 예정인 건 제외)
     const candidate = runState.units.find(u =>
-      u.alive &&
       !toRemove.has(u.uid) &&
       ((u.kind === "trait"  && u.traitId  === reqId) ||
        (u.kind === "fusion" && u.fusionId === reqId))
@@ -8497,6 +8571,8 @@ function pickFusion(fusionId) {
     });
   }
   runState.fusionHistory.push({ stage: runState.stage, fusionId: fusionId, consumed: consumed });
+  // v0.3.8c: 실제 합체 발생 → stageHistory의 이 stage 기록을 fusionHere=true로 소급 갱신
+  markFusionHappenedThisStage(runState.stage);
 
   // 이름 찾기 (기본/1차 모두)
   function nameOf(id) {
@@ -9651,10 +9727,8 @@ function getUnitStatuses(u) {
   if (u._bindingTargetUid && u._bindingTurns > 0) {
     out.push({ type: "bind", count: u._bindingTurns });
   }
-  // 보호막
-  if (u.shield && u.shield > 0) {
-    out.push({ type: "shield", count: u.shield });
-  }
+  // v0.3.8e (피드백): 보호막은 상태 아이콘에서 제거 — 오른쪽 아래 수치(shield-badge)로 통일.
+  //   전 유닛 공통 규칙: 보호막 = 수치 전용. 아이콘 칸은 다른 상태이상/버프용으로 확보.
   // 중독
   if (u.poisoned && u.poisoned > 0) {
     out.push({ type: "poison", count: u.poisoned });
@@ -10652,7 +10726,7 @@ function drawAimMarker(actor, target) {
   const t = getActionLineAnchor(target.uid);
   if (!a || !tc || !t) return;
 
-  const AIM = "#c89ad8";
+  const AIM = "#d070e8";   // v0.3.8e: 옅은 보라 → 선명한 보라 (시인성 강화)
   const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
   group.setAttribute("data-aim-from", actor.uid);
   group.setAttribute("data-to-uid", target.uid);   // 대상 죽으면 cleanupUnitLines가 같이 정리
@@ -10681,7 +10755,8 @@ function drawAimMarker(actor, target) {
   ring.setAttribute("r", "13");
   ring.setAttribute("fill", "none");
   ring.setAttribute("stroke", AIM);
-  ring.setAttribute("stroke-width", "1.6");
+  ring.setAttribute("stroke-width", "2.2");
+  ring.style.filter = "drop-shadow(0 0 4px rgba(200,120,232,0.95))";
   ring.style.animation = "aim-pulse 1.1s ease-in-out infinite";
   group.appendChild(ring);
 
@@ -10690,26 +10765,29 @@ function drawAimMarker(actor, target) {
   ring2.setAttribute("r", "7");
   ring2.setAttribute("fill", "none");
   ring2.setAttribute("stroke", AIM);
-  ring2.setAttribute("stroke-width", "1");
-  ring2.setAttribute("opacity", "0.7");
+  ring2.setAttribute("stroke-width", "1.6");
+  ring2.setAttribute("opacity", "0.95");
+  ring2.style.filter = "drop-shadow(0 0 3px rgba(200,120,232,0.8))";
   group.appendChild(ring2);
 
-  // 십자 (스코프 조준점)
+  // 십자 (스코프 조준점) — 더 또렷하게 + 발광
   [[tc.x-16,tc.y,tc.x-9,tc.y],[tc.x+9,tc.y,tc.x+16,tc.y],[tc.x,tc.y-16,tc.x,tc.y-9],[tc.x,tc.y+9,tc.x,tc.y+16]].forEach(([x1,y1,x2,y2])=>{
     const ln=document.createElementNS("http://www.w3.org/2000/svg","line");
     ln.setAttribute("x1",x1);ln.setAttribute("y1",y1);ln.setAttribute("x2",x2);ln.setAttribute("y2",y2);
-    ln.setAttribute("stroke",AIM);ln.setAttribute("stroke-width","1.2");ln.setAttribute("opacity","0.8");
+    ln.setAttribute("stroke",AIM);ln.setAttribute("stroke-width","1.8");ln.setAttribute("opacity","1");
+    ln.style.filter = "drop-shadow(0 0 2px rgba(200,120,232,0.8))";
     group.appendChild(ln);
   });
 
-  // 🎯 대상 머리 위
-  const mark = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  mark.setAttribute("x", tc.x); mark.setAttribute("y", tc.y - 20);
-  mark.setAttribute("text-anchor", "middle");
-  mark.setAttribute("font-size", "13");
-  mark.style.animation = "aim-pulse 1.1s ease-in-out infinite";
-  mark.textContent = "🎯";
-  group.appendChild(mark);
+  // 중심점 (작은 점 — 조준 정중앙 강조)
+  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  dot.setAttribute("cx", tc.x); dot.setAttribute("cy", tc.y);
+  dot.setAttribute("r", "1.6");
+  dot.setAttribute("fill", AIM);
+  dot.style.filter = "drop-shadow(0 0 2px rgba(200,120,232,0.9))";
+  group.appendChild(dot);
+
+  // v0.3.8e (피드백): 🎯 아이콘 제거 — 조준선 + 스코프로 충분. 중복 정보 덜어냄.
 
   svg.appendChild(group);
 }
