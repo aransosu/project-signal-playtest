@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8l-test</title>
+<title>Project Signal Mk.II v0.3.8m-test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -3719,7 +3719,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8l test (계승 복원)</div>
+      <div class="title-version">MK.II — v0.3.8m test (도감 순서)</div>
     </div>
 
     <p class="title-tagline">
@@ -4504,7 +4504,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8l-test";
+const BUILD_VERSION = "v0.3.8m-test";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -4838,6 +4838,52 @@ const CODEX_ACTIONS = {
   sovereign: ["전열 공격 + HP 낮은 2명 회복", "위기 시 파티 전체 성역(보호막)"],
 };
 
+/* v0.3.8m: 도감 합체 정보 — 직업 이름 헬퍼 + 합체 관계 계산 */
+function codexJobName(id) {
+  const t = TRAITS.find(x => x.id === id);
+  if (t) return t.name;
+  const f = FUSIONS.find(x => x.id === id);
+  return f ? f.name : id;
+}
+function codexFusionInfo(jobId) {
+  const isBase = !!TRAIT_STATS[jobId];
+  // 이 직업을 재료로 쓰는 합체들
+  const usedIn = FUSIONS.filter(f => f.requires.includes(jobId));
+  const usedInHTML = usedIn.map(f =>
+    `<li>${f.name} = ${f.requires.map(codexJobName).join(" + ")}</li>`
+  ).join("");
+
+  if (isBase) {
+    // 기본 직업: 만들 수 있는 합체 목록
+    if (!usedIn.length) return "";
+    return `
+      <div class="codex-detail-section">
+        <div class="cds-head">합체 정보</div>
+        <div class="cds-rule" style="margin-bottom:5px;">이 직업으로 만들 수 있는 직업:</div>
+        <ul class="cds-actions">${usedInHTML}</ul>
+      </div>`;
+  }
+
+  // 합체 직업: 재료 + (1차면) 다음 합체
+  const fusion = FUSIONS.find(f => f.id === jobId);
+  if (!fusion) return "";
+  const matLine = `<div class="cds-rule">재료: <b>${fusion.requires.map(codexJobName).join(" + ")}</b></div>`;
+  let nextHTML = "";
+  if (usedIn.length) {
+    nextHTML = `
+      <div class="cds-rule" style="margin-top:6px;">다음 합체:</div>
+      <ul class="cds-actions">${usedInHTML}</ul>`;
+  } else {
+    // 더 합쳐질 곳 없음 = 최종 직업
+    nextHTML = `<div class="cds-note" style="margin-top:6px;">현재 최종 직업입니다.</div>`;
+  }
+  return `
+    <div class="codex-detail-section">
+      <div class="cds-head">합체 정보</div>
+      ${matLine}${nextHTML}
+    </div>`;
+}
+
 function openCodexDetail(entryId) {
   const entry = CODEX_ENTRIES.find(e => e.id === entryId);
   if (!entry) return;
@@ -4860,10 +4906,6 @@ function openCodexDetail(entryId) {
     </div>
 
     <div class="codex-detail-info">
-      <!-- v0.3.7.9: 계열 결을 base → combo로 박음.
-           base는 legacy 결로 일부 잘못 박힌 자리 있었음.
-           combo는 도감 헤더에도 박히는 진짜 합체 조합 결.
-           → single source of truth 박음. -->
       <div class="row"><span class="k">계열</span><span class="v">${entry.combo}</span></div>
       <div class="row"><span class="k">위치</span><span class="v">${entry.role === "front" ? "전열" : "후열"}</span></div>
       <div class="row"><span class="k">역할</span><span class="v">${entry.role_desc}</span></div>
@@ -4872,48 +4914,54 @@ function openCodexDetail(entryId) {
     <div class="codex-detail-flavor">"${entry.flavor}"</div>
 
     ${(() => {
-      // v0.3.8j: 기본 스탯 + 성장/계승 규칙 + 주요 행동
+      // v0.3.8m (나라님 핫픽스): 표시 순서 = 주요행동 → 직업개성(태그) → 기본스탯 → 성장/계승 → 합체정보
+      //   "얘가 뭘 하는 애인지"를 먼저, 숫자는 그 다음.
       const st = codexBaseStats(entry.id);
       const isFusion = !TRAIT_STATS[entry.id];
       const actions = CODEX_ACTIONS[entry.id] || (entry.role_desc ? [entry.role_desc] : []);
-      let statHTML = "";
-      if (st) {
-        statHTML = `
-          <div class="codex-detail-section">
-            <div class="cds-head">기본 스탯 <span class="cds-note">(강화·계승 전)</span></div>
-            <div class="cds-stats">
-              <span class="cds-stat"><b>HP</b> ${st.hp}</span>
-              <span class="cds-stat"><b>공격</b> ${st.atk}</span>
-              <span class="cds-stat"><b>방어</b> ${st.def}</span>
-              <span class="cds-stat"><b>속도</b> ${st.spd}</span>
-            </div>
-          </div>`;
-      }
-      let growthHTML = "";
-      if (!isFusion) {
-        growthHTML = `
-          <div class="codex-detail-section">
-            <div class="cds-head">성장</div>
-            <div class="cds-rule">강화 1회마다 <b>HP +10% / 공격 +12%</b><br><span class="cds-note">방어·속도는 오르지 않음. 키울수록 합체 시 더 강해진다.</span></div>
-          </div>`;
-      } else {
-        growthHTML = `
-          <div class="codex-detail-section">
-            <div class="cds-head">합체 계승</div>
-            <div class="cds-rule">재료의 강화 기억을 평균내어 <b>계승 레벨</b>을 만든다. 계승 Lv 1마다 <b>HP·공격 +15%</b> (방어·속도는 그대로).<br>1차 직업이 다시 2차 직업의 재료가 되어도, 그 1차가 품은 계승 레벨이 이어진다.<br><span class="cds-note">이전에 키운 재료의 힘은 상위 직업에서도 사라지지 않는다.</span></div>
-          </div>`;
-      }
+
+      // 1. 주요 행동
       const actionHTML = actions.length ? `
         <div class="codex-detail-section">
           <div class="cds-head">주요 행동</div>
           <ul class="cds-actions">${actions.map(a => `<li>${a}</li>`).join("")}</ul>
         </div>` : "";
-      return statHTML + growthHTML + actionHTML;
-    })()}
 
-    <div class="codex-detail-tags">
-      ${entry.tags.map(t => `<span class="codex-detail-tag">${t}</span>`).join("")}
-    </div>
+      // 2. 직업 개성 (태그 — 스탯 위로)
+      const tagHTML = (entry.tags && entry.tags.length) ? `
+        <div class="codex-detail-section">
+          <div class="cds-head">직업 개성</div>
+          <div class="codex-detail-tags">${entry.tags.map(t => `<span class="codex-detail-tag">${t}</span>`).join("")}</div>
+        </div>` : "";
+
+      // 3. 기본 스탯
+      const statHTML = st ? `
+        <div class="codex-detail-section">
+          <div class="cds-head">기본 스탯 <span class="cds-note">(강화·계승 전)</span></div>
+          <div class="cds-stats">
+            <span class="cds-stat"><b>HP</b> ${st.hp}</span>
+            <span class="cds-stat"><b>공격</b> ${st.atk}</span>
+            <span class="cds-stat"><b>방어</b> ${st.def}</span>
+            <span class="cds-stat"><b>속도</b> ${st.spd}</span>
+          </div>
+        </div>` : "";
+
+      // 4. 성장 / 합체 계승
+      const growthHTML = !isFusion ? `
+        <div class="codex-detail-section">
+          <div class="cds-head">성장</div>
+          <div class="cds-rule">강화 1회마다 <b>HP +10% / 공격 +12%</b><br><span class="cds-note">방어·속도는 오르지 않음. 키울수록 합체 시 더 강해진다.</span></div>
+        </div>` : `
+        <div class="codex-detail-section">
+          <div class="cds-head">합체 계승</div>
+          <div class="cds-rule">재료의 강화 기억을 평균내어 <b>계승 레벨</b>을 만든다. 계승 Lv 1마다 <b>HP·공격 +15%</b> (방어·속도는 그대로).<br>1차 직업이 다시 2차 직업의 재료가 되어도, 그 1차가 품은 계승 레벨이 이어진다.<br><span class="cds-note">이전에 키운 재료의 힘은 상위 직업에서도 사라지지 않는다.</span></div>
+        </div>`;
+
+      // 5. 합체 정보
+      const fusionInfoHTML = codexFusionInfo(entry.id);
+
+      return actionHTML + tagHTML + statHTML + growthHTML + fusionInfoHTML;
+    })()}
 
     <div class="codex-detail-status ${statusClass}">
       ${entry.status === "구현" ? "▸ 현재 플레이 가능" :
