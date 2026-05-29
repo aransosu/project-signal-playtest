@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.7.30</title>
+<title>Project Signal Mk.II v0.3.8-test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -3639,7 +3639,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.7.30</div>
+      <div class="title-version">MK.II — v0.3.8 test</div>
     </div>
 
     <p class="title-tagline">
@@ -4232,6 +4232,60 @@ const FUSIONS = [
     leadsTo: []
   },
 
+  /* ===== v0.3.8: 신규 1차 직업 3종 — 파티플레이 역할군 빈칸 채우기 =====
+     수문장: 전사 + 수호자 → 후반 도발 탱커 (내 뒤는 못 지나간다)
+     성직자: 사제 + 신관   → 2명 집중 치유 (무너지는 두 축 붙잡기)
+     추적자: 궁수 + 유격수 → 집중→저격 선제 제거 (위험한 후열 고체력)
+  */
+  {
+    id: "gatekeeper",
+    name: "수문장",
+    role: "front",
+    requires: ["bravery", "guard"],       // 전사 + 수호자
+    inherits: [
+      { from: "bravery", ratio: 0.7 },
+      { from: "guard",   ratio: 0.7 }
+    ],
+    evolution: {
+      type: "gate_taunt",
+      tags: ["front", "taunt", "protect"]
+    },
+    desc: "내 뒤는 지나가지 못한다 — 후반 도발 탱커.",
+    leadsTo: []
+  },
+  {
+    id: "cleric",
+    name: "성직자",
+    role: "back",
+    requires: ["heal", "blessing"],       // 사제 + 신관
+    inherits: [
+      { from: "heal",     ratio: 0.7 },
+      { from: "blessing", ratio: 0.7 }
+    ],
+    evolution: {
+      type: "dual_heal",
+      tags: ["back", "heal", "support"]
+    },
+    desc: "무너지는 두 축을 동시에 붙잡는 숙련 치유자.",
+    leadsTo: []
+  },
+  {
+    id: "tracker",
+    name: "추적자",
+    role: "back",
+    requires: ["snipe", "disrupt"],       // 궁수 + 유격수
+    inherits: [
+      { from: "snipe",   ratio: 0.7 },
+      { from: "disrupt", ratio: 0.7 }
+    ],
+    evolution: {
+      type: "mark_snipe",
+      tags: ["back", "snipe", "priority_kill"]
+    },
+    desc: "가장 위험한 적을 먼저 제거한다 — 집중 후 저격.",
+    leadsTo: []
+  },
+
   /* ===== 2차 직업 (v0.3.2: 첫 실험 - 용창) =====
      규칙:
        - 기본 + 기본 → 1차
@@ -4370,7 +4424,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.7.30";
+const BUILD_VERSION = "v0.3.8-test";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -4379,7 +4433,10 @@ function getEnemyStatMultiplier(stage) {
   if (stage <= 12) return 1.0;
   if (stage <= 15) return 0.92;  // S13~15: -8%
   if (stage <= 18) return 0.90;  // S16~18: -10%
-  return 0.88;                    // S19~20: -12%
+  if (stage <= 20) return 0.88;  // S19~20: -12%
+  // v0.3.8: 사이클 5 관측 구간
+  if (stage <= 24) return 0.90;  // S21~24: -10% (연장 관측, 살짝 완화)
+  return 1.0;                     // S25 boss: 완화 X — "어디까지 버티나" 온전히 관측
 }
 
 /* 적 템플릿 — 종족 + 역할 + 스탯 */
@@ -4395,6 +4452,9 @@ const ENEMY_TEMPLATES = {
   troll_melee:    { race: "troll",  role: "melee",   hp: 130, atk: 18, def: 4, spd: 65 },
   troll_guard:    { race: "troll",  role: "guard",   hp: 160, atk: 12, def: 7, spd: 50 },
   troll_caster:   { race: "troll",  role: "caster",  hp: 100, atk: 16, def: 3, spd: 75 },
+  // v0.3.8: S25 보스층 — 관측용 (정교 밸런싱 X). "어디까지 버티나"
+  boss_troll_lord:{ race: "troll",  role: "guard",   hp: 520, atk: 24, def: 9, spd: 55, isBoss: true },
+  boss_warlock:   { race: "orc",    role: "caster",  hp: 300, atk: 20, def: 4, spd: 80, isBoss: true },
 };
 
 /* ---------- 스테이지 정의 (v0.3.1: 5층 사이클 × 4) ----------
@@ -4474,9 +4534,30 @@ const STAGES = [
   { num: 19, cycle: 4, phase: "prep",
     name: "시험 운전", desc: "최후 합체 후 손맛 — 정예이지만 적응 자리",
     enemies: ["troll_guard", "troll_melee", "orc_melee", "goblin_ranged", "troll_caster", "orc_caster"], themeId: null },
-  { num: 20, cycle: 4, phase: "ending",
-    name: "마지막 벽", desc: "Mk.II 한계 시험 — 모든 결의 정점",
+  { num: 20, cycle: 4, phase: "proof",
+    name: "마지막 벽", desc: "사이클 4 정점 — 1막의 끝, 그러나 끝이 아니다",
     enemies: ["troll_guard", "troll_guard", "orc_guard", "troll_melee", "orc_melee", "goblin_ranged", "troll_caster", "orc_caster"], themeId: null },
+
+  /* ===== v0.3.8: 사이클 5 (21~25) — 롱런 관측장 =====
+     목적: 밸런스 완성 X. "조합의 긴 호흡 / 어디까지 이어지나" 관측.
+     S23 fusion = 5번째 합체 (2차 직업 최대 2개 천장).
+     S25 boss = 최종 결과 지점 (finalizeRunResult는 S25에서만).
+  */
+  { num: 21, cycle: 5, phase: "growth",
+    name: "연장의 시작", desc: "20층을 넘은 자들 — 더 깊은 군세",
+    enemies: ["troll_melee", "troll_caster", "orc_guard", "orc_caster", "goblin_ranged", "goblin_ranged"], themeId: null },
+  { num: 22, cycle: 5, phase: "growth",
+    name: "강철 능선", desc: "오크·트롤 혼성 정예",
+    enemies: ["troll_guard", "orc_guard", "orc_melee", "troll_caster", "orc_caster", "troll_melee"], themeId: null },
+  { num: 23, cycle: 5, phase: "fusion",
+    name: "마지막 갈림", desc: "다섯 번째 합체 — 파티의 완성형을 정한다",
+    enemies: ["troll_guard", "troll_melee", "troll_melee", "troll_caster", "orc_caster", "orc_guard"], themeId: null },
+  { num: 24, cycle: 5, phase: "prep",
+    name: "보스 직전", desc: "합체 직후 손맛 — 보스를 앞둔 호흡",
+    enemies: ["troll_melee", "orc_melee", "troll_caster", "goblin_ranged", "orc_caster"], themeId: null },
+  { num: 25, cycle: 5, phase: "boss",
+    name: "관측장의 끝 — 군주", desc: "이 파티가 어디까지 이어지는가",
+    enemies: ["boss_troll_lord", "boss_warlock", "troll_guard", "troll_caster"], themeId: null },
 ];
 
 /* ---------- 아군 직업 베이스 스탯 (v0.1.5 결 계승) ---------- */
@@ -5721,6 +5802,7 @@ function makeEnemyUnit(templateId) {
   if (phase === "prep")        phaseMult = 0.85;
   else if (phase === "proof")  phaseMult = 1.10;
   else if (phase === "ending") phaseMult = 1.20;
+  else if (phase === "boss")   phaseMult = 1.15;   // v0.3.8: 관측용 보수값 (보스 고체력은 템플릿)
 
   const hp  = Math.floor(tpl.hp  * hpMult  * phaseMult);
   const atk = Math.floor(tpl.atk * atkMult * phaseMult);
@@ -5867,6 +5949,11 @@ function loadStage(stageNum) {
     u._shieldCooldown = 0;
     // v0.3.6: 마도 차징 결 정리
     u._arcaneCharged = false;
+    // v0.3.8: 추적자 조준 결 정리 (전투 종료 경로 충돌 방지)
+    u._aiming = false;
+    u._aimTarget = null;
+    // v0.3.8: 파수궁 보호 태그 정리
+    u._guardianUid = null;
     // v0.3.7.4: slow 결 정리 (적/아군 공통)
     u._speedMul = 1.0;
     delete u._slowedTurns;
@@ -6135,6 +6222,9 @@ function getReactionKind(actor, actionType) {
     if (t === "turn_def_up")      return "shield";
     if (t === "holy_sustain")     return "taunt";   // 성휘 = 앞으로 한 발 (빛의 전사)
     if (t === "arcane_chain")     return "heal";    // 마도 = 부드럽게 떠오름 (마법 시전)
+    if (t === "gate_taunt")       return "taunt";   // v0.3.8 수문장 = 도발
+    if (t === "dual_heal")        return "heal";    // v0.3.8 성직자 = 치유
+    if (t === "mark_snipe")       return "attack";  // v0.3.8 추적자 = 사격
     return "attack";
   }
   return "attack";
@@ -6575,36 +6665,65 @@ function actFusion(actor) {
        핵심: "독 걸린 애 살린다"가 눈에 보임
     */
     case "purify_heal": {
-      // 1) 중독 아군 찾기
-      const poisonedAllies = runState.units.filter(u =>
-        u.alive && u.uid !== actor.uid && u.poisoned && u.poisoned > 0
+      // v0.3.8 리워크: 평소엔 사제(단일 치유), 상태이상 있으면 정화 카운터픽.
+      // 1) 상태이상 아군 찾기 — 중독(poisoned) + 감속(_slowedTurns)
+      const afflictedAllies = runState.units.filter(u =>
+        u.alive && u.uid !== actor.uid &&
+        ((u.poisoned && u.poisoned > 0) || (u._slowedTurns && u._slowedTurns > 0))
       );
 
-      if (poisonedAllies.length > 0) {
-        // 우선도: 중독 남은 턴 긴 순 → HP 낮은 순
-        poisonedAllies.sort((a, b) => {
-          if (b.poisoned !== a.poisoned) return b.poisoned - a.poisoned;
+      if (afflictedAllies.length > 0) {
+        // 우선도: 상태이상 가짓수 많은 순 → 중독 턴 긴 순 → HP 낮은 순
+        afflictedAllies.sort((a, b) => {
+          const aCount = (a.poisoned > 0 ? 1 : 0) + (a._slowedTurns > 0 ? 1 : 0);
+          const bCount = (b.poisoned > 0 ? 1 : 0) + (b._slowedTurns > 0 ? 1 : 0);
+          if (bCount !== aCount) return bCount - aCount;
+          if ((b.poisoned || 0) !== (a.poisoned || 0)) return (b.poisoned || 0) - (a.poisoned || 0);
           return (a.hp / a.maxHp) - (b.hp / b.maxHp);
         });
-        const target = poisonedAllies[0];
+        const target = afflictedAllies[0];
 
-        // 정화 + 회복
-        const cleansedTurns = target.poisoned;
-        target.poisoned = 0;
+        // 정화: 중독 + 감속 모두 거둠
+        const cleansed = [];
+        if (target.poisoned > 0) { cleansed.push(`중독(${target.poisoned}턴)`); target.poisoned = 0; }
+        if (target._slowedTurns > 0) {
+          cleansed.push(`감속(${target._slowedTurns}턴)`);
+          target._slowedTurns = 0;
+          target._speedMul = 1.0;   // 속도 원복
+        }
+        // 회복 + 소량 보호막 (보수값)
         const healAmt = Math.floor(actor.atk * 1.4 + 10);
+        const shieldAmt = Math.floor(actor.atk * 0.4);
+        target.shield = Math.max(target.shield || 0, shieldAmt);
 
         showActionLabel(actor, "정화!", "heal");
         drawLine(actor, target, "heal");
         doHeal(actor, target, healAmt);
-        pushEvent(`<b>${actor.name}</b> 정화 — <b>${target.name}</b>의 중독(${cleansedTurns}턴) 거두고 회복`, "heal");
+        if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmt);
+        reactReceive(target, "shield");
+        pushEvent(`<b>${actor.name}</b> 정화 — <b>${target.name}</b>의 ${cleansed.join("·")} 거두고 회복 +◇${shieldAmt}`, "heal");
       } else {
-        // 중독 없음 — 일반 공격 (약하게)
-        const enemyTarget = pickEnemyTarget(actor, "any");
-        if (enemyTarget) {
-          const dmg = Math.floor(actor.atk * 0.8);
-          showActionLabel(actor, "공격", "attack");
-          dealDamage(actor, enemyTarget, dmg);
-          drawLine(actor, enemyTarget, "attack");
+        // v0.3.8: 상태이상 없음 — 약공격이 아니라 사제처럼 HP 최저 아군 단일 치유
+        const woundedAllies = runState.units.filter(u =>
+          u.alive && u.uid !== actor.uid && u.hp < u.maxHp
+        );
+        if (woundedAllies.length > 0) {
+          woundedAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          const target = woundedAllies[0];
+          const healAmt = Math.floor(actor.atk * 1.5 + 8);
+          showActionLabel(actor, "치유", "heal");
+          drawLine(actor, target, "heal");
+          doHeal(actor, target, healAmt);
+          pushEvent(`<b>${actor.name}</b> 치유 — <b>${target.name}</b> +${healAmt}`, "heal");
+        } else {
+          // 다친 아군도 없음 — 가벼운 견제 공격
+          const enemyTarget = pickEnemyTarget(actor, "any");
+          if (enemyTarget) {
+            const dmg = Math.floor(actor.atk * 0.8);
+            showActionLabel(actor, "공격", "attack");
+            dealDamage(actor, enemyTarget, dmg);
+            drawLine(actor, enemyTarget, "attack");
+          }
         }
       }
       break;
@@ -6797,11 +6916,13 @@ function actFusion(actor) {
         const wounded = aliveAllies[0];
         const shieldAmount = Math.floor(actor.atk * 0.45);  // 검증용 기본값
         wounded.shield = Math.max(wounded.shield || 0, shieldAmount);
+        // v0.3.8: 누가 지키는 보호막인지 태그 — 피격 시 지원사격 연결
+        wounded._guardianUid = actor.uid;
         // v0.3.7.23: 보호막 부여 누적
         if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmount);
         drawLine(actor, wounded, "shield");
         reactReceive(wounded, "shield");
-        pushEvent(`<b>${actor.name}</b> 보호 — <b>${wounded.name}</b>에게 ◇${shieldAmount}`, "heal");
+        pushEvent(`<b>${actor.name}</b> 보호 — <b>${wounded.name}</b>에게 ◇${shieldAmount} <span style="opacity:.7">(지원사격 대기)</span>`, "heal");
       }
       break;
     }
@@ -6902,6 +7023,162 @@ function actFusion(actor) {
           drawLine(actor, wounded, "heal");
         }
       }
+      break;
+    }
+
+    /* ─── v0.3.8 수문장 (gate_taunt): 후반 도발 탱커 ───
+       조합: 전사 + 수호자
+       의도: 전사의 도발 감성을 후반까지. "내 뒤는 지나가지 못한다."
+       동작:
+         후열 아군 HP 낮을수록 도발 확률 ↑ (전사 선택규칙 결 재사용)
+           최저 후열 HP% <=0.30 → 도발 확정 / <=0.50 → 55% / <=0.70 → 25%
+         도발 시: 도발 등록 + 자기 보호막 (actTaunt 골격 재사용)
+         아니면: 전열 적 공격 (atk × 1.0)
+       라벨: "수문!" (도발) / "막아선다" (공격)
+    */
+    case "gate_taunt": {
+      // 후열 아군 최저 HP 비율
+      const backAllies = runState.units.filter(u =>
+        u.alive && u.uid !== actor.uid && u.row === "back"
+      );
+      let lowestBackPct = 1.0;
+      backAllies.forEach(u => { lowestBackPct = Math.min(lowestBackPct, u.hp / u.maxHp); });
+
+      let doTaunt = false;
+      if (backAllies.length > 0) {
+        if (lowestBackPct <= 0.30) doTaunt = true;
+        else if (lowestBackPct <= 0.50 && Math.random() < 0.55) doTaunt = true;
+        else if (lowestBackPct <= 0.70 && Math.random() < 0.25) doTaunt = true;
+      }
+
+      if (doTaunt) {
+        // 도발 등록 (taunts 배열 재사용) + 자기 보호막
+        const TAUNT_DURATION = 60;
+        runState.taunts = runState.taunts.filter(t => t.tauntorUid !== actor.uid);
+        runState.taunts.push({ tauntorUid: actor.uid, expireAt: runState.tickCount + TAUNT_DURATION });
+        const shieldAmt = Math.floor(actor.atk * 0.5) + actor.level * 3;
+        actor.shield = Math.max(actor.shield || 0, shieldAmt);
+        if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmt);
+        showActionText(actor, "수문!", { kind: "taunt" });
+        showResultText(actor, shieldAmt, "shield", { self: true });
+        const aliveEnemies = runState.enemies.filter(e => e.alive);
+        setTimeout(() => { aliveEnemies.forEach(e => { if (e.alive) drawLine(e, actor, "taunt"); }); }, 130);
+        pushEvent(`<b>${actor.name}</b> 수문 — 적의 시선을 끌고 ◇${shieldAmt} 보호막`, "taunt");
+      } else {
+        // 전열 적 공격
+        let target = pickEnemyTarget(actor, "front") || pickEnemyTarget(actor, "any");
+        if (target) {
+          const dmg = Math.floor(actor.atk * 1.0);
+          showActionLabel(actor, "막아선다", "attack");
+          dealDamage(actor, target, dmg);
+          drawLine(actor, target, "attack");
+          pushEvent(`<b>${actor.name}</b> → <b>${target.name}</b> (${dmg})`, "attack");
+        }
+      }
+      break;
+    }
+
+    /* ─── v0.3.8 성직자 (dual_heal): 두 축을 동시에 붙잡는 치유자 ───
+       조합: 사제 + 신관
+       의도: 사제(1명 큰 치유) ↔ 신관(전체 소량) 사이 빈칸.
+         사제   = 1명 큰 / 신관 = 전체 소량 / 성직자 = HP 최저 2명 집중 / 선봉 = 공격형 보조
+       동작:
+         1) 약공격 (후열, atk × 0.6)
+         2) HP 최저 아군 2명에게 중~큰 치유 (각 atk × 0.7 — 선봉 0.3보다 큼)
+       라벨: "두 손 치유!"
+    */
+    case "dual_heal": {
+      showActionLabel(actor, "두 손 치유!", "heal");
+
+      // 1) 가벼운 후열 견제
+      let enemyTarget = pickEnemyTarget(actor, "back") || pickEnemyTarget(actor, "any");
+      if (enemyTarget) {
+        const dmg = Math.floor(actor.atk * 0.6);
+        dealDamage(actor, enemyTarget, dmg);
+        drawLine(actor, enemyTarget, "attack");
+      }
+
+      // 2) HP 최저 아군 2명 집중 치유
+      const aliveAllies = runState.units.filter(u => u.alive);
+      if (aliveAllies.length > 0) {
+        aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+        const healTargets = aliveAllies.slice(0, Math.min(2, aliveAllies.length));
+        const healAmount = Math.floor(actor.atk * 0.7 + 6);
+        let anyHealed = false;
+        healTargets.forEach(ally => {
+          if (ally.hp < ally.maxHp) {
+            doHeal(actor, ally, healAmount);
+            drawLine(actor, ally, "heal");
+            pushEvent(`<b>${actor.name}</b> 치유 — <b>${ally.name}</b> +${healAmount}`, "heal");
+            anyHealed = true;
+          } else {
+            drawLine(actor, ally, "heal");
+          }
+        });
+        if (!anyHealed) pushEvent(`<b>${actor.name}</b> — 파티 모두 든든하다`, "system");
+      }
+      break;
+    }
+
+    /* ─── v0.3.8 추적자 (mark_snipe): 집중 → 저격 선제 제거 ───
+       조합: 궁수 + 유격수
+       의도: 위험한 후열 고체력 대상을 미리 조준해 제거. 도적(처형=마무리)과 반대.
+       2단 행동 (마도 _arcaneCharged 패턴 + _aimTarget):
+         행동 1 (집중): _aiming=true, _aimTarget=uid 기억.
+           우선순위: 후열 적 우선 → 그중 HP 가장 높은 적
+         행동 2 (저격): 조준 대상에게 강력한 단일 (atk × 1.8). HP 100%면 ×1.3 추가.
+           대상 죽었/사라졌으면 → 재조준 또는 일반 후열 공격 (폴백)
+       라벨: "조준…" / "저격!"
+    */
+    case "mark_snipe": {
+      const aliveEnemies = runState.enemies.filter(e => e.alive);
+      if (aliveEnemies.length === 0) break;
+
+      if (!actor._aiming) {
+        // ─── 행동 1: 집중 / 조준 ───
+        let pool = aliveEnemies.filter(e => e.row === "back");
+        if (pool.length === 0) pool = aliveEnemies;
+        pool.sort((a, b) => b.hp - a.hp);   // 고체력 우선
+        const aim = pool[0];
+        actor._aiming = true;
+        actor._aimTarget = aim.uid;
+        const el = document.querySelector(`[data-uid="${actor.uid}"]`);
+        if (el) el.classList.add("arcane-charging");  // 기존 차징 글로우 재사용
+        showActionLabel(actor, "조준…", "control");
+        drawLine(actor, aim, "debuff");
+        pushEvent(`<b>${actor.name}</b> 🎯 조준 — <b>${aim.name}</b> [조준중] 다음 행동 저격`, "system");
+        break;
+      }
+
+      // ─── 행동 2: 저격 (반드시) ───
+      actor._aiming = false;
+      const el = document.querySelector(`[data-uid="${actor.uid}"]`);
+      if (el) el.classList.remove("arcane-charging");
+
+      let aim = runState.enemies.find(e => e.uid === actor._aimTarget && e.alive);
+      actor._aimTarget = null;
+
+      if (!aim) {
+        // 폴백: 조준 대상 사라짐 → 일반 후열 공격
+        aim = pickEnemyTarget(actor, "back") || pickEnemyTarget(actor, "any");
+        if (aim) {
+          const dmg = Math.floor(actor.atk * 1.0);
+          showActionLabel(actor, "사격", "attack");
+          dealDamage(actor, aim, dmg);
+          drawLine(actor, aim, "attack");
+          pushEvent(`<b>${actor.name}</b> — 조준 대상 사라짐, 일반 사격 <b>${aim.name}</b> (${dmg})`, "attack");
+        }
+        break;
+      }
+
+      // 저격: 강력한 단일. HP 100%면 추가 피해
+      const full = aim.hp >= aim.maxHp;
+      let dmg = Math.floor(actor.atk * 1.8);
+      if (full) dmg = Math.floor(dmg * 1.3);
+      showActionLabel(actor, "저격!", "attack");
+      drawLine(actor, aim, "attack");
+      dealDamage(actor, aim, dmg, { isCritical: full });
+      pushEvent(`<b>${actor.name}</b> 저격! — <b>${aim.name}</b> (${dmg})${full ? " ★선제" : ""}`, "attack");
       break;
     }
 
@@ -7310,6 +7587,24 @@ function dealDamage(actor, target, amount, opts = {}) {
     if (target.alive) shakeUnit(target, "mild");
   }
 
+  // v0.3.8: 파수궁 지원사격 — 보호막 받은 아군이 피해를 입으면 수호자가 즉시 반격
+  //   조건: 피격자가 아군 + _guardianUid 살아있는 파수궁 + 이번 피해가 반격이 아님(무한루프 차단)
+  //   _isCounter 플래그로 "반격의 반격" 차단 — 핵심 자리.
+  if (!opts._isCounter
+      && target.side === "ally"
+      && target._guardianUid
+      && actor && actor.side === "enemy" && actor.alive) {
+    const guardian = runState.units.find(u => u.uid === target._guardianUid && u.alive);
+    if (guardian && guardian.uid !== target.uid && guardian.fusionId === "hunter") {
+      const counterDmg = Math.floor(guardian.atk * 0.6);   // 검증용 보수값
+      showActionLabel(guardian, "지원사격!", "attack");
+      drawLine(guardian, actor, "attack");
+      pushEvent(`<b>${guardian.name}</b> 지원사격 — <b>${actor.name}</b>에게 반격 (${counterDmg})`, "attack");
+      // _isCounter로 박아서 이 반격이 또 다른 반격을 부르지 않게 (1회성)
+      dealDamage(guardian, actor, counterDmg, { _isCounter: true, reason: "counter" });
+    }
+  }
+
   // v0.3.7.12: 공통 사망 게이트 — markIfDead로 통일
   // v0.3.7.16: isCritical / isExecute 결을 markIfDead로 전달
   //   (직접 alive=false 박지 않음. 모든 죽음은 같은 문을 통과.)
@@ -7356,8 +7651,11 @@ function markIfDead(unit, opts = {}) {
   unit._bindingTargetUid = null;
   unit._bindingTurns = 0;
   unit._arcaneCharged = false;
+  unit._aiming = false;        // v0.3.8: 추적자 조준 정리
+  unit._aimTarget = null;
   unit._wallProtectorUid = null;
   unit._wallProtectorTurns = 0;
+  unit._guardianUid = null;   // v0.3.8: 파수궁 보호 태그 해제
 
   // 3) kill stat 누적 (killer 정해진 경우만)
   if (opts.killerUid && battleState && battleState.stats) {
@@ -7620,26 +7918,28 @@ function onStageClear() {
   const phase = stage ? stage.phase : null;
 
   // v0.3.7.29: 스테이지 종료 history push (pacing 분석용)
-  //   outcome: ending이면 "ending", 아니면 "clear"
-  //   fusion/recruit/growth는 *이 시점*에 박는 게 가장 정확 (다음 화면 진입 전).
-  pushStageHistory(phase === "ending" ? "ending" : "clear", {
+  //   v0.3.8: boss(S25)가 최종 → outcome "ending"은 boss에서.
+  pushStageHistory(phase === "boss" ? "ending" : "clear", {
     fusionHere: (phase === "fusion"),
     recruitHere: (phase === "recruit"),
     growthHere: (phase === "growth"),
   });
 
-  // ─── v0.3.1: 5층 사이클 phase 분기 ───
-  // 사이클 = [성장 / 성장 / 합체 / prep / proof]  × 4
-  // 클리어 후 어떤 화면이 뜨는가는 *이 스테이지의 phase*가 정함:
+  // ─── v0.3.1 → v0.3.8: 5층 사이클 phase 분기 (25층 관측장) ───
   //   growth  → showGrowth (성장 화면) → 다음 스테이지
   //   fusion  → showFusionChoice (합체 화면) → 다음 스테이지
-  //   prep    → 그냥 다음 (시험 운전 끝, 호흡 한 박자)
-  //   proof   → 그냥 다음 (사이클 종료)
-  //   recruit → 새 동료 영입 (S10 전용 — proof + 영입)
-  //   ending  → 승리 (S20)
+  //   prep    → 그냥 다음 (시험 운전 끝)
+  //   proof   → 그냥 다음 (사이클 종료) ← S20도 이제 proof (1막 끝이지만 계속)
+  //   recruit → 새 동료 영입 (S10 — 단 영입은 S9로 당겨짐)
+  //   boss    → 최종 승리 (S25에서만 finalizeRunResult)
 
+  // v0.3.8: 최종 결과는 boss(S25)에서만. S20은 더 이상 ending 아님.
+  if (phase === "boss") {
+    finalizeRunResult("win", "stage25_boss_clear");
+    return;
+  }
+  // legacy 안전망 — 혹시 ending phase가 남아있으면 그대로 처리 (구 빌드 호환)
   if (phase === "ending") {
-    // v0.3.7.28: finalizeRunResult로 통일 (이후 stale callback 못 덮어씀)
     finalizeRunResult("win", "stage20_clear");
     return;
   }
@@ -7681,11 +7981,23 @@ function onStageClear() {
   }
 
   if (phase === "recruit") {
-    // v0.3.3: S10 proof 후 새 동료 영입 → 4인 박힘
-    // S11+ 부터는 getTargetPartySize()가 자동으로 4인 유지 처리
-    // pendingFourthMember 플래그는 더 이상 필요 없음 (legacy 호환 위해 false로 박음)
+    // v0.3.3 → v0.3.8: S10 영입은 이제 S9에서 당겨왔으므로,
+    //   여기 도달 시 이미 4인이면 그냥 통과. (legacy 안전망 — 3인이면 여전히 영입)
+    runState.pendingFourthMember = false;
+    if (runState.units.length < getTargetPartySize()) {
+      showFourthMember();
+    } else {
+      proceedToNextStage();
+    }
+    return;
+  }
+
+  // v0.3.8: prep phase — 보통은 그냥 다음. 단 S9 클리어는 "4번째 영입"을 당겨 트리거.
+  //   S10을 4인으로 맞이하게 해서 "3인 체크문"을 "첫 4인 확인전"으로 바꾼다.
+  if (phase === "prep" && stageNum === 9) {
     runState.pendingFourthMember = false;
     if (runState.units.length < 4) {
+      pushEvent("▸ 새 동료 합류 준비 — 4인 파티로 STAGE 10 진입", "system");
       showFourthMember();
     } else {
       proceedToNextStage();
@@ -7697,14 +8009,16 @@ function onStageClear() {
   proceedToNextStage();
 }
 
-/* ---------- 기준 파티 인원 (v0.3.3) ----------
+/* ---------- 기준 파티 인원 (v0.3.3 → v0.3.8 보정) ----------
+   v0.3.8: S10 "3인 체크문" 해소. 4번째 영입을 S9 클리어 후로 당김.
    1~9   : 3인
-   10    : recruit phase → 4인 박힘 (S10 클리어 후)
-   11~20 : 4인 유지
+   9 클리어 후: 4번째 영입 (S10 진입 전) → 4인 박힘
+   10    : 4인으로 진입 (첫 4인 파티 확인전 — 더는 3인 체크문 아님)
+   10~25 : 4인 유지
    합체로 인원 < 기준 일 때 즉시 영입 → 4인 완성 감정 끊지 않음
 */
 function getTargetPartySize() {
-  return runState.stage > 10 ? 4 : 3;
+  return runState.stage >= 10 ? 4 : 3;
 }
 
 /* 합체 제안 가능 여부 (v0.3.2: 2차 직업도 포함)
@@ -8358,7 +8672,7 @@ function showResult() {
   document.getElementById("result-status").textContent = isWin ? "▸ VICTORY" : "▸ DEFEAT";
   document.getElementById("result-status").className = `result-status ${isWin ? "win" : "lose"}`;
   document.getElementById("result-title").textContent = isWin
-    ? "20스테이지 완주"
+    ? "25스테이지 완주 — 관측장의 끝"
     : `STAGE ${effectiveStage}에서 패배`;
   document.getElementById("result-title").className = `result-title ${isWin ? "win" : "lose"}`;
   document.getElementById("result-subtitle").textContent = isWin
