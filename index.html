@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8h-test</title>
+<title>Project Signal Mk.II v0.3.8l-test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -1018,6 +1018,67 @@ body {
   line-height: 1.7;
   padding: 4px 2px;
   font-style: italic;
+}
+
+/* v0.3.8j: 도감 스탯/성장/행동 섹션 */
+.codex-detail-section {
+  margin: 10px 0;
+  padding: 9px 11px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
+.codex-detail-section .cds-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--signal);
+  margin-bottom: 6px;
+}
+.codex-detail-section .cds-note {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+.codex-detail-section .cds-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.codex-detail-section .cds-stat {
+  font-size: 12.5px;
+  color: var(--text);
+}
+.codex-detail-section .cds-stat b {
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 11px;
+  margin-right: 2px;
+}
+.codex-detail-section .cds-rule {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.codex-detail-section .cds-rule b { color: var(--signal); }
+.codex-detail-section .cds-actions {
+  margin: 0;
+  padding-left: 16px;
+  list-style: none;
+}
+.codex-detail-section .cds-actions li {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.65;
+  position: relative;
+}
+.codex-detail-section .cds-actions li::before {
+  content: "▸";
+  position: absolute;
+  left: -14px;
+  color: var(--signal);
+  opacity: 0.7;
 }
 
 .codex-detail-tags {
@@ -3658,7 +3719,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8h test (25층 관측장)</div>
+      <div class="title-version">MK.II — v0.3.8l test (계승 복원)</div>
     </div>
 
     <p class="title-tagline">
@@ -4443,7 +4504,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8h-test";
+const BUILD_VERSION = "v0.3.8l-test";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -4725,6 +4786,58 @@ function renderCodexCard(entry) {
   `;
 }
 
+/* ---------- v0.3.8j: 도감용 base 스탯 계산 ----------
+   makeFusionUnit의 base 계산식을 강화/계승 보너스 *제외*하고 재현.
+   "도감은 기본값을 보여준다 — 키우면 여기서 더 강해진다"는 결.
+   기본 직업: TRAIT_STATS 그대로. 합체 직업: 재귀 평균식(makeFusionUnit과 동일).
+*/
+function codexBaseStats(jobId) {
+  if (TRAIT_STATS[jobId]) {
+    return { ...TRAIT_STATS[jobId] };
+  }
+  const fusion = FUSIONS.find(f => f.id === jobId);
+  if (!fusion) return null;
+  const s1 = codexBaseStats(fusion.requires[0]);
+  const s2 = codexBaseStats(fusion.requires[1]);
+  if (!s1 || !s2) return null;
+  const mix = (a, b) => Math.floor((a + b) / 2 * 0.7 + Math.max(a, b) * 0.35);
+  let atk = mix(s1.atk, s2.atk);
+  // statOverride.atkBoost (용창 등 의도적 atk 최고치) 반영 — makeFusionUnit과 동일
+  if (fusion.statOverride && fusion.statOverride.atkBoost) {
+    atk = Math.floor(atk * fusion.statOverride.atkBoost);
+  }
+  return {
+    hp:  mix(s1.hp,  s2.hp),
+    atk: atk,
+    def: mix(s1.def, s2.def),
+    spd: mix(s1.spd, s2.spd),
+  };
+}
+
+/* 직업별 주요 행동 — 도감용 (코드 동작 기준, 여러 포인트). */
+const CODEX_ACTIONS = {
+  bravery:  ["전열 공격", "위기 시 도발로 전열 유지"],
+  guard:    ["전열 공격", "위기 시 보호 / 방어 자세"],
+  heal:     ["HP 가장 낮은 아군 1명 큰 치유"],
+  blessing: ["아군 전체 소량 회복 · 가호"],
+  snipe:    ["후열 적 우선 저격"],
+  disrupt:  ["적 속도 저하 · 교란"],
+  rogue:    ["후열 침투", "처형 — HP 낮은 적 마무리"],
+  trapper:  ["중독 부여", "치명타 + 회복 차단(anti-heal)"],
+  bard:     ["아군에게 리듬 부여 (다음 공격 강화권)", "♪N = 남은 공격 강화 횟수", "적 감속"],
+  wall:     ["한 명을 대신해 피해 50% 가로채기"],
+  paladin:  ["공격하며 자기 회복 + 보호막"],
+  arcanist: ["집중(차징) → 광역 파동"],
+  purifier: ["평소에는 단일 치유", "중독 / 감속 정화", "정화 성공 시 회복 + 보호막"],
+  binder:   ["적 봉인 (ATK 저하)", "30% 가로채기"],
+  gatekeeper: ["전열 공격", "도발 + 자기 보호막", "후열 아군이 위험할수록 도발 확률↑"],
+  cleric:   ["HP 낮은 아군 2명 집중 치유", "전문 힐러형 1차 직업"],
+  tracker:  ["조준 → 다음 행동 저격", "후열의 현재 체력 높은 적 우선", "HP 100% 대상이면 추가 피해"],
+  dragoon:  ["관통 — 두 명 동시 타격", "처치 시 재돌격 (행동력 100%)", "리듬 대응 공격"],
+  sage:     ["차징 중 아군 가속", "차징 후 광역 마법"],
+  sovereign: ["전열 공격 + HP 낮은 2명 회복", "위기 시 파티 전체 성역(보호막)"],
+};
+
 function openCodexDetail(entryId) {
   const entry = CODEX_ENTRIES.find(e => e.id === entryId);
   if (!entry) return;
@@ -4757,6 +4870,46 @@ function openCodexDetail(entryId) {
     </div>
 
     <div class="codex-detail-flavor">"${entry.flavor}"</div>
+
+    ${(() => {
+      // v0.3.8j: 기본 스탯 + 성장/계승 규칙 + 주요 행동
+      const st = codexBaseStats(entry.id);
+      const isFusion = !TRAIT_STATS[entry.id];
+      const actions = CODEX_ACTIONS[entry.id] || (entry.role_desc ? [entry.role_desc] : []);
+      let statHTML = "";
+      if (st) {
+        statHTML = `
+          <div class="codex-detail-section">
+            <div class="cds-head">기본 스탯 <span class="cds-note">(강화·계승 전)</span></div>
+            <div class="cds-stats">
+              <span class="cds-stat"><b>HP</b> ${st.hp}</span>
+              <span class="cds-stat"><b>공격</b> ${st.atk}</span>
+              <span class="cds-stat"><b>방어</b> ${st.def}</span>
+              <span class="cds-stat"><b>속도</b> ${st.spd}</span>
+            </div>
+          </div>`;
+      }
+      let growthHTML = "";
+      if (!isFusion) {
+        growthHTML = `
+          <div class="codex-detail-section">
+            <div class="cds-head">성장</div>
+            <div class="cds-rule">강화 1회마다 <b>HP +10% / 공격 +12%</b><br><span class="cds-note">방어·속도는 오르지 않음. 키울수록 합체 시 더 강해진다.</span></div>
+          </div>`;
+      } else {
+        growthHTML = `
+          <div class="codex-detail-section">
+            <div class="cds-head">합체 계승</div>
+            <div class="cds-rule">재료의 강화 기억을 평균내어 <b>계승 레벨</b>을 만든다. 계승 Lv 1마다 <b>HP·공격 +15%</b> (방어·속도는 그대로).<br>1차 직업이 다시 2차 직업의 재료가 되어도, 그 1차가 품은 계승 레벨이 이어진다.<br><span class="cds-note">이전에 키운 재료의 힘은 상위 직업에서도 사라지지 않는다.</span></div>
+          </div>`;
+      }
+      const actionHTML = actions.length ? `
+        <div class="codex-detail-section">
+          <div class="cds-head">주요 행동</div>
+          <ul class="cds-actions">${actions.map(a => `<li>${a}</li>`).join("")}</ul>
+        </div>` : "";
+      return statHTML + growthHTML + actionHTML;
+    })()}
 
     <div class="codex-detail-tags">
       ${entry.tags.map(t => `<span class="codex-detail-tag">${t}</span>`).join("")}
@@ -5790,7 +5943,7 @@ function makeAllyUnit(traitId) {
   };
 }
 
-function makeFusionUnit(fusionId) {
+function makeFusionUnit(fusionId, materialUnits = null) {
   const fusion = FUSIONS.find(f => f.id === fusionId);
 
   // v0.3.2: 재료가 기본 직업이면 TRAIT_STATS, 1차 직업이면 FUSIONS에서 계산된 스탯
@@ -5826,10 +5979,22 @@ function makeFusionUnit(fusionId) {
     baseAtk = Math.floor(baseAtk * fusion.statOverride.atkBoost);
   }
 
-  // ─── 선택 누적에 대한 강해짐 규칙 (mk2 v0.2 박힘) ───
-  // v0.3.2: 재료가 1차 직업이면 traitLevels 없음 → 0 처리
-  const levelA = runState.traitLevels[fusion.requires[0]] || 0;
-  const levelB = runState.traitLevels[fusion.requires[1]] || 0;
+  // ─── 선택 누적에 대한 강해짐 규칙 (mk2 v0.2 → v0.3.8l 계승 복원) ───
+  // v0.3.8l: "선택은 사라지지 않는다" — 1차 재료가 품은 계승 레벨이 2차로 이어진다.
+  //   재료가 기본 직업이면 traitLevels[id], 1차 직업이면 그 유닛의 _inheritedLevel(level)을 강화값으로.
+  //   materialUnits[i]가 있으면 인스턴스 기준, 없으면(미리보기 등) traitLevels 폴백.
+  function materialLevelOf(reqId, idx) {
+    const mu = materialUnits && materialUnits[idx];
+    if (mu) {
+      // 실제 재료 유닛 인스턴스 — 1차 직업이면 자기가 품은 계승 레벨
+      if (mu.kind === "fusion") return mu._inheritedLevel || mu.level || 0;
+      return runState.traitLevels[reqId] || 0;   // 기본 직업
+    }
+    // 폴백 (재료 인스턴스 없음): 기본 직업만 알 수 있음
+    return runState.traitLevels[reqId] || 0;
+  }
+  const levelA = materialLevelOf(fusion.requires[0], 0);
+  const levelB = materialLevelOf(fusion.requires[1], 1);
   const inheritedLevel = Math.ceil((levelA + levelB) / 2);
 
   const hpBonus  = Math.floor(baseHp  * 0.15 * inheritedLevel);
@@ -5869,6 +6034,7 @@ function makeFusionUnit(fusionId) {
     shield: 0, gauge: 0, alive: true,
     _deathReported: false,  // v0.3.7.12: 사망 보고 플래그
     level: inheritedLevel,                 // 합체 계승 레벨
+    _inheritedLevel: inheritedLevel,        // v0.3.8l: 다음 합체(2차)가 이어받는 계승 레벨 (선택은 사라지지 않는다)
     inheritedFrom: {                        // 계승 출처 (UI/디버그용)
       [fusion.requires[0]]: levelA,
       [fusion.requires[1]]: levelB,
@@ -8434,6 +8600,9 @@ function showFusionChoice() {
   // v0.3.7.14: 공통 helper 거침 (single source of truth)
   const candidates = getAvailableFusions();
   const availableFusions = candidates.map(c => c.fusion);
+  // v0.3.8l: 재료 유닛 인스턴스 맵 (계승 레벨 미리보기 정확도 — fusionId → materials)
+  const materialsByFusion = {};
+  candidates.forEach(c => { materialsByFusion[c.fusion.id] = c.materials; });
 
   // 진단 결 — 살아있는 유닛 풀 + 매칭된 후보 함께 박음
   const alivePool = runState.units
@@ -8485,11 +8654,21 @@ function showFusionChoice() {
   container.innerHTML = availableFusions.map(f => {
     const t1Name = nameOf(f.requires[0]);
     const t2Name = nameOf(f.requires[1]);
-    const levelA = levelOf(f.requires[0]);
-    const levelB = levelOf(f.requires[1]);
+    // v0.3.8l: 재료 유닛 인스턴스 기반 계승 레벨 (1차 재료면 그 유닛이 품은 _inheritedLevel)
+    const mats = materialsByFusion[f.id] || [];
+    const matLevelOf = (reqId, idx) => {
+      const mu = mats[idx];
+      if (mu) {
+        if (mu.kind === "fusion") return mu._inheritedLevel || mu.level || 0;
+        return runState.traitLevels[reqId] || 0;
+      }
+      return runState.traitLevels[reqId] || 0;
+    };
+    const levelA = matLevelOf(f.requires[0], 0);
+    const levelB = matLevelOf(f.requires[1], 1);
     const inheritedLevel = Math.ceil((levelA + levelB) / 2);
     const inheritLine = (levelA > 0 || levelB > 0)
-      ? `<div class="choice-inherit">${t1Name} Lv.${levelA} + ${t2Name} Lv.${levelB} → <b>계승 Lv.${inheritedLevel}</b></div>`
+      ? `<div class="choice-inherit">${t1Name} Lv.${levelA} + ${t2Name} Lv.${levelB} → <b>계승 Lv.${inheritedLevel}</b> (HP·공격 +${inheritedLevel * 15}%)</div>`
       : "";
     // v0.3.2: 2차 직업 표식
     const tierBadge = f.tier === "secondary"
@@ -8527,6 +8706,7 @@ function pickFusion(fusionId) {
   // 각 requires id에 대해 매칭되는 유닛 1명씩 제거
   const consumed = [];
   const toRemove = new Set();  // uid 기준
+  const materialUnits = [];    // v0.3.8l: requires 순서대로 재료 유닛 (계승 레벨 인스턴스 참조용)
 
   for (const reqId of fusion.requires) {
     // v0.3.8d: 재료는 생존 무관, 보유 기준으로 찾는다.
@@ -8540,13 +8720,16 @@ function pickFusion(fusionId) {
     if (candidate) {
       toRemove.add(candidate.uid);
       consumed.push(reqId);
+      materialUnits.push(candidate);   // 순서 보존 (requires 인덱스와 일치)
+    } else {
+      materialUnits.push(null);
     }
   }
 
   runState.units = runState.units.filter(u => !toRemove.has(u.uid));
 
-  // 합체 유닛 추가
-  const fusionUnit = makeFusionUnit(fusionId);
+  // 합체 유닛 추가 — v0.3.8l: 재료 유닛 인스턴스를 넘겨 계승 레벨 이어받기
+  const fusionUnit = makeFusionUnit(fusionId, materialUnits);
   runState.units.push(fusionUnit);
   // v0.3.7.23: 분석 리포트용 stats 자리 박음
   ensureRunStatsForUnit(fusionUnit);
@@ -8745,25 +8928,28 @@ function renderPartyStatus(opts = {}) {
     }
   }
 
-  // 2) 슬롯 결 — 살아있는 파티원 + 빈 자리 1개 (영입 직전이니까)
-  //    v0.3.7.2: 슬롯 수 동적 결
-  //      - 합체 후 영입: 3인(혹은 합체로 2인 등) + 빈 자리 1 → 영입하면 다시 채워짐
-  //      - S10 영입: 3인 + 빈 자리 1 = 4슬롯
-  //    슬롯이 너무 많으면 모바일 결이 깨지니까 최대 4슬롯으로 cap.
-  const aliveUnits = runState.units.filter(u => u.alive);
-  const slotCount = Math.min(4, aliveUnits.length + 1);  // +1 = 영입 빈 자리
-  const emptyCount = Math.max(0, slotCount - aliveUnits.length);
+  // 2) 슬롯 결 — 보유 파티원(roster) + 빈 자리 1개 (영입 직전이니까)
+  //    v0.3.8i (나라님 결): aliveUnits → roster 기준.
+  //      합체에 쓰지 않은 파티원이 직전 전투에서 죽었어도 "사라진" 게 아니다.
+  //      roster엔 남아있고 다음 전투에 출전한다 → 파티 현황도 보유 기준으로 보여야 함.
+  //      "선택은 사라지지 않는다" — 합체 후보(v0.3.8d)와 같은 계열의 결.
+  //      canonical roster = runState.units (생존 무관). 이게 파티 현황의 단일 진실.
+  const rosterUnits = runState.units.slice();
+  const slotCount = Math.min(4, rosterUnits.length + 1);  // +1 = 영입 빈 자리
+  const emptyCount = Math.max(0, slotCount - rosterUnits.length);
 
   const slotHTML = (unit) => {
     const isNew = newFusionId && unit.kind === "fusion" && unit.fusionId === newFusionId;
     const posLabel = unit.role === "front" ? "전열" : "후열";
+    // v0.3.8i: 직전 전투 사망 표시는 흐리게 — "사라진 게 아니라 다음 전투에 복귀" 결
+    const downed = !unit.alive;
     return `
-      <div class="ps-slot${isNew ? " ps-slot-new" : ""}">
+      <div class="ps-slot${isNew ? " ps-slot-new" : ""}"${downed ? ' style="opacity:0.62;"' : ""}>
         <div class="ps-slot-avatar" style="border-color: ${colorOf(unit)}; color: ${colorOf(unit)};">
           ${avatarOf(unit)}
         </div>
         <div class="ps-slot-name">${unit.name}</div>
-        <div class="ps-slot-pos">${posLabel}</div>
+        <div class="ps-slot-pos">${downed ? "다음 전투 복귀" : posLabel}</div>
       </div>
     `;
   };
@@ -8777,7 +8963,7 @@ function renderPartyStatus(opts = {}) {
   `;
 
   const slotsHTML =
-    aliveUnits.map(slotHTML).join("") +
+    rosterUnits.map(slotHTML).join("") +
     Array(emptyCount).fill(emptySlotHTML).join("");
 
   container.innerHTML = `
