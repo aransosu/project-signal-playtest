@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8u-hydra-dev-seed</title>
+<title>Project Signal Mk.II v0.3.8v-war-drummer-ui-hydra-fieldboss-devmode</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2365,6 +2365,68 @@ body {
 }
 .dev-test-btn:active { background: rgba(255,90,50,0.28); }
 
+/* ─── v0.3.8v: DEV 모드 진입 버튼 + 화면 ─── */
+.dev-mode-entry {
+  margin-top: 10px;
+  border-color: rgba(255,120,80,0.45) !important;
+  color: #ffd0b8 !important;
+}
+#screen-dev-mode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+.dev-mode-header {
+  flex-shrink: 0;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(255,120,80,0.25);
+  background: rgba(255,80,40,0.05);
+}
+.dev-back-btn {
+  font-size: 13px;
+  background: none;
+  border: none;
+  color: rgba(255,140,100,0.9);
+  cursor: pointer;
+  padding: 0 0 8px;
+}
+.dev-mode-title { font-size: 20px; font-weight: 800; color: #ffd0b8; }
+.dev-mode-sub { font-size: 11px; color: rgba(255,140,100,0.7); margin-top: 4px; }
+.dev-mode-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;       /* v0.3.8v: 항목이 늘어나도 스크롤 */
+  padding: 12px 16px 24px;
+}
+.dev-menu-section { margin-bottom: 18px; }
+.dev-menu-section-title {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(255,160,120,0.9);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(255,120,80,0.25);
+}
+.dev-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: rgba(255,90,50,0.10);
+  border: 1px solid rgba(255,120,80,0.35);
+  border-radius: 8px;
+  color: #ffd0b8;
+  cursor: pointer;
+}
+.dev-menu-item:active { background: rgba(255,90,50,0.24); }
+.dmi-label { font-size: 14px; font-weight: 600; }
+.dmi-desc { font-size: 11px; color: rgba(255,200,170,0.65); line-height: 1.3; }
+
 /* DEV 테스트 런 배지 (결과/전장) */
 .dev-run-badge {
   font-size: 10px;
@@ -2401,11 +2463,25 @@ body {
 
 /* ─── v0.3.8r1: 전쟁 북지기(후열 3칸) 대형감 강화 + 잘림 방지 ─── */
 .unit.large-enemy.pattern-back3 .unit-portrait {
-  transform: scale(1.7);
-  transform-origin: center center;
+  transform: scale(1.55);
+  transform-origin: center top;   /* v0.3.8v: 위 기준 — 아래 hp/속도바를 안 덮게 */
 }
 .unit.large-enemy.pattern-back3 .enemy-emoji { font-size: 60px; }
-.unit.large-enemy.pattern-back3 { margin: 0 36px; min-width: 90px; }
+.unit.large-enemy.pattern-back3 {
+  margin: 0 36px;
+  min-width: 90px;
+  /* v0.3.8v: 대형 객체도 hp/gauge-bar가 아래에 읽히게 자리 확보 */
+  padding-bottom: 8px;
+}
+/* v0.3.8v: 대형 몬스터 체력/속도바를 portrait 확대에 안 가리게 — bar를 위로 띄우고 폭 키움 */
+.unit.large-enemy .hp-bar,
+.unit.large-enemy .gauge-bar {
+  position: relative;
+  z-index: 4;
+  margin-top: 4px;
+  width: 100%;
+  min-width: 56px;
+}
 /* 후열 lane 위쪽 여백 확보 — 대형 몬스터 상단이 안 잘리게 */
 #lane-enemy-back { padding-top: 28px; overflow: visible; }
 .lane, #battle-svg { overflow: visible; }
@@ -2450,7 +2526,7 @@ body {
 }
 .unit.large-enemy.pattern-all10 .unit-portrait {
   transform: scale(2.1);
-  transform-origin: center center;
+  transform-origin: center top;
 }
 .unit.large-enemy.pattern-all10 { margin: 0 48px; min-width: 110px; }
 
@@ -3923,7 +3999,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8u (hydra dev seed)</div>
+      <div class="title-version">MK.II — v0.3.8v (drummer UI · field boss · DEV mode)</div>
     </div>
 
     <p class="title-tagline">
@@ -3937,20 +4013,23 @@ body {
     <button class="title-codex title-footprints" onclick="openFootprints()">🌸 발자취</button>
 
     <!-- v0.3.8r2: 개발용 스테이지 테스트 (DEV_STAGE_TEST=true일 때만 JS가 표시) -->
-    <div id="dev-stage-tools" class="dev-stage-tools" style="display:none;">
-      <div class="dev-tools-label">[DEV] 장면 테스트</div>
-      <button class="dev-test-btn" onclick="devJumpToStage('s10_solo')">S10 트롤 문지기</button>
-      <button class="dev-test-btn" onclick="devJumpToStage('s20_war_drummer_A')">S20 전쟁 북지기 A</button>
-      <button class="dev-test-btn" onclick="devJumpToStage('s20_war_drummer_B')">S20 전쟁 북지기 B</button>
-      <button class="dev-test-btn" onclick="devJumpToStage('s25_hydra_A')">S25 히드라 A (균형)</button>
-      <button class="dev-test-btn" onclick="devJumpToStage('s25_hydra_B')">S25 히드라 B (현자)</button>
-      <button class="dev-test-btn" onclick="devJumpToStage('s25_hydra_C')">S25 히드라 C (독/처형)</button>
-    </div>
+    <!-- v0.3.8v: DEV 모드 — 메인 화면엔 버튼 하나만. 누르면 DEV 모드 화면으로. -->
+    <button id="dev-mode-btn" class="title-codex dev-mode-entry" style="display:none;" onclick="openDevMode()">🛠 DEV 모드</button>
 
     <div class="title-foot">
       Phase 1 · 2 Build<br>
       Data Skeleton + Trait Select
     </div>
+  </section>
+
+  <!-- v0.3.8v: DEV 모드 화면 (스크롤 메뉴) -->
+  <section class="screen" id="screen-dev-mode">
+    <div class="dev-mode-header">
+      <button class="dev-back-btn" onclick="backToTitle()">← 타이틀</button>
+      <div class="dev-mode-title">🛠 DEV 모드</div>
+      <div class="dev-mode-sub">개발/기획 관측용 — 일반 런과 분리 기록됨</div>
+    </div>
+    <div id="dev-mode-list" class="dev-mode-list"><!-- JS가 섹션/항목 렌더 --></div>
   </section>
 
   <!-- ============================================================
@@ -4719,7 +4798,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8u-hydra-dev-seed";
+const BUILD_VERSION = "v0.3.8v-war-drummer-ui-hydra-fieldboss-devmode";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -4729,6 +4808,28 @@ const ENABLE_STAGE13_TEST_SOFTENING = true;
    ※ 오염 방지: dev 점프 런은 runState.devTest로 표식 → timeStats/export/결과/발자취에 "DEV 테스트 런" 표시.
       일반 런 데이터와 섞이지 않게. */
 const DEV_STAGE_TEST = true;
+
+/* ─── v0.3.8v: DEV 모드 ───
+   메인 화면엔 [DEV 모드] 버튼 하나만. 누르면 별도 화면에서 테스트 항목을 스크롤 선택.
+   DEV_MODE_ENABLED = false 로 친구/릴리즈 빌드에서 완전히 숨김.
+   (DEV_STAGE_TEST는 하위호환 — 둘 중 하나라도 true면 노출) */
+const DEV_MODE_ENABLED = true;
+
+// DEV 모드 메뉴 구성 — 목적별 섹션 + 항목 설명 (presetKey는 DEV_STAGE_PRESETS 키)
+const DEV_MODE_MENU = [
+  { section: "전투 시인성 테스트", items: [
+    { presetKey: "s10_solo",          desc: "트롤 문지기 정체성 / 재생 FX / 대형감" },
+    { presetKey: "s20_war_drummer_A", desc: "북지기 FX / 속도 게이지 surge / 후열 대형감 / 체력·속도바" },
+    { presetKey: "s25_hydra_seed",    desc: "중앙형 히드라 seed (보존) 관측" },
+    { presetKey: "s25_hydra_field",   desc: "다중 객체형 보스 압박감 / 좌우 히드라 개별 체력" },
+  ]},
+  { section: "밸런스 테스트", items: [
+    { presetKey: "s20_war_drummer_B", desc: "현자형 파티로 S20 북지기 대응" },
+    { presetKey: "s25_hydra_A",       desc: "균형형 (용창/성직자/파수궁/수호자)" },
+    { presetKey: "s25_hydra_B",       desc: "현자형 (현자/성직자/성벽/정화사)" },
+    { presetKey: "s25_hydra_C",       desc: "독·처형형 (덫꾼/도적/성직자/금제)" },
+  ]},
+];
 
 // preset 파티 정의 — id: 기본직업(traitId) 또는 합체(fusionId), lvl: 합체 계승 레벨(시각/스탯 근사)
 const DEV_STAGE_PRESETS = {
@@ -4793,6 +4894,31 @@ const DEV_STAGE_PRESETS = {
       { kind: "fusion", id: "binder",   lvl: 4 },  // 금제
     ],
   },
+  // v0.3.8v: 중앙형 히드라 seed 관측 (보존된 boss_hydra를 enemiesOverride로 띄움)
+  s25_hydra_seed: {
+    label: "S25 히드라 seed (중앙형)",
+    startStage: 25,
+    testId: "s25_hydra_seed",
+    enemiesOverride: ["boss_hydra"],   // S25 기본은 좌우 field boss — 여기선 중앙형 seed로 교체
+    party: [
+      { kind: "fusion", id: "dragoon",  lvl: 5 },
+      { kind: "fusion", id: "cleric",   lvl: 4 },
+      { kind: "fusion", id: "hunter",   lvl: 4 },
+      { kind: "trait",  id: "guard" },
+    ],
+  },
+  // v0.3.8v: 신규 다중 객체형 field boss (S25 기본 = 좌우 히드라)
+  s25_hydra_field: {
+    label: "S25 히드라 field boss (다중)",
+    startStage: 25,
+    testId: "s25_hydra_field_boss",
+    party: [
+      { kind: "fusion", id: "dragoon",  lvl: 5 },
+      { kind: "fusion", id: "cleric",   lvl: 4 },
+      { kind: "fusion", id: "hunter",   lvl: 4 },
+      { kind: "trait",  id: "guard" },
+    ],
+  },
 };
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -4837,6 +4963,27 @@ const ENEMY_TEMPLATES = {
     enrageAtkBoost: 1.20,      // 광폭화 시 공격 계열 +20% (재생량은 안 올림 — 장기전 방지)
     hydraRegenPct: 0.06,       // 재생 머리: maxHp 6% (보수적 — 전투 늘어지지 않게)
     displayName: "히드라",
+  },
+
+  /* ─── v0.3.8v: 다중 객체형 히드라 (field boss) ───
+     "전열2+후열2 대형 객체가 가로로 2기 — 화면을 가득 채우는 최종 보스 장면."
+     중앙형 boss_hydra(seed)는 보존. 신규는 좌/우 별개 객체로 각자 체력/속도/행동.
+     좌: 독/재생형(느림·오래 버팀) / 우: 화염/포효/물어뜯기형(공격·교란). */
+  hydra_left: {
+    race: "troll", role: "guard", hp: 1100, atk: 18, def: 2, spd: 50,
+    isBoss: true, isHydra: true, hydraVariant: "poison_regen",
+    isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    enrageAfter: 8, enrageAtkBoost: 1.20, hydraRegenPct: 0.06,
+    hydraHeads: ["poison", "regen", "bite"],   // 좌측: 독/재생 중심
+    displayName: "독 히드라",
+  },
+  hydra_right: {
+    race: "orc", role: "guard", hp: 1000, atk: 22, def: 2, spd: 64,
+    isBoss: true, isHydra: true, hydraVariant: "flame_roar",
+    isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    enrageAfter: 8, enrageAtkBoost: 1.20, hydraRegenPct: 0,
+    hydraHeads: ["flame", "roar", "bite"],     // 우측: 화염/포효/물어뜯기
+    displayName: "화염 히드라",
   },
 
   /* ─── v0.3.8r: 문지기/준보스 seed ───
@@ -4979,12 +5126,11 @@ const STAGES = [
     name: "보스 직전", desc: "합체 직후 손맛 — 보스를 앞둔 호흡",
     enemies: ["troll_melee", "orc_melee", "troll_caster", "goblin_ranged", "orc_caster"], themeId: null },
   { num: 25, cycle: 5, phase: "boss",
-    name: "관측장의 끝 — 히드라", desc: "모든 길의 끝에서, 다섯 머리가 깨어난다",
-    enemies: ["boss_hydra"], themeId: null,
-    threatIntro: { title: "히드라 등장", line: "\"다섯 머리가, 하나의 심장으로 울부짖습니다.\"" } },   // v0.3.8u
-  /* v0.3.8u: 히드라 구현됨 (boss_hydra). 머리별 행동(독/재생/포효/화염/물어뜯기)은
-     actEnemyAttack의 isHydra 분기 참조. 완전한 부위별 타겟팅은 후속 — 지금은
-     "하나의 대형 보스 + 여러 머리 행동 패턴". */
+    name: "관측장의 끝 — 히드라", desc: "두 마리의 거대한 괴물이 전장을 가득 채운다",
+    enemies: ["hydra_left", "hydra_right"], themeId: null,
+    threatIntro: { title: "히드라 등장", line: "\"두 머리의 괴물이, 전장을 가득 메웁니다.\"" } },   // v0.3.8v: 다중 객체형
+  /* v0.3.8v: S25 = 신규 다중 히드라(hydra_left 독/재생 + hydra_right 화염/포효).
+     중앙형 boss_hydra는 seed로 보존 — DEV preset(s25_hydra_seed)에서 enemiesOverride로 관측. */
 ];
 
 /* ---------- 아군 직업 베이스 스탯 (v0.1.5 결 계승) ---------- */
@@ -5066,6 +5212,26 @@ function startGame() {
 /* ─── v0.3.8r2: 개발용 스테이지 점프 ───
    preset 파티를 즉석 조립 → 목표 스테이지로 바로 진입.
    runState.devTest에 표식을 박아 일반 런 데이터와 섞이지 않게 한다. */
+/* v0.3.8v: DEV 모드 화면 — 섹션별 스크롤 메뉴 렌더 후 진입 */
+function openDevMode() {
+  const list = document.getElementById("dev-mode-list");
+  if (list) {
+    list.innerHTML = DEV_MODE_MENU.map(sec => {
+      const items = sec.items.map(it => {
+        const preset = DEV_STAGE_PRESETS[it.presetKey];
+        const label = preset ? preset.label : it.presetKey;
+        return `
+          <button class="dev-menu-item" onclick="devJumpToStage('${it.presetKey}')">
+            <span class="dmi-label">${label}</span>
+            <span class="dmi-desc">${it.desc || ""}</span>
+          </button>`;
+      }).join("");
+      return `<div class="dev-menu-section"><div class="dev-menu-section-title">${sec.section}</div>${items}</div>`;
+    }).join("");
+  }
+  showScreen("screen-dev-mode");
+}
+
 function devJumpToStage(presetKey) {
   const preset = DEV_STAGE_PRESETS[presetKey];
   if (!preset) { console.warn("[DEV] unknown preset", presetKey); return; }
@@ -5091,14 +5257,16 @@ function devJumpToStage(presetKey) {
   // 3) DEV 표식 — 오염 방지 (export/결과/발자취에서 일반 런과 구분)
   runState.devTest = {
     enabled: true,
+    source: "dev_mode",
+    testId: preset.testId || presetKey,
     startStage: preset.startStage,
     preset: presetKey,
   };
   debugResult("dev stage jump", { preset: presetKey, startStage: preset.startStage });
 
-  // 4) 목표 스테이지 진입
+  // 4) 목표 스테이지 진입 (preset에 enemiesOverride 있으면 적 교체 — seed 관측용)
   runState.stage = preset.startStage;
-  loadStage(preset.startStage);
+  loadStage(preset.startStage, preset.enemiesOverride);
   enterBattleScreen();
 }
 
@@ -6741,6 +6909,8 @@ function makeEnemyUnit(templateId) {
     // v0.3.8u: 히드라 필드
     isHydra: tpl.isHydra || false,
     hydraRegenPct: tpl.hydraRegenPct || 0,
+    hydraHeads: tpl.hydraHeads || null,       // v0.3.8v: 객체별 머리 풀 (없으면 5머리 전부)
+    hydraVariant: tpl.hydraVariant || null,   // v0.3.8v: 좌/우 변형 식별
     _lastHead: null,        // 직전 머리 행동 (반복 회피용)
     _enemyActionCount: 0,   // 자기 행동 횟수 (광폭화 게이트용)
     _enraged: false,        // 광폭화 상태
@@ -6888,7 +7058,7 @@ function statsBump(uid, key, n = 1) {
   s[key] = (s[key] || 0) + n;
 }
 
-function loadStage(stageNum) {
+function loadStage(stageNum, enemiesOverride) {
   const stage = STAGES[stageNum - 1];
   if (!stage) return;
 
@@ -6896,8 +7066,9 @@ function loadStage(stageNum) {
   //   "예약된 과거가 현재를 덮어쓰면 안 된다."
   beginNewBattleSlot();
 
-  // 적 인스턴스 생성
-  runState.enemies = stage.enemies.map(tplId => makeEnemyUnit(tplId));
+  // 적 인스턴스 생성 (v0.3.8v: DEV override 있으면 그걸로 — seed 관측용)
+  const enemyList = (enemiesOverride && enemiesOverride.length) ? enemiesOverride : stage.enemies;
+  runState.enemies = enemyList.map(tplId => makeEnemyUnit(tplId));
 
   // 아군 HP/게이지/보호막 리셋 (새 스테이지 시작)
   runState.units.forEach(u => {
@@ -8408,7 +8579,10 @@ function actFusion(actor) {
    선택: 랜덤이되 직전 머리 반복 회피 + 재생 연속 금지 + HP 90%↑면 재생 우선순위↓.
    광폭화(_enraged) 시 공격 계열 피해 ×enrageAtkBoost (재생은 안 올림). */
 function hydraAct(actor) {
-  const heads = ["poison", "regen", "roar", "flame", "bite"];
+  // v0.3.8v: 객체별 머리 풀 (좌=독/재생, 우=화염/포효). 없으면 5머리 전부 (중앙형 seed).
+  const heads = actor.hydraHeads && actor.hydraHeads.length
+    ? actor.hydraHeads.slice()
+    : ["poison", "regen", "roar", "flame", "bite"];
   const hpPct = actor.hp / actor.maxHp;
 
   // 후보 풀 구성 (회피 규칙)
@@ -10688,7 +10862,7 @@ function buildBalanceExportPayload() {
     version: BUILD_VERSION,
     stage13Softening: !!ENABLE_STAGE13_TEST_SOFTENING,
     notes: ENABLE_STAGE13_TEST_SOFTENING
-      ? "Elite visual polish — troll sprite & drummer rhythm FX tuning"
+      ? "War drummer UI fix, dual field-boss hydra, DEV mode screen"
       : "Standard build",
     features: [
       "vanguard_3_target_minor_heal",
@@ -10714,6 +10888,11 @@ function buildBalanceExportPayload() {
       "hydra_sprite",
       "hydra_enrage_seed",
       "dev_s25_hydra_presets",
+      "war_drummer_bar_visibility_fix",
+      "hydra_dual_field_boss",
+      "hydra_center_seed_preserved",
+      "dev_mode_screen",
+      "dev_run_source_tagging",
     ],
     devStageTestBuild: (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) || false,
   };
@@ -11184,33 +11363,39 @@ function trollGatekeeperSVG() {
 /* v0.3.8u: 히드라 전용 스프라이트 — 다섯 머리 다두룡 (귀엽지만 위압적).
    거대한 몸체 + 다섯 목/머리, 머리마다 개성 색(독 보라 / 재생 초록 / 포효 회색 /
    화염 주황 / 물어뜯기 빨강). Project Signal 톤 — 너무 리얼/징그럽지 않게. */
-function hydraSVG() {
+function hydraSVG(variant) {
+  // v0.3.8v: variant별 머리 색 강조 — 좌(poison_regen)=보라/초록, 우(flame_roar)=주황/빨강.
+  //   중앙형(변형 없음)은 다섯 머리 다른 색 그대로.
+  let c = { body: "#3a5a4a", bodyHi: "#4a6e58", bite: "#a64a4a", poison: "#8a6db0",
+            regen: "#5ddb8a", roar: "#8a8a98", flame: "#e89a3c" };
+  if (variant === "poison_regen") {
+    c.body = "#3a5a52"; c.bodyHi = "#4a6e62";
+    c.bite = "#6a8a5a"; c.poison = "#9a6dc0"; c.regen = "#5ddb8a"; c.roar = "#6a8a6a"; c.flame = "#7aa86a";
+  } else if (variant === "flame_roar") {
+    c.body = "#5a3a3a"; c.bodyHi = "#6e4a4a";
+    c.bite = "#c0392b"; c.poison = "#a6632a"; c.regen = "#c87a3c"; c.roar = "#8a6a5a"; c.flame = "#e8702c";
+  }
   return `
     <svg class="hydra-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="히드라">
       <!-- 거대 몸체 -->
-      <ellipse cx="32" cy="50" rx="20" ry="12" fill="#3a5a4a" stroke="#1e3326" stroke-width="2"/>
-      <ellipse cx="32" cy="48" rx="14" ry="7" fill="#4a6e58" opacity="0.7"/>
+      <ellipse cx="32" cy="50" rx="20" ry="12" fill="${c.body}" stroke="#1e3326" stroke-width="2"/>
+      <ellipse cx="32" cy="48" rx="14" ry="7" fill="${c.bodyHi}" opacity="0.7"/>
       <!-- 다섯 목 (부채꼴로 펼침) -->
-      <!-- 물어뜯기(빨강) 좌끝 -->
       <path d="M18 48 Q10 38 12 28" stroke="#7a3a3a" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <circle cx="12" cy="26" r="5" fill="#a64a4a" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="12" cy="26" r="5" fill="${c.bite}" stroke="#1e3326" stroke-width="1.2"/>
       <circle cx="11" cy="25" r="1.2" fill="#ffe0a0"/>
-      <!-- 독(보라) 좌 -->
       <path d="M24 48 Q20 34 22 22" stroke="#5a4a6e" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <circle cx="22" cy="20" r="5" fill="#8a6db0" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="22" cy="20" r="5" fill="${c.poison}" stroke="#1e3326" stroke-width="1.2"/>
       <circle cx="21" cy="19" r="1.2" fill="#d4ff90"/>
-      <!-- 재생(초록) 중앙 -->
       <path d="M32 47 Q32 30 32 16" stroke="#3a6e4a" stroke-width="5.5" fill="none" stroke-linecap="round"/>
-      <circle cx="32" cy="14" r="5.5" fill="#5ddb8a" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="32" cy="14" r="5.5" fill="${c.regen}" stroke="#1e3326" stroke-width="1.2"/>
       <circle cx="31" cy="13" r="1.3" fill="#1e3326"/>
       <circle cx="34" cy="13" r="1.3" fill="#1e3326"/>
-      <!-- 포효(회색) 우 -->
       <path d="M40 48 Q44 34 42 22" stroke="#5a5a64" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <circle cx="42" cy="20" r="5" fill="#8a8a98" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="42" cy="20" r="5" fill="${c.roar}" stroke="#1e3326" stroke-width="1.2"/>
       <path d="M39 21 Q42 23 45 21" stroke="#1e3326" stroke-width="1" fill="none"/>
-      <!-- 화염(주황) 우끝 -->
       <path d="M46 48 Q54 38 52 28" stroke="#a6632a" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <circle cx="52" cy="26" r="5" fill="#e89a3c" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="52" cy="26" r="5" fill="${c.flame}" stroke="#1e3326" stroke-width="1.2"/>
       <circle cx="51" cy="25" r="1.2" fill="#fff0b0"/>
     </svg>
   `;
@@ -11252,6 +11437,12 @@ function renderUnitHTML(u) {
     } else if (u.templateId === "boss_hydra" && typeof hydraSVG === "function") {
       portraitInner = `
         ${hydraSVG()}
+        ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
+      `;
+    } else if (u.isHydra && typeof hydraSVG === "function") {
+      // v0.3.8v: 신규 좌/우 field boss 히드라 — variant 색 분리
+      portraitInner = `
+        ${hydraSVG(u.hydraVariant)}
         ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
       `;
     } else {
@@ -12597,11 +12788,14 @@ const CODEX_ENTRIES = [
     });
   });
 
-  // v0.3.8r2: DEV 스테이지 테스트 버튼 — 플래그 true일 때만 노출 (일반/친구 빌드는 숨김)
-  if (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) {
-    const devTools = document.getElementById("dev-stage-tools");
-    if (devTools) devTools.style.display = "";
-    console.log("[DEV] stage test tools enabled");
+  // v0.3.8v: DEV 모드 버튼 — DEV_MODE_ENABLED(또는 하위호환 DEV_STAGE_TEST) true일 때만 노출.
+  //   친구/릴리즈 빌드는 둘 다 false로 완전히 숨김.
+  const devOn = (typeof DEV_MODE_ENABLED !== "undefined" && DEV_MODE_ENABLED)
+             || (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST);
+  if (devOn) {
+    const devBtn = document.getElementById("dev-mode-btn");
+    if (devBtn) devBtn.style.display = "";
+    console.log("[DEV] dev mode enabled");
   }
 })();
 </script>
