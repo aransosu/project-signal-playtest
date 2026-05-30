@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8p-stage13-20-soften</title>
+<title>Project Signal Mk.II v0.3.8r1-gatekeeper-readability-hotfix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -1881,17 +1881,22 @@ body {
 
 /* 이벤트 피드 — 2줄 고정 (v0.1.5 결 계승) */
 .event-feed {
-  height: 48px;
+  /* v0.3.8r1: 48px(2줄) → 26px(1줄) 축소. 전장 시인성 확보 (후보 A).
+     중요 이벤트는 전장 FX/플로팅으로 읽히게 했으므로 로그는 보조로 줄임.
+     상세 로그가 필요하면 후속에서 접기(후보 B)로 확장 가능. */
+  height: 26px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
-  padding: 6px 12px;
+  padding: 4px 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 0;
   contain: layout style;
   flex-shrink: 0;
 }
+/* 첫 줄(과거)은 숨기고 최신 1줄만 — 전장을 가리지 않게 */
+.event-feed .event-line:first-child { display: none; }
 
 .event-line {
   font-family: 'JetBrains Mono', monospace;
@@ -1920,7 +1925,7 @@ body {
   flex: 1;
   min-height: 0; /* flex 자식이 늘어날 수 있게 */
   position: relative;
-  padding: 12px 12px 16px;
+  padding: 22px 12px 16px;  /* v0.3.8r1: 상단 12→22px — 대형 몬스터(북지기) 상단 여유 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2290,6 +2295,95 @@ body {
   align-items: center;
   justify-content: center;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+}
+
+/* ─── v0.3.8r: 대형 몬스터 / 광폭화 시각 강조 (seed) ───
+   완전한 칸 점유 렌더는 후속. 지금은 "얘 크다 / 분노했다"를 느끼게 하는 CSS 표현. */
+.unit.large-enemy .unit-portrait {
+  transform: scale(1.45);
+  transform-origin: center bottom;
+  z-index: 3;
+}
+.unit.large-enemy .enemy-emoji { font-size: 52px; }
+.unit.large-enemy.size-4 .unit-portrait { transform: scale(1.55); }
+.unit.large-enemy.size-3 .unit-portrait { transform: scale(1.45); }
+.unit.miniboss .unit-portrait {
+  box-shadow: 0 0 0 2px rgba(255,201,74,0.55), 0 0 18px rgba(255,201,74,0.45) !important;
+  border-color: var(--job-sovereign, #ffc94a) !important;
+}
+/* 대형 몬스터는 lane 안에서 더 넓은 자리를 차지하는 느낌 */
+.unit.large-enemy { margin: 0 14px; min-width: 64px; }
+.unit.large-enemy.pattern-back3 { margin: 0 28px; }
+
+/* 광폭화 — 붉은 맥동 + 배지 */
+.unit.enraged .unit-portrait {
+  box-shadow: 0 0 0 2px rgba(255,80,60,0.7), 0 0 20px rgba(255,80,60,0.6) !important;
+  animation: enrage-pulse 0.9s ease-in-out infinite;
+}
+@keyframes enrage-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.35) saturate(1.3); }
+}
+.enrage-badge {
+  position: absolute;
+  top: -6px; left: -6px;
+  font-size: 14px;
+  background: rgba(255,60,40,0.9);
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 8px rgba(255,80,60,0.8);
+  z-index: 5;
+}
+
+/* ─── v0.3.8r1: 정예/보스 등장 인트로 오버레이 ─── */
+.threat-intro {
+  position: absolute; inset: 0;
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at center, rgba(20,10,30,0.82), rgba(5,5,12,0.92));
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  cursor: pointer;
+}
+.threat-intro.show { opacity: 1; }
+.threat-intro .ti-inner { text-align: center; transform: translateY(8px); transition: transform 0.3s ease; padding: 0 24px; }
+.threat-intro.show .ti-inner { transform: translateY(0); }
+.threat-intro .ti-stage {
+  font-size: 13px; letter-spacing: 3px; color: var(--signal-dim, #8a8aa0);
+  margin-bottom: 8px;
+}
+.threat-intro .ti-title {
+  font-size: 26px; font-weight: 800; color: var(--job-sovereign, #ffc94a);
+  text-shadow: 0 0 16px rgba(255,201,74,0.5); margin-bottom: 12px;
+}
+.threat-intro .ti-line { font-size: 15px; color: #e0e0ec; line-height: 1.5; margin-bottom: 18px; }
+.threat-intro .ti-hint { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+
+/* ─── v0.3.8r1: 전쟁 북지기(후열 3칸) 대형감 강화 + 잘림 방지 ─── */
+.unit.large-enemy.pattern-back3 .unit-portrait {
+  transform: scale(1.7);
+  transform-origin: center center;
+}
+.unit.large-enemy.pattern-back3 .enemy-emoji { font-size: 60px; }
+.unit.large-enemy.pattern-back3 { margin: 0 36px; min-width: 90px; }
+/* 후열 lane 위쪽 여백 확보 — 대형 몬스터 상단이 안 잘리게 */
+#lane-enemy-back { padding-top: 28px; overflow: visible; }
+.lane, #battle-svg { overflow: visible; }
+
+/* v0.3.8r1: 북지기 게이지 가속 강조 — 파란 게이지가 훅 차오르는 펄스 */
+.gauge-bar.gauge-surge {
+  box-shadow: 0 0 8px 2px rgba(90,150,255,0.85);
+  animation: gauge-surge-pulse 0.6s ease-out;
+}
+.gauge-bar.gauge-surge .gauge-bar-fill {
+  background: linear-gradient(90deg, #5a96ff, #9ec6ff) !important;
+  transition: width 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+@keyframes gauge-surge-pulse {
+  0%   { transform: scaleY(1); }
+  40%  { transform: scaleY(1.8); }
+  100% { transform: scaleY(1); }
 }
 
 /* 종족별 외곽 — v0.1.5 결 (이중 gradient + 외곽 글로우) */
@@ -3719,7 +3813,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8p (playtime soften)</div>
+      <div class="title-version">MK.II — v0.3.8r1 (readability hotfix)</div>
     </div>
 
     <p class="title-tagline">
@@ -4504,19 +4598,19 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8p-stage13-20-soften";
+const BUILD_VERSION = "v0.3.8r1-gatekeeper-readability-hotfix";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
 function getEnemyStatMultiplier(stage) {
   if (!ENABLE_STAGE13_TEST_SOFTENING) return 1.0;
   if (stage <= 12) return 1.0;
-  if (stage <= 15) return 0.88;  // S13~15: -12% (v0.3.8p: 0.92→0.88, 검문소 유지하되 압축기 완화)
-  if (stage <= 18) return 0.86;  // S16~18: -14% (v0.3.8p: 0.90→0.86, 중후반 벽으로 남김)
-  if (stage <= 20) return 0.84;  // S19~20: -16% (v0.3.8p: 0.88→0.84, S20 도달 빈도↑ 관측)
+  if (stage <= 15) return 0.84;  // S13~15: -16% (v0.3.8q: 0.88→0.84, 2차 직업 실험 막는 압축기 X)
+  if (stage <= 18) return 0.82;  // S16~18: -18% (v0.3.8q: 0.86→0.82, 중후반 벽으로 남김)
+  if (stage <= 20) return 0.80;  // S19~20: -20% (v0.3.8q: 0.84→0.80, 2차 보유 파티로 S20 이후 진입↑)
   // v0.3.8: 사이클 5 관측 구간
-  if (stage <= 24) return 0.90;  // S21~24: -10% (연장 관측 — v0.3.8p 유지)
-  return 1.0;                     // S25 boss: 완화 X — "어디까지 버티나" 온전히 관측 (v0.3.8p 유지)
+  if (stage <= 24) return 0.86;  // S21~24: -14% (v0.3.8q: 0.90→0.86, 후반 롱런 감각 관측)
+  return 1.0;                     // S25 boss: 완화 X — "어디까지 버티나" 온전히 관측 (유지)
 }
 
 /* 적 템플릿 — 종족 + 역할 + 스탯 */
@@ -4535,6 +4629,39 @@ const ENEMY_TEMPLATES = {
   // v0.3.8: S25 보스층 — 관측용 (정교 밸런싱 X). "어디까지 버티나"
   boss_troll_lord:{ race: "troll",  role: "guard",   hp: 520, atk: 24, def: 9, spd: 55, isBoss: true },
   boss_warlock:   { race: "orc",    role: "caster",  hp: 300, atk: 20, def: 4, spd: 80, isBoss: true },
+
+  /* ─── v0.3.8r: 문지기/준보스 seed ───
+     대형 몬스터 필드 (seed — 완전 렌더 시스템은 후속):
+       sizeSlots:        점유 칸 수 (1=일반 / 2~3=정예 / 3~5=문지기 / 6~10=최종보스)
+       occupiedPattern:  "single" | "front2_back2" | "back3" | "all10"  (시각 배치 의도)
+       isLargeEnemy:     true면 카드 크게 + 대형 강조
+     행동/광폭화 필드:
+       selfHealPct:      자기 행동 후 maxHp의 N% 회복 (문지기 지속력)
+       enrageAfter:      N번째 자기 행동 이후 광폭화 발동
+       enrageAtkBoost:   광폭화 시 공격력 배수 (트롤 문지기)
+       drumGaugePct:     자기 행동 시 적 전체 speed gauge +N% (전쟁 북지기)
+       drumEnrageGaugePct: 광폭화 후 gauge 증가량 (전쟁 북지기)
+  */
+  troll_gatekeeper: {
+    race: "troll", role: "guard", hp: 720, atk: 20, def: 3, spd: 58,
+    // v0.3.8r1: DEF 8→3 (억까 제거 — DEF는 amount에서 평면 차감 + 스테이지 스케일링되어
+    //   전사/궁수 기본공격이 1뎀만 뜨던 자리). HP는 대형감 유지, atk 22→20 소폭 하향.
+    //   결: "큰 HP+재생으로 버티는 문지기"이지 "DEF로 특정 직업만 가능한 벽"이 아니다.
+    //   도적은 처형(HP 비례, DEF 무시)이라 여전히 천적 — 그 감성은 유지.
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    selfHealPct: 0.10,        // 자기 행동 후 최대 HP 10% 회복 (테스트 후 필요하면 0.08)
+    enrageAfter: 8,           // 8번째 행동 이후 광폭화 (유지)
+    enrageAtkBoost: 1.30,     // 광폭화 시 공격력 +30%
+    displayName: "트롤 문지기",
+  },
+  war_drummer: {
+    race: "orc", role: "special", hp: 560, atk: 12, def: 5, spd: 70,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 3, occupiedPattern: "back3",
+    drumGaugePct: 0.15,       // 자기 행동 시 적 전체 speed gauge +15%
+    enrageAfter: 6,           // 6번째 행동 이후 광폭화
+    drumEnrageGaugePct: 0.25, // 광폭화 후 gauge 증가량 +25%
+    displayName: "전쟁 북지기",
+  },
 };
 
 /* ---------- 스테이지 정의 (v0.3.1: 5층 사이클 × 4) ----------
@@ -4581,8 +4708,9 @@ const STAGES = [
     name: "시험 운전", desc: "합체 후 손맛 — 약간 가벼운 부대",
     enemies: ["orc_melee", "goblin_ranged", "goblin_ranged", "troll_caster"], themeId: null },
   { num: 10, cycle: 2, phase: "recruit",
-    name: "두 번째 입증", desc: "사이클의 결과 — 중간 강도. 직후 새 동료 합류",
-    enemies: ["troll_guard", "orc_caster", "goblin_ranged", "orc_melee", "troll_caster"], themeId: null },
+    name: "두 번째 입증", desc: "문지기가 길을 막는다 — 4인 파티 입장 시험. 직후 새 동료 합류",
+    enemies: ["troll_gatekeeper"], themeId: null,
+    threatIntro: { title: "트롤 문지기 등장", line: "\"이 문을 지나가려면, 힘을 증명해라.\"" } },   // v0.3.8r1
 
   /* ===== 사이클 3 (11~15): 1차 직업 확장 + 독 몬스터 검증 환경 (v0.3.4) ===== */
   { num: 11, cycle: 3, phase: "growth",
@@ -4600,6 +4728,9 @@ const STAGES = [
   { num: 15, cycle: 3, phase: "proof",
     name: "세 번째 입증", desc: "사이클의 결과 — 독 진영 정점",
     enemies: ["troll_guard", "orc_guard", "goblin_poison", "goblin_poison", "troll_caster", "orc_melee"], themeId: null },
+  /* v0.3.8r seed — S15 문지기화 후보 (이번 빌드 미적용, 설계만):
+       트롤 문지기 중앙 + 빈 공간에 일반 몬스터 랜덤 조합.
+       10층 트롤 문지기의 응용 / 중간 검문소. 손맛 데이터 본 뒤 적용 판단. */
 
   /* ===== 사이클 4 (16~20): 완성형 증명 ===== */
   { num: 16, cycle: 4, phase: "growth",
@@ -4615,8 +4746,9 @@ const STAGES = [
     name: "시험 운전", desc: "최후 합체 후 손맛 — 정예이지만 적응 자리",
     enemies: ["troll_guard", "troll_melee", "orc_melee", "goblin_ranged", "troll_caster", "orc_caster"], themeId: null },
   { num: 20, cycle: 4, phase: "proof",
-    name: "마지막 벽", desc: "사이클 4 정점 — 1막의 끝, 그러나 끝이 아니다",
-    enemies: ["troll_guard", "troll_guard", "orc_guard", "troll_melee", "orc_melee", "goblin_ranged", "troll_caster", "orc_caster"], themeId: null },
+    name: "마지막 벽", desc: "뒤에서 북을 치는 자가 전장을 조율한다 — 1막의 끝, 그러나 끝이 아니다",
+    enemies: ["troll_guard", "orc_guard", "troll_guard", "war_drummer"], themeId: null,
+    threatIntro: { title: "전쟁 북지기 등장", line: "\"둥… 둥… 적의 박자가 빨라집니다.\"" } },   // v0.3.8r1
 
   /* ===== v0.3.8: 사이클 5 (21~25) — 롱런 관측장 =====
      목적: 밸런스 완성 X. "조합의 긴 호흡 / 어디까지 이어지나" 관측.
@@ -4638,6 +4770,11 @@ const STAGES = [
   { num: 25, cycle: 5, phase: "boss",
     name: "관측장의 끝 — 군주", desc: "이 파티가 어디까지 이어지는가",
     enemies: ["boss_troll_lord", "boss_warlock", "troll_guard", "troll_caster"], themeId: null },
+  /* v0.3.8r seed — S25 최종 보스 후보: 히드라 (이번 빌드 미구현, 로망 설계만):
+       전열 5칸 + 후열 5칸, 총 10칸 전체 점유 (sizeSlots:10, occupiedPattern:"all10", isBoss).
+       하나의 거대한 보스로 표현. 추후 머리별 행동:
+         독 머리 / 재생 머리 / 포효 머리(전체 가속) / 화염 머리(광역) / 물어뜯기 머리(단일 강타).
+       대형 몬스터 seed(sizeSlots/occupiedPattern)가 히드라까지 확장되도록 구조만 열어둠. */
 ];
 
 /* ---------- 아군 직업 베이스 스탯 (v0.1.5 결 계승) ---------- */
@@ -4835,6 +4972,7 @@ const CODEX_ACTIONS = {
   tracker:  ["조준 → 다음 행동 저격", "후열의 현재 체력 높은 적 우선", "HP 100% 대상이면 추가 피해"],
   dragoon:  ["관통 — 두 명 동시 타격", "처치 시 재돌격 (행동력 100%)", "리듬 대응 공격"],
   sage:     ["차징 중 아군 가속", "차징 후 광역 마법"],
+  vanguard: ["전열 공격 + HP 낮은 3명 소량 회복", "전선 유지형 하이브리드 (메인 힐러 X)"],
   sovereign: ["전열 공격 + HP 낮은 2명 회복", "위기 시 파티 전체 성역(보호막)"],
 };
 
@@ -6325,9 +6463,11 @@ function makeEnemyUnit(templateId) {
   return {
     uid: nextUid(),
     side: "enemy",
-    name: templateId === "goblin_poison"
-      ? `${RACES[race].name} 독술사`
-      : `${RACES[race].name} ${roleName}`,
+    name: tpl.displayName
+      ? tpl.displayName
+      : (templateId === "goblin_poison"
+          ? `${RACES[race].name} 독술사`
+          : `${RACES[race].name} ${roleName}`),
     race: race,
     role: role,
     templateId: templateId,
@@ -6337,6 +6477,20 @@ function makeEnemyUnit(templateId) {
     shield: 0, gauge: 0, alive: true,
     _deathReported: false,  // v0.3.7.12: 사망 보고 플래그
     offsetSeed: Math.floor(Math.random() * 100000),
+    // v0.3.8r: 문지기/준보스 seed 필드 (없으면 일반 몬스터)
+    isBoss: tpl.isBoss || false,
+    isMiniboss: tpl.isMiniboss || false,
+    isLargeEnemy: tpl.isLargeEnemy || false,
+    sizeSlots: tpl.sizeSlots || 1,
+    occupiedPattern: tpl.occupiedPattern || "single",
+    selfHealPct: tpl.selfHealPct || 0,
+    enrageAfter: tpl.enrageAfter || 0,
+    enrageAtkBoost: tpl.enrageAtkBoost || 1.0,
+    drumGaugePct: tpl.drumGaugePct || 0,
+    drumEnrageGaugePct: tpl.drumEnrageGaugePct || 0,
+    _enemyActionCount: 0,   // 자기 행동 횟수 (광폭화 게이트용)
+    _enraged: false,        // 광폭화 상태
+    _baseAtk: finalAtk,     // 광폭화 배수 적용 기준 (원본 atk)
   };
 }
 
@@ -6359,7 +6513,52 @@ function enterBattleScreen() {
     syncBattleSvg();
     requestAnimationFrame(syncBattleSvg);
   });
-  startBattleLoop();
+
+  // v0.3.8r1: 정예/문지기/보스 인트로 — threatIntro 태그가 있는 스테이지만.
+  //   인트로 동안 전투 루프 시작을 잠깐 늦춤. 탭하면 즉시 스킵.
+  const stage = STAGES[(runState.stage || 0) - 1];
+  if (stage && stage.threatIntro) {
+    showThreatIntro(stage, () => startBattleLoop());
+  } else {
+    startBattleLoop();
+  }
+}
+
+/* v0.3.8r1: 정예/보스 등장 인트로 오버레이.
+   - 0.8~1.2초 짧게 노출 후 자동 진행 / 탭하면 즉시 스킵.
+   - onDone은 정확히 1번만 호출 (자동/스킵 중복 방지). */
+function showThreatIntro(stage, onDone) {
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    const ov = document.getElementById("threat-intro");
+    if (ov) {
+      ov.classList.remove("show");
+      setTimeout(() => { if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 220);
+    }
+    onDone && onDone();
+  };
+
+  const intro = stage.threatIntro;
+  const overlay = document.createElement("div");
+  overlay.id = "threat-intro";
+  overlay.className = "threat-intro";
+  overlay.innerHTML = `
+    <div class="ti-inner">
+      <div class="ti-stage">STAGE ${stage.num}</div>
+      <div class="ti-title">${intro.title}</div>
+      <div class="ti-line">${intro.line}</div>
+      <div class="ti-hint">탭하여 시작</div>
+    </div>
+  `;
+  overlay.addEventListener("click", finish);
+  const app = document.getElementById("app") || document.body;
+  app.appendChild(overlay);
+  // 다음 프레임에 show 클래스 (fade-in)
+  requestAnimationFrame(() => overlay.classList.add("show"));
+  // 자동 진행 (1.1초)
+  setTimeout(finish, 1100);
 }
 
 function initRunFromParty() {
@@ -7527,13 +7726,14 @@ function actFusion(actor) {
       drawLine(actor, target, "attack");
       pushEvent(`<b>${actor.name}</b> → <b>${target.name}</b> (${dmg})`, "attack");
 
-      // 2) HP 비율 가장 낮은 아군 2명에게 소량 회복 박음
-      //    v0.3.7.10: 1명 → 2명. 사제/치원과 결 차이 박음. 팀 전선 유지 시각 결.
+      // 2) HP 비율 가장 낮은 아군 3명에게 소량 회복 박음
+      //    v0.3.8r: 2명 → 3명, atk×0.3 → ×0.35 (전열 파티 유지형 강화 — "뾰롱뾰롱뾰롱").
+      //    결: 메인 힐러(사제/성직자) 안 됨. 서로 다른 대상 / 만피·사망 제외 (자기 반복 회복 X).
       const aliveAllies = runState.units.filter(u => u.alive);
       if (aliveAllies.length > 0) {
         aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
-        const healTargets = aliveAllies.slice(0, Math.min(2, aliveAllies.length));
-        const healAmount = Math.floor(actor.atk * 0.3);   // 2명 × 0.3 = 합 0.6 (이전 단일 0.4보다 큼 — 결 의도)
+        const healTargets = aliveAllies.slice(0, Math.min(3, aliveAllies.length));
+        const healAmount = Math.floor(actor.atk * 0.35);   // 3명 × 0.35 = 합 1.05 (전선 유지형, 단일 집중 X)
         let anyHealed = false;
         healTargets.forEach(ally => {
           if (ally.hp < ally.maxHp) {
@@ -7947,6 +8147,64 @@ function actFusion(actor) {
 }
 
 function actEnemyAttack(actor) {
+  // ─── v0.3.8r: 문지기/준보스 seed — 행동 카운트 + 광폭화 게이트 ───
+  //   (일반 몬스터는 enrageAfter=0 / 특수 필드 0이라 아래 블록 전부 no-op)
+  if (actor.isMiniboss || actor.enrageAfter > 0 || actor.selfHealPct > 0 || actor.drumGaugePct > 0) {
+    actor._enemyActionCount = (actor._enemyActionCount || 0) + 1;
+
+    // 광폭화 발동 (N번째 행동 이후, 1회만)
+    if (actor.enrageAfter > 0 && !actor._enraged && actor._enemyActionCount >= actor.enrageAfter) {
+      actor._enraged = true;
+      // 트롤 문지기: 공격력 +30%
+      if (actor.enrageAtkBoost > 1.0) {
+        actor.atk = Math.floor((actor._baseAtk || actor.atk) * actor.enrageAtkBoost);
+        pushEvent(`<b>${actor.name}</b>가 분노합니다! 공격력이 증가했습니다.`, "death");
+      } else {
+        // 전쟁 북지기: 게이지 증가량 강화 (drumEnrageGaugePct로 승격)
+        pushEvent(`<b>${actor.name}</b>가 분노합니다! 전장의 박동이 거세집니다.`, "death");
+      }
+      showActionLabel(actor, "광폭화!", "attack");
+      if (typeof markEnrageBadge === "function") markEnrageBadge(actor);
+    }
+
+    // 전쟁 북지기: 자기 행동 시 적(아군 입장의 적 = 적 진영 전체) speed gauge 가속
+    if (actor.drumGaugePct > 0) {
+      const pct = actor._enraged && actor.drumEnrageGaugePct > 0
+        ? actor.drumEnrageGaugePct
+        : actor.drumGaugePct;
+      const allEnemies = runState.enemies.filter(e => e.alive);
+      // v0.3.8r1: 로그가 아니라 전장 FX로 먼저 읽히게 —
+      //   1) 북지기→적 전체 파동 FX  2) 게이지 차오르는 강조 클래스  3) 플로팅 텍스트
+      showActionLabel(actor, "둥! 전쟁의 박동!", "attack");
+      if (typeof drawCenterPulse === "function") {
+        drawCenterPulse(actor, allEnemies.filter(e => e.uid !== actor.uid), "drum");
+      } else if (typeof drawAoeWave === "function") {
+        drawAoeWave(actor, allEnemies.filter(e => e.uid !== actor.uid), "drum");
+      }
+      allEnemies.forEach(e => {
+        e.gauge = Math.min(100, (e.gauge || 0) + 100 * pct);
+        // 게이지 바 시각 강조 (차오름 펄스)
+        const el = document.querySelector(`[data-uid="${e.uid}"] .gauge-bar`);
+        if (el) {
+          el.classList.add("gauge-surge");
+          setTimeout(() => el.classList.remove("gauge-surge"), 600);
+        }
+      });
+      pushEvent(`둥! 전쟁의 박동! 적 전체의 속도 게이지가 차오릅니다.`, "debuff");
+      // 북지기는 게이지 가속이 주 행동 — 직접 타격은 약하게(아래 일반 공격 흐름) 또는 생략.
+      //   여기선 "조율"이 핵심이라 직접 공격은 건너뛰고 자기 회복만 처리 후 종료.
+      if (actor.selfHealPct > 0 && actor.hp < actor.maxHp) {
+        const healAmt = Math.floor(actor.maxHp * actor.selfHealPct);
+        actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
+      }
+      return;  // 북지기 행동 종료 (전장 조율형)
+    }
+
+    // 트롤 문지기 등: 자기 행동 후 maxHp N% 회복 (행동 끝에 박되, 먼저 계산값 보관)
+    //   회복은 공격 처리 뒤에 적용하려고 플래그만 — 아래 일반 공격 흐름 거친 뒤 finishAction 전에.
+    actor._pendingSelfHeal = actor.selfHealPct > 0;
+  }
+
   // v0.3.5: 금제 atk 봉인 결 (행동 시 카운트다운)
   if (actor._atkSealStacks && actor._atkSealStacks > 0) {
     actor._atkSealStacks--;
@@ -8024,6 +8282,15 @@ function actEnemyAttack(actor) {
     showActionLabel(actor, "독침!", "debuff");
     pushEvent(`<b>${target.name}</b> 중독됨 (2턴)`, "debuff");
   }
+
+  // v0.3.8r: 트롤 문지기 등 — 자기 행동 후 maxHp N% 회복 (장기 지속력)
+  if (actor._pendingSelfHeal && actor.selfHealPct > 0 && actor.alive && actor.hp < actor.maxHp) {
+    const healAmt = Math.floor(actor.maxHp * actor.selfHealPct);
+    actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
+    drawLine(actor, actor, "heal");
+    pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
+  }
+  actor._pendingSelfHeal = false;
 }
 
 /* 유닛 흔들림 (피격 강조) */
@@ -8919,10 +9186,16 @@ function showFusionChoice() {
   }
 
   // 2차 직업이 먼저 보이게 정렬 (도파민 자리)
+  // v0.3.8q: 같은 2차끼리는 성황(sovereign)을 살짝 앞세움 — 도달 어려운 루트라 노출 우선.
+  //   (합체 룰/후보 생성은 안 건드림. 이미 후보엔 다 들어있고, 보이는 순서만 약하게 정리.)
   availableFusions.sort((a, b) => {
     const aTier = a.tier === "secondary" ? 1 : 0;
     const bTier = b.tier === "secondary" ? 1 : 0;
-    return bTier - aTier;
+    if (bTier !== aTier) return bTier - aTier;
+    // 동급(둘 다 secondary 등)이면 성황을 앞으로
+    const aSov = a.id === "sovereign" ? 1 : 0;
+    const bSov = b.id === "sovereign" ? 1 : 0;
+    return bSov - aSov;
   });
 
   container.innerHTML = availableFusions.map(f => {
@@ -9122,6 +9395,10 @@ function renderRecruitCandidates(title, desc, opts = {}) {
 
   const shuffled = pool.slice().sort(() => Math.random() - 0.5);
   const candidates = shuffled.slice(0, Math.min(3, shuffled.length));
+
+  // v0.3.8r: 영입은 "파티에 없는 기본직업 중 N등분" 원칙으로 복원.
+  //   (v0.3.8q의 vanguard route bias 제거 — 숨은 보정으로 루트 유도하지 않는다.
+  //    영입 랜덤은 Project Signal의 핵심 재미. 플레이어가 주어진 후보로 "이번 판은 이렇게 꺾자"를 판단한다.)
 
   document.getElementById("companion-title").textContent = title;
   document.getElementById("companion-desc").textContent = desc;
@@ -10039,16 +10316,29 @@ function buildBalanceExportPayload() {
     version: BUILD_VERSION,
     stage13Softening: !!ENABLE_STAGE13_TEST_SOFTENING,
     notes: ENABLE_STAGE13_TEST_SOFTENING
-      ? "Stage13~20 playtime balance softening build"
+      ? "Gatekeeper stat tuning and elite encounter readability hotfix"
       : "Standard build",
+    features: [
+      "vanguard_3_target_minor_heal",
+      "recruit_no_hidden_vanguard_bias",
+      "stage10_troll_gatekeeper",
+      "stage20_war_drummer",
+      "large_enemy_slot_seed",
+      "boss_enrage_seed",
+      "troll_gatekeeper_def_tuned",
+      "elite_boss_intro",
+      "war_drummer_fx_readability",
+      "large_enemy_layout_adjust",
+      "combat_log_compact_test",
+    ],
   };
 
   // 적용 배율 — 테스트 완화 박힌 경우만 (가독성)
   if (ENABLE_STAGE13_TEST_SOFTENING) {
-    build.stage13_15_mult = 0.88;   // v0.3.8p
-    build.stage16_18_mult = 0.86;   // v0.3.8p
-    build.stage19_20_mult = 0.84;   // v0.3.8p
-    build.stage21_24_mult = 0.90;   // 25층 관측장 — 연장(S21~24) 완화 배율 유지 (코드 진실과 일치)
+    build.stage13_15_mult = 0.84;   // v0.3.8q
+    build.stage16_18_mult = 0.82;   // v0.3.8q
+    build.stage19_20_mult = 0.80;   // v0.3.8q
+    build.stage21_24_mult = 0.86;   // v0.3.8q
   }
 
   return {
@@ -10202,9 +10492,10 @@ function renderBattlefield() {
 }
 
 function initBattlefield() {
-  // 적 라인 분배: caster/ranged → back, 나머지 → front
-  const enemyBack  = runState.enemies.filter(e => e.role === "caster" || e.role === "ranged");
-  const enemyFront = runState.enemies.filter(e => !(e.role === "caster" || e.role === "ranged"));
+  // 적 라인 분배: caster/ranged/special → back, 나머지 → front
+  //   v0.3.8r: 전쟁 북지기(special)는 후열 대형 몬스터 — back lane에 배치.
+  const enemyBack  = runState.enemies.filter(e => e.role === "caster" || e.role === "ranged" || e.role === "special");
+  const enemyFront = runState.enemies.filter(e => !(e.role === "caster" || e.role === "ranged" || e.role === "special"));
 
   const setLane = (id, units) => {
     const lane = document.getElementById(id);
@@ -10439,6 +10730,12 @@ function rerollAllOffsets() {
   runState.enemies.forEach(rerollUnitOffset);
 }
 
+// v0.3.8r: 광폭화 발동 시 적 카드 즉시 강조 (다음 updateBattlefield 전에도 보이게)
+function markEnrageBadge(u) {
+  const el = document.querySelector(`[data-uid="${u.uid}"]`);
+  if (el) el.classList.add("enraged");
+}
+
 function renderUnitHTML(u) {
   const hpPct = (u.hp / u.maxHp) * 100;
   const hpClass = hpPct <= 25 ? "crit" : hpPct <= 50 ? "warn" : "";
@@ -10451,6 +10748,11 @@ function renderUnitHTML(u) {
   let portraitInner = "";
   let unitClasses = `unit ${u.side} ${u.alive ? "" : "dead"} ${charging ? "charging" : ""} ${isTaunting ? "tauntor" : ""}`;
 
+  // v0.3.8r: 대형 몬스터 / 광폭화 시각 강조 (seed — 카드 크게 + 배지)
+  if (u.isLargeEnemy) unitClasses += ` large-enemy size-${u.sizeSlots || 1} pattern-${u.occupiedPattern || "single"}`;
+  if (u.isMiniboss)   unitClasses += " miniboss";
+  if (u._enraged)     unitClasses += " enraged";
+
   if (u.side === "enemy") {
     unitClasses += ` race-${u.race}`;
     const race = RACES[u.race];
@@ -10460,6 +10762,7 @@ function renderUnitHTML(u) {
     portraitInner = `
       <span class="enemy-emoji">${race.emoji}</span>
       <div class="role-badge" style="border-color: ${roleColor};">${roleSymbol}</div>
+      ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
     `;
   } else {
     // 아군: trait or fusion에 따라 다른 아바타/클래스
@@ -11380,6 +11683,7 @@ function drawCenterPulse(actor, targets, kind = "magic") {
   const colorMap = {
     magic: "#a87de0",
     heal:  "#5ddba8",
+    drum:  "#ff6a4a",   // v0.3.8r1: 전쟁 북지기 — 붉은 전쟁 톤
   };
   const color = colorMap[kind] || "#a87de0";
   const glow  = `${color}aa`;
@@ -11677,8 +11981,8 @@ const CODEX_ENTRIES = [
     tags: ["자가회복", "보호막"], status: "구현" },
   { id: "vanguard", name: "선봉", tier: "tier2", base: "전사+신관", role: "front",
     combo: "전사 + 신관", role_desc: "앞에서 싸우며 팀 전선을 유지한다",
-    flavor: "전열에서 칼을 휘두르면서도 등 뒤를 돌본다. 큰 회복은 아니지만, 둘에게 동시에 손을 내민다.",
-    tags: ["전열 공격", "2인 소량 회복"], status: "구현" },
+    flavor: "전열에서 칼을 휘두르면서도 등 뒤를 돌본다. 큰 회복은 아니지만, 셋에게 동시에 손을 내민다.",
+    tags: ["전열 공격", "3인 소량 회복"], status: "구현" },
   { id: "binder",   name: "금제", tier: "tier2", base: "수호자 + 사제", role: "front",
     combo: "수호자 + 사제", role_desc: "위험한 적 하나를 묶는다",
     flavor: "빛의 사슬로 적을 묶는 술사기사. 묶인 적은 약해지고, 자기가 받는 피해의 30%를 대신 받는다.",
