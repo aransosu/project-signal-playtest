@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8v-war-drummer-ui-hydra-fieldboss-devmode</title>
+<title>Project Signal Mk.II v0.3.8v1-dev-mode-layout-hotfix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2371,9 +2371,14 @@ body {
   border-color: rgba(255,120,80,0.45) !important;
   color: #ffd0b8 !important;
 }
-#screen-dev-mode {
+/* v0.3.8v1: display는 .screen / .screen.active 시스템에 맡긴다.
+   (기존 #screen-dev-mode { display:flex }가 ID 우선순위로 .screen{display:none}을
+    덮어써서, active 없이도 첫 화면에 같이 노출되던 버그 수정.) */
+#screen-dev-mode.active {
   display: flex;
   flex-direction: column;
+}
+#screen-dev-mode {
   height: 100%;
   padding: 0;
 }
@@ -2396,6 +2401,7 @@ body {
 .dev-mode-list {
   flex: 1;
   min-height: 0;
+  max-height: 80vh;       /* v0.3.8v1: 내부에서만 스크롤 (메인 첫 화면 밀림 방지 안전망) */
   overflow-y: auto;       /* v0.3.8v: 항목이 늘어나도 스크롤 */
   padding: 12px 16px 24px;
 }
@@ -3999,7 +4005,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8v (drummer UI · field boss · DEV mode)</div>
+      <div class="title-version">MK.II — v0.3.8v1 (DEV mode layout hotfix)</div>
     </div>
 
     <p class="title-tagline">
@@ -4798,7 +4804,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8v-war-drummer-ui-hydra-fieldboss-devmode";
+const BUILD_VERSION = "v0.3.8v1-dev-mode-layout-hotfix";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -10862,7 +10868,7 @@ function buildBalanceExportPayload() {
     version: BUILD_VERSION,
     stage13Softening: !!ENABLE_STAGE13_TEST_SOFTENING,
     notes: ENABLE_STAGE13_TEST_SOFTENING
-      ? "War drummer UI fix, dual field-boss hydra, DEV mode screen"
+      ? "DEV mode layout hotfix — panel hidden until opened"
       : "Standard build",
     features: [
       "vanguard_3_target_minor_heal",
