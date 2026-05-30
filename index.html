@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8r1-gatekeeper-readability-hotfix</title>
+<title>Project Signal Mk.II v0.3.8u-hydra-dev-seed</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2336,9 +2336,48 @@ body {
   z-index: 5;
 }
 
+/* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ─── */
+.dev-stage-tools {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px dashed rgba(255,120,80,0.5);
+  border-radius: 8px;
+  background: rgba(255,80,40,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 280px;
+}
+.dev-tools-label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: rgba(255,140,100,0.9);
+  text-align: center;
+}
+.dev-test-btn {
+  font-size: 13px;
+  padding: 8px 12px;
+  background: rgba(255,90,50,0.14);
+  border: 1px solid rgba(255,120,80,0.45);
+  border-radius: 6px;
+  color: #ffd0b8;
+  cursor: pointer;
+}
+.dev-test-btn:active { background: rgba(255,90,50,0.28); }
+
+/* DEV 테스트 런 배지 (결과/전장) */
+.dev-run-badge {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(255,140,100,0.95);
+  border: 1px solid rgba(255,120,80,0.5);
+  border-radius: 4px;
+  padding: 1px 6px;
+  display: inline-block;
+}
+
 /* ─── v0.3.8r1: 정예/보스 등장 인트로 오버레이 ─── */
-.threat-intro {
-  position: absolute; inset: 0;
+.threat-intro {  position: absolute; inset: 0;
   z-index: 200;
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at center, rgba(20,10,30,0.82), rgba(5,5,12,0.92));
@@ -2384,6 +2423,77 @@ body {
   0%   { transform: scaleY(1); }
   40%  { transform: scaleY(1.8); }
   100% { transform: scaleY(1); }
+}
+
+/* ─── v0.3.8s: 전쟁 북지기 전용 스프라이트 ─── */
+.war-drummer-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+}
+
+/* ─── v0.3.8t: 트롤 문지기 전용 스프라이트 ─── */
+.troll-gatekeeper-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.65));
+}
+
+/* ─── v0.3.8u: 히드라 전용 스프라이트 (최종 보스 — 가장 크게) ─── */
+.hydra-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
+}
+.unit.large-enemy.pattern-all10 .unit-portrait {
+  transform: scale(2.1);
+  transform-origin: center center;
+}
+.unit.large-enemy.pattern-all10 { margin: 0 48px; min-width: 110px; }
+
+/* v0.3.8u: 히드라 포효 머리 — 아군 게이지 감소 강조 (붉은 깜빡) */
+.gauge-bar.gauge-drain {
+  box-shadow: 0 0 8px 2px rgba(220,80,80,0.8);
+  animation: gauge-drain-pulse 0.5s ease-out;
+}
+@keyframes gauge-drain-pulse {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
+}
+
+/* ─── v0.3.8s: 트롤 재생 펄스 (초록 — "재생했구나") ─── */
+.unit-portrait.regen-pulse {
+  animation: regen-pulse-anim 0.7s ease-out;
+}
+@keyframes regen-pulse-anim {
+  0%   { box-shadow: 0 0 0 0 rgba(90,219,168,0.0); }
+  40%  { box-shadow: 0 0 16px 5px rgba(90,219,168,0.75); filter: brightness(1.2) saturate(1.2); }
+  100% { box-shadow: 0 0 0 0 rgba(90,219,168,0.0); }
+}
+
+/* ─── v0.3.8s: 전쟁 북지기 고양 리듬 FX ─── */
+.mk-drum-beat-circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: drum-beat-anim 0.6s ease-out forwards;
+}
+@keyframes drum-beat-anim {
+  0%   { transform: scale(0.3); opacity: 0; }
+  30%  { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+/* 적 강화 반짝임 — 노랑/주황 (고양됐다) */
+.unit-portrait.drum-buff-flash {
+  animation: drum-buff-anim 0.5s ease-out;
+}
+@keyframes drum-buff-anim {
+  0%   { box-shadow: 0 0 0 0 rgba(255,180,60,0.0); }
+  40%  { box-shadow: 0 0 12px 3px rgba(255,180,60,0.7); filter: brightness(1.18) saturate(1.25); }
+  100% { box-shadow: 0 0 0 0 rgba(255,180,60,0.0); }
 }
 
 /* 종족별 외곽 — v0.1.5 결 (이중 gradient + 외곽 글로우) */
@@ -3813,7 +3923,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8r1 (readability hotfix)</div>
+      <div class="title-version">MK.II — v0.3.8u (hydra dev seed)</div>
     </div>
 
     <p class="title-tagline">
@@ -3825,6 +3935,17 @@ body {
 
     <button class="title-codex" onclick="openCodex()">📖 영웅 도감</button>
     <button class="title-codex title-footprints" onclick="openFootprints()">🌸 발자취</button>
+
+    <!-- v0.3.8r2: 개발용 스테이지 테스트 (DEV_STAGE_TEST=true일 때만 JS가 표시) -->
+    <div id="dev-stage-tools" class="dev-stage-tools" style="display:none;">
+      <div class="dev-tools-label">[DEV] 장면 테스트</div>
+      <button class="dev-test-btn" onclick="devJumpToStage('s10_solo')">S10 트롤 문지기</button>
+      <button class="dev-test-btn" onclick="devJumpToStage('s20_war_drummer_A')">S20 전쟁 북지기 A</button>
+      <button class="dev-test-btn" onclick="devJumpToStage('s20_war_drummer_B')">S20 전쟁 북지기 B</button>
+      <button class="dev-test-btn" onclick="devJumpToStage('s25_hydra_A')">S25 히드라 A (균형)</button>
+      <button class="dev-test-btn" onclick="devJumpToStage('s25_hydra_B')">S25 히드라 B (현자)</button>
+      <button class="dev-test-btn" onclick="devJumpToStage('s25_hydra_C')">S25 히드라 C (독/처형)</button>
+    </div>
 
     <div class="title-foot">
       Phase 1 · 2 Build<br>
@@ -4598,8 +4719,81 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8r1-gatekeeper-readability-hotfix";
+const BUILD_VERSION = "v0.3.8u-hydra-dev-seed";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
+
+/* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
+   DEV_STAGE_TEST = true 일 때만 타이틀에 [DEV] 버튼 노출.
+   일반 플레이/친구 테스트 빌드에서는 false로 숨김.
+   목적: 클리어 밸런스 확인이 아니라 "장면 관측" (인트로/대형감/게이지 surge/광폭화/로그 시인성).
+   ※ 오염 방지: dev 점프 런은 runState.devTest로 표식 → timeStats/export/결과/발자취에 "DEV 테스트 런" 표시.
+      일반 런 데이터와 섞이지 않게. */
+const DEV_STAGE_TEST = true;
+
+// preset 파티 정의 — id: 기본직업(traitId) 또는 합체(fusionId), lvl: 합체 계승 레벨(시각/스탯 근사)
+const DEV_STAGE_PRESETS = {
+  s10_solo: {
+    label: "S10 트롤 문지기",
+    startStage: 10,
+    // S10은 4인 입장 시험 — 균형 4인 (도적 포함, 천적 확인용)
+    party: [
+      { kind: "fusion", id: "rogue",  lvl: 3 },   // 도적 (트롤 천적)
+      { kind: "trait",  id: "bravery" },          // 전사
+      { kind: "trait",  id: "snipe" },            // 궁수
+      { kind: "trait",  id: "guard" },            // 수호자
+    ],
+  },
+  s20_war_drummer_A: {
+    label: "S20 전쟁 북지기 A",
+    startStage: 20,
+    party: [
+      { kind: "fusion", id: "dragoon",  lvl: 4 },  // 용창
+      { kind: "fusion", id: "cleric",   lvl: 3 },  // 성직자
+      { kind: "fusion", id: "hunter", lvl: 3 },  // 파수궁 (내부 id hunter)
+      { kind: "trait",  id: "guard" },             // 수호자
+    ],
+  },
+  s20_war_drummer_B: {
+    label: "S20 전쟁 북지기 B",
+    startStage: 20,
+    party: [
+      { kind: "fusion", id: "sage",     lvl: 4 },  // 현자
+      { kind: "fusion", id: "cleric",   lvl: 3 },  // 성직자
+      { kind: "fusion", id: "wall",     lvl: 3 },  // 성벽
+      { kind: "fusion", id: "purifier", lvl: 3 },  // 정화사
+    ],
+  },
+  s25_hydra_A: {
+    label: "S25 히드라 A (균형형)",
+    startStage: 25,
+    party: [
+      { kind: "fusion", id: "dragoon",  lvl: 5 },  // 용창
+      { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자
+      { kind: "fusion", id: "hunter",   lvl: 4 },  // 파수궁
+      { kind: "trait",  id: "guard" },             // 수호자
+    ],
+  },
+  s25_hydra_B: {
+    label: "S25 히드라 B (현자형)",
+    startStage: 25,
+    party: [
+      { kind: "fusion", id: "sage",     lvl: 5 },  // 현자
+      { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자
+      { kind: "fusion", id: "wall",     lvl: 4 },  // 성벽
+      { kind: "fusion", id: "purifier", lvl: 4 },  // 정화사
+    ],
+  },
+  s25_hydra_C: {
+    label: "S25 히드라 C (독/처형형)",
+    startStage: 25,
+    party: [
+      { kind: "fusion", id: "trapper",  lvl: 5 },  // 덫꾼
+      { kind: "fusion", id: "rogue",    lvl: 5 },  // 도적
+      { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자
+      { kind: "fusion", id: "binder",   lvl: 4 },  // 금제
+    ],
+  },
+};
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
 function getEnemyStatMultiplier(stage) {
@@ -4630,6 +4824,21 @@ const ENEMY_TEMPLATES = {
   boss_troll_lord:{ race: "troll",  role: "guard",   hp: 520, atk: 24, def: 9, spd: 55, isBoss: true },
   boss_warlock:   { race: "orc",    role: "caster",  hp: 300, atk: 20, def: 4, spd: 80, isBoss: true },
 
+  /* ─── v0.3.8u: 히드라 — 첫 최종 보스 후보 (10칸 점유형) ───
+     "여러 머리가 각기 다른 방식으로 파티를 압박하는 다두룡."
+     딜/회복/방어/정화/템포 대응을 모두 묻는다. 한 해법만 요구하지 않음.
+     트롤처럼 DEF로 막는 보스 X — "여러 압박을 동시에 던지는 보스".
+     수치: HP 매우 높음 / DEF 낮음 / ATK 중간~높음 / SPD 중간. */
+  boss_hydra: {
+    race: "troll", role: "guard", hp: 1800, atk: 22, def: 2, spd: 60,
+    isBoss: true, isHydra: true,
+    isLargeEnemy: true, sizeSlots: 10, occupiedPattern: "all10",
+    enrageAfter: 8,            // 8번째 행동 이후 광폭화 (1회)
+    enrageAtkBoost: 1.20,      // 광폭화 시 공격 계열 +20% (재생량은 안 올림 — 장기전 방지)
+    hydraRegenPct: 0.06,       // 재생 머리: maxHp 6% (보수적 — 전투 늘어지지 않게)
+    displayName: "히드라",
+  },
+
   /* ─── v0.3.8r: 문지기/준보스 seed ───
      대형 몬스터 필드 (seed — 완전 렌더 시스템은 후속):
        sizeSlots:        점유 칸 수 (1=일반 / 2~3=정예 / 3~5=문지기 / 6~10=최종보스)
@@ -4643,15 +4852,17 @@ const ENEMY_TEMPLATES = {
        drumEnrageGaugePct: 광폭화 후 gauge 증가량 (전쟁 북지기)
   */
   troll_gatekeeper: {
-    race: "troll", role: "guard", hp: 720, atk: 20, def: 3, spd: 58,
-    // v0.3.8r1: DEF 8→3 (억까 제거 — DEF는 amount에서 평면 차감 + 스테이지 스케일링되어
-    //   전사/궁수 기본공격이 1뎀만 뜨던 자리). HP는 대형감 유지, atk 22→20 소폭 하향.
-    //   결: "큰 HP+재생으로 버티는 문지기"이지 "DEF로 특정 직업만 가능한 벽"이 아니다.
-    //   도적은 처형(HP 비례, DEF 무시)이라 여전히 천적 — 그 감성은 유지.
+    race: "troll", role: "guard", hp: 800, atk: 18, def: 0, spd: 44,
+    // v0.3.8s: 정체성 재정의 — "방어벽"이 아니라 "맞으면 잘 들어가지만 체력 많고
+    //   자기 턴마다 회복하는 느린 거구". DEF 3→0 (피해 팍팍 들어가게),
+    //   HP 720→800 (거구감), ATK 20→18 (소폭 하향), SPD 58→44 (확실히 느리게).
+    //   결: "단단해서 안 죽네"가 아니라 "피는 잘 빠지는데 재생하고 느린 놈이구나".
+    //   도적 처형(HP 비례)은 여전히 천적이되, 전사/궁수/용창/마도도 피해가 보이게.
     isMiniboss: true, isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
-    selfHealPct: 0.10,        // 자기 행동 후 최대 HP 10% 회복 (테스트 후 필요하면 0.08)
+    selfHealPct: 0.10,        // 자기 행동 후 최대 HP 10% 회복 (재생 거구의 핵심 개성)
     enrageAfter: 8,           // 8번째 행동 이후 광폭화 (유지)
     enrageAtkBoost: 1.30,     // 광폭화 시 공격력 +30%
+    heavyHitter: true,        // v0.3.8s: 둔탁/무거운 반응 톤 (느린 거구)
     displayName: "트롤 문지기",
   },
   war_drummer: {
@@ -4768,13 +4979,12 @@ const STAGES = [
     name: "보스 직전", desc: "합체 직후 손맛 — 보스를 앞둔 호흡",
     enemies: ["troll_melee", "orc_melee", "troll_caster", "goblin_ranged", "orc_caster"], themeId: null },
   { num: 25, cycle: 5, phase: "boss",
-    name: "관측장의 끝 — 군주", desc: "이 파티가 어디까지 이어지는가",
-    enemies: ["boss_troll_lord", "boss_warlock", "troll_guard", "troll_caster"], themeId: null },
-  /* v0.3.8r seed — S25 최종 보스 후보: 히드라 (이번 빌드 미구현, 로망 설계만):
-       전열 5칸 + 후열 5칸, 총 10칸 전체 점유 (sizeSlots:10, occupiedPattern:"all10", isBoss).
-       하나의 거대한 보스로 표현. 추후 머리별 행동:
-         독 머리 / 재생 머리 / 포효 머리(전체 가속) / 화염 머리(광역) / 물어뜯기 머리(단일 강타).
-       대형 몬스터 seed(sizeSlots/occupiedPattern)가 히드라까지 확장되도록 구조만 열어둠. */
+    name: "관측장의 끝 — 히드라", desc: "모든 길의 끝에서, 다섯 머리가 깨어난다",
+    enemies: ["boss_hydra"], themeId: null,
+    threatIntro: { title: "히드라 등장", line: "\"다섯 머리가, 하나의 심장으로 울부짖습니다.\"" } },   // v0.3.8u
+  /* v0.3.8u: 히드라 구현됨 (boss_hydra). 머리별 행동(독/재생/포효/화염/물어뜯기)은
+     actEnemyAttack의 isHydra 분기 참조. 완전한 부위별 타겟팅은 후속 — 지금은
+     "하나의 대형 보스 + 여러 머리 행동 패턴". */
 ];
 
 /* ---------- 아군 직업 베이스 스탯 (v0.1.5 결 계승) ---------- */
@@ -4851,6 +5061,45 @@ function startGame() {
   renderMiniPreview();
   updateConfirmBar();
   showScreen("screen-trait-select");
+}
+
+/* ─── v0.3.8r2: 개발용 스테이지 점프 ───
+   preset 파티를 즉석 조립 → 목표 스테이지로 바로 진입.
+   runState.devTest에 표식을 박아 일반 런 데이터와 섞이지 않게 한다. */
+function devJumpToStage(presetKey) {
+  const preset = DEV_STAGE_PRESETS[presetKey];
+  if (!preset) { console.warn("[DEV] unknown preset", presetKey); return; }
+
+  // 1) 일반 런 기반 잡기 (timeStats/runId/락 등 정상 초기화)
+  partyState.slots = ["", "", ""];
+  initRunFromParty();
+
+  // 2) units를 preset으로 교체 (기본직업 + 합체 혼합 조립)
+  runState.units = preset.party.map(p => {
+    if (p.kind === "fusion") {
+      const u = makeFusionUnit(p.id);   // 재료 인스턴스 없이 — 계승 레벨은 아래서 근사 주입
+      if (p.lvl && p.lvl > 0) {
+        u._inheritedLevel = p.lvl;
+        u.level = p.lvl;
+      }
+      return u;
+    }
+    return makeAllyUnit(p.id);
+  });
+  runState.units.forEach(u => ensureRunStatsForUnit(u));
+
+  // 3) DEV 표식 — 오염 방지 (export/결과/발자취에서 일반 런과 구분)
+  runState.devTest = {
+    enabled: true,
+    startStage: preset.startStage,
+    preset: presetKey,
+  };
+  debugResult("dev stage jump", { preset: presetKey, startStage: preset.startStage });
+
+  // 4) 목표 스테이지 진입
+  runState.stage = preset.startStage;
+  loadStage(preset.startStage);
+  enterBattleScreen();
 }
 
 function backToTitle() {
@@ -6198,6 +6447,7 @@ function finalizeRunResult(result, reason) {
     timestamp: Date.now(),
     timeStats: tFinal,        // { startedAt, endedAt, realElapsedMs, battleRealMs, battleX1EquivalentMs, speedBucketsMs, averageSpeed }
     timeSummary,              // 포맷된 표시용 (mm:ss / x5.9)
+    devTest: runState.devTest || null,   // v0.3.8r2: dev 점프 런 표식
   };
   if (tFinal) debugResult("timeStats snapshot attached", timeSummary);
   debugResult("finalizeRunResult called", {
@@ -6488,6 +6738,10 @@ function makeEnemyUnit(templateId) {
     enrageAtkBoost: tpl.enrageAtkBoost || 1.0,
     drumGaugePct: tpl.drumGaugePct || 0,
     drumEnrageGaugePct: tpl.drumEnrageGaugePct || 0,
+    // v0.3.8u: 히드라 필드
+    isHydra: tpl.isHydra || false,
+    hydraRegenPct: tpl.hydraRegenPct || 0,
+    _lastHead: null,        // 직전 머리 행동 (반복 회피용)
     _enemyActionCount: 0,   // 자기 행동 횟수 (광폭화 게이트용)
     _enraged: false,        // 광폭화 상태
     _baseAtk: finalAtk,     // 광폭화 배수 적용 기준 (원본 atk)
@@ -6587,6 +6841,9 @@ function initRunFromParty() {
   _debugTimeTickAccum = 0;
   debugResult("timeStats init", { runId: runState.runId, startedAt: Math.round(runState.timeStats.startedAt) });
   console.log("[initRunFromParty] runId=" + runState.runId);
+  // v0.3.8r2: dev 점프 표식 리셋 — 일반 "새 작전" 런은 항상 devTest=null (오염 방지)
+  //   devJumpToStage가 initRunFromParty 뒤에 다시 박으므로, 일반 런은 여기서 null로 시작.
+  runState.devTest = null;
   runState.units = partyState.slots
     .filter(Boolean)
     .map(jobId => makeAllyUnit(jobId));
@@ -8146,17 +8403,107 @@ function actFusion(actor) {
   }
 }
 
+/* ─── v0.3.8u: 히드라 머리 행동 ───
+   5개 머리(독/재생/포효/화염/물어뜯기) 중 하나를 선택해 실행.
+   선택: 랜덤이되 직전 머리 반복 회피 + 재생 연속 금지 + HP 90%↑면 재생 우선순위↓.
+   광폭화(_enraged) 시 공격 계열 피해 ×enrageAtkBoost (재생은 안 올림). */
+function hydraAct(actor) {
+  const heads = ["poison", "regen", "roar", "flame", "bite"];
+  const hpPct = actor.hp / actor.maxHp;
+
+  // 후보 풀 구성 (회피 규칙)
+  let pool = heads.filter(h => h !== actor._lastHead);   // 직전 반복 회피
+  // 재생 연속 금지 + HP 높으면 재생 빼기
+  if (actor._lastHead === "regen") pool = pool.filter(h => h !== "regen");
+  if (hpPct >= 0.90) pool = pool.filter(h => h !== "regen");
+  if (pool.length === 0) pool = heads.slice();
+  const head = pool[Math.floor(Math.random() * pool.length)];
+  actor._lastHead = head;
+
+  const atkMul = actor._enraged ? (actor.enrageAtkBoost || 1.2) : 1.0;
+  const aliveAllies = runState.units.filter(u => u.alive);
+
+  switch (head) {
+    case "poison": {
+      // 독 머리 — 무작위 1~2명 중독 부여, 이미 중독이면 약한 추가 피해
+      showActionLabel(actor, "독 머리: 부식 독니", "debuff");
+      pushEvent(`히드라 — 독 머리: 부식 독니`, "debuff");
+      const n = Math.random() < 0.5 ? 1 : 2;
+      const picks = aliveAllies.slice().sort(() => Math.random() - 0.5).slice(0, n);
+      picks.forEach(t => {
+        if (t.poisoned && t.poisoned > 0) {
+          const dmg = Math.floor(actor.atk * 0.4 * atkMul);
+          dealDamage(actor, t, dmg);
+        }
+        t.poisoned = Math.max(t.poisoned || 0, 3);
+        drawLine(actor, t, "debuff");
+      });
+      break;
+    }
+    case "regen": {
+      // 재생 머리 — maxHp N% 회복 (보수적)
+      showActionLabel(actor, "재생 머리", "heal");
+      pushEvent(`히드라 — 재생 머리: 살점이 다시 돋아납니다`, "heal");
+      const amt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06));
+      doHeal(actor, actor, amt);
+      const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
+      if (el) { el.classList.add("regen-pulse"); setTimeout(() => el.classList.remove("regen-pulse"), 700); }
+      break;
+    }
+    case "roar": {
+      // 포효 머리 — 아군 2명 속도 게이지 -15%
+      showActionLabel(actor, "포효 머리: 위압의 포효", "debuff");
+      pushEvent(`히드라 — 포효 머리: 위압의 포효`, "debuff");
+      const picks = aliveAllies.slice().sort(() => Math.random() - 0.5).slice(0, 2);
+      picks.forEach(t => {
+        t.gauge = Math.max(0, (t.gauge || 0) - 15);
+        const gel = document.querySelector(`[data-uid="${t.uid}"] .gauge-bar`);
+        if (gel) { gel.classList.add("gauge-drain"); setTimeout(() => gel.classList.remove("gauge-drain"), 500); }
+        drawLine(actor, t, "debuff");
+      });
+      break;
+    }
+    case "flame": {
+      // 화염 머리 — 랜덤 3명 약한 광역 피해
+      showActionLabel(actor, "화염 머리: 갈라지는 화염", "attack");
+      pushEvent(`히드라 — 화염 머리: 갈라지는 화염`, "attack");
+      const picks = aliveAllies.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+      const dmg = Math.floor(actor.atk * 0.7 * atkMul);
+      picks.forEach(t => { dealDamage(actor, t, dmg); drawLine(actor, t, "attack"); });
+      break;
+    }
+    case "bite":
+    default: {
+      // 물어뜯기 머리 — 전열 우선 1명 강한 단일
+      showActionLabel(actor, "물어뜯기 머리: 거대 물어뜯기", "attack");
+      pushEvent(`히드라 — 물어뜯기 머리: 거대 물어뜯기`, "attack");
+      let target = (typeof pickAllyTargetByRole === "function" && (pickAllyTargetByRole("front") || pickAllyTargetByRole("back")))
+        || aliveAllies[0];
+      if (target) {
+        const dmg = Math.floor(actor.atk * 1.6 * atkMul);
+        dealDamage(actor, target, dmg);
+        drawLine(actor, target, "attack");
+      }
+      break;
+    }
+  }
+}
+
 function actEnemyAttack(actor) {
   // ─── v0.3.8r: 문지기/준보스 seed — 행동 카운트 + 광폭화 게이트 ───
   //   (일반 몬스터는 enrageAfter=0 / 특수 필드 0이라 아래 블록 전부 no-op)
-  if (actor.isMiniboss || actor.enrageAfter > 0 || actor.selfHealPct > 0 || actor.drumGaugePct > 0) {
+  if (actor.isMiniboss || actor.isHydra || actor.enrageAfter > 0 || actor.selfHealPct > 0 || actor.drumGaugePct > 0) {
     actor._enemyActionCount = (actor._enemyActionCount || 0) + 1;
 
     // 광폭화 발동 (N번째 행동 이후, 1회만)
     if (actor.enrageAfter > 0 && !actor._enraged && actor._enemyActionCount >= actor.enrageAfter) {
       actor._enraged = true;
-      // 트롤 문지기: 공격력 +30%
-      if (actor.enrageAtkBoost > 1.0) {
+      if (actor.isHydra) {
+        // 히드라: 공격 계열 +20% (재생량은 안 올림 — 장기전 방지)
+        actor.atk = Math.floor((actor._baseAtk || actor.atk) * (actor.enrageAtkBoost || 1.2));
+        pushEvent(`<b>${actor.name}</b>가 모든 머리를 치켜듭니다!`, "death");
+      } else if (actor.enrageAtkBoost > 1.0) {
+        // 트롤 문지기: 공격력 +30%
         actor.atk = Math.floor((actor._baseAtk || actor.atk) * actor.enrageAtkBoost);
         pushEvent(`<b>${actor.name}</b>가 분노합니다! 공격력이 증가했습니다.`, "death");
       } else {
@@ -8167,32 +8514,41 @@ function actEnemyAttack(actor) {
       if (typeof markEnrageBadge === "function") markEnrageBadge(actor);
     }
 
+    // ─── v0.3.8u: 히드라 머리 행동 (독/재생/포효/화염/물어뜯기 중 하나) ───
+    if (actor.isHydra) {
+      hydraAct(actor);
+      return;  // 히드라 행동 종료 (머리 행동이 곧 이번 턴)
+    }
+
     // 전쟁 북지기: 자기 행동 시 적(아군 입장의 적 = 적 진영 전체) speed gauge 가속
     if (actor.drumGaugePct > 0) {
       const pct = actor._enraged && actor.drumEnrageGaugePct > 0
         ? actor.drumEnrageGaugePct
         : actor.drumGaugePct;
       const allEnemies = runState.enemies.filter(e => e.alive);
-      // v0.3.8r1: 로그가 아니라 전장 FX로 먼저 읽히게 —
-      //   1) 북지기→적 전체 파동 FX  2) 게이지 차오르는 강조 클래스  3) 플로팅 텍스트
+      // v0.3.8s: 시각 문법 분리 — 마도/현자 파동 = 공격/타격 / 북지기 = 고양/강화/템포.
+      //   큰 원형 1개(공격처럼 보임) → 적 진영 3곳에서 작은 원형이 리듬감 있게 톡톡 (노랑/주황 폭죽).
       showActionLabel(actor, "둥! 전쟁의 박동!", "attack");
-      if (typeof drawCenterPulse === "function") {
-        drawCenterPulse(actor, allEnemies.filter(e => e.uid !== actor.uid), "drum");
-      } else if (typeof drawAoeWave === "function") {
-        drawAoeWave(actor, allEnemies.filter(e => e.uid !== actor.uid), "drum");
+      if (typeof drawDrumBeats === "function") {
+        drawDrumBeats(actor, allEnemies.filter(e => e.uid !== actor.uid));
       }
       allEnemies.forEach(e => {
         e.gauge = Math.min(100, (e.gauge || 0) + 100 * pct);
         // 게이지 바 시각 강조 (차오름 펄스)
-        const el = document.querySelector(`[data-uid="${e.uid}"] .gauge-bar`);
-        if (el) {
-          el.classList.add("gauge-surge");
-          setTimeout(() => el.classList.remove("gauge-surge"), 600);
+        const gel = document.querySelector(`[data-uid="${e.uid}"] .gauge-bar`);
+        if (gel) {
+          gel.classList.add("gauge-surge");
+          setTimeout(() => gel.classList.remove("gauge-surge"), 600);
+        }
+        // v0.3.8s: 적 유닛에 짧은 강화 반짝임 — "적이 고양됐다"
+        const pel = document.querySelector(`[data-uid="${e.uid}"] .unit-portrait`);
+        if (pel) {
+          pel.classList.add("drum-buff-flash");
+          setTimeout(() => pel.classList.remove("drum-buff-flash"), 500);
         }
       });
       pushEvent(`둥! 전쟁의 박동! 적 전체의 속도 게이지가 차오릅니다.`, "debuff");
-      // 북지기는 게이지 가속이 주 행동 — 직접 타격은 약하게(아래 일반 공격 흐름) 또는 생략.
-      //   여기선 "조율"이 핵심이라 직접 공격은 건너뛰고 자기 회복만 처리 후 종료.
+      // 북지기는 게이지 가속이 주 행동 — 직접 타격은 생략 (전장 조율형).
       if (actor.selfHealPct > 0 && actor.hp < actor.maxHp) {
         const healAmt = Math.floor(actor.maxHp * actor.selfHealPct);
         actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
@@ -8283,11 +8639,18 @@ function actEnemyAttack(actor) {
     pushEvent(`<b>${target.name}</b> 중독됨 (2턴)`, "debuff");
   }
 
-  // v0.3.8r: 트롤 문지기 등 — 자기 행동 후 maxHp N% 회복 (장기 지속력)
+  // v0.3.8s: 트롤 문지기 등 — 자기 행동 후 maxHp N% "재생". 회복이 또렷이 읽히게.
+  //   doHeal 경유 → 초록 회복 숫자 자동 노출. + "재생!" 라벨 + 몸 주변 초록 펄스.
+  //   결: "왜 안 죽지?"가 아니라 "아, 지금 재생했구나"를 즉시 이해.
   if (actor._pendingSelfHeal && actor.selfHealPct > 0 && actor.alive && actor.hp < actor.maxHp) {
     const healAmt = Math.floor(actor.maxHp * actor.selfHealPct);
-    actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
-    drawLine(actor, actor, "heal");
+    showActionLabel(actor, "재생!", "heal");
+    doHeal(actor, actor, healAmt);   // 초록 회복 숫자 + 리액션
+    const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
+    if (el) {
+      el.classList.add("regen-pulse");
+      setTimeout(() => el.classList.remove("regen-pulse"), 700);
+    }
     pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
   }
   actor._pendingSelfHeal = false;
@@ -9629,9 +9992,16 @@ function showResult() {
     <div class="row"><span class="key">평균 배속</span><span class="val">${timeSummary.averageSpeed}</span></div>
   ` : "";
 
+  // v0.3.8r2: DEV 점프 런이면 결과창에 표식 (일반 런과 혼동 방지)
+  const devInfo = (snap && snap.devTest) ? snap.devTest : runState.devTest;
+  const devRow = (devInfo && devInfo.enabled) ? `
+    <div class="row"><span class="key">테스트</span><span class="val"><span class="dev-run-badge">DEV 테스트 런 · ${devInfo.preset}</span></span></div>
+  ` : "";
+
   summary.innerHTML = `
     <div class="row highlight"><span class="key">도달</span><span class="val big">STAGE ${effectiveStage} / ${MAX_STAGE}</span></div>
     ${progressBar}
+    ${devRow}
     ${timeRows}
     <div class="row"><span class="key">시작 파티</span><span class="val">${initialParty}</span></div>
     <div class="row"><span class="key">합체 이력</span><span class="val">${fusionsDone}</span></div>
@@ -10062,6 +10432,8 @@ function createFootprintFromRun() {
     // v0.3.8o: 시간 관측 — snapshot.timeStats 우선 (결과 안정화 결 일치), 없으면 runState
     timeStats: _footprintTimeStats(),
     timeSummary: _footprintTimeSummary(),
+    // v0.3.8r2: dev 점프 런 표식 — 일반 런 데이터와 섞이지 않게 (밸런스 분석 오염 방지)
+    devTest: runState.devTest || null,
     totals: {
       damageDealt: totalDmg,
       healDone: totalHeal,
@@ -10316,7 +10688,7 @@ function buildBalanceExportPayload() {
     version: BUILD_VERSION,
     stage13Softening: !!ENABLE_STAGE13_TEST_SOFTENING,
     notes: ENABLE_STAGE13_TEST_SOFTENING
-      ? "Gatekeeper stat tuning and elite encounter readability hotfix"
+      ? "Elite visual polish — troll sprite & drummer rhythm FX tuning"
       : "Standard build",
     features: [
       "vanguard_3_target_minor_heal",
@@ -10330,7 +10702,20 @@ function buildBalanceExportPayload() {
       "war_drummer_fx_readability",
       "large_enemy_layout_adjust",
       "combat_log_compact_test",
+      "dev_stage_test_tools",
+      "troll_regen_giant_identity",
+      "troll_regen_fx",
+      "war_drummer_rhythm_fx",
+      "war_drummer_sprite",
+      "troll_gatekeeper_sprite",
+      "war_drummer_fx_tuned",
+      "stage25_hydra_dev_seed",
+      "hydra_multi_head_actions",
+      "hydra_sprite",
+      "hydra_enrage_seed",
+      "dev_s25_hydra_presets",
     ],
+    devStageTestBuild: (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) || false,
   };
 
   // 적용 배율 — 테스트 완화 박힌 경우만 (가독성)
@@ -10730,10 +11115,105 @@ function rerollAllOffsets() {
   runState.enemies.forEach(rerollUnitOffset);
 }
 
-// v0.3.8r: 광폭화 발동 시 적 카드 즉시 강조 (다음 updateBattlefield 전에도 보이게)
+// v0.3.8s: 광폭화 발동 시 적 카드 즉시 강조 (다음 updateBattlefield 전에도 보이게)
 function markEnrageBadge(u) {
   const el = document.querySelector(`[data-uid="${u.uid}"]`);
   if (el) el.classList.add("enraged");
+}
+
+/* v0.3.8s: 전쟁 북지기 전용 스프라이트 — "북을 치며 전장을 조율하는 후열 지휘관".
+   일반 몬스터 이모지 확대판과 구분: 큰 전쟁 북 + 채 + 위압적 지휘관 실루엣, 노랑/주황 포인트. */
+function warDrummerSVG() {
+  return `
+    <svg class="war-drummer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="전쟁 북지기">
+      <!-- 지휘관 몸통 (위압적 어깨) -->
+      <path d="M20 50 Q18 34 24 28 L40 28 Q46 34 44 50 Z" fill="#6b4a2a" stroke="#3a2614" stroke-width="1.5"/>
+      <!-- 어깨 갑주 -->
+      <ellipse cx="22" cy="30" rx="6" ry="4" fill="#8a5a30" stroke="#3a2614" stroke-width="1"/>
+      <ellipse cx="42" cy="30" rx="6" ry="4" fill="#8a5a30" stroke="#3a2614" stroke-width="1"/>
+      <!-- 머리 (투구) -->
+      <circle cx="32" cy="20" r="8" fill="#7a5232" stroke="#3a2614" stroke-width="1.5"/>
+      <path d="M24 18 Q32 10 40 18 Z" fill="#c0392b" stroke="#3a2614" stroke-width="1"/>
+      <!-- 전쟁 북 (앞 중앙, 크게) -->
+      <ellipse cx="32" cy="46" rx="15" ry="11" fill="#d98a2b" stroke="#7a4a18" stroke-width="2"/>
+      <ellipse cx="32" cy="46" rx="15" ry="11" fill="none" stroke="#ffd24a" stroke-width="1" opacity="0.7"/>
+      <line x1="22" y1="40" x2="42" y2="52" stroke="#7a4a18" stroke-width="1.2"/>
+      <line x1="42" y1="40" x2="22" y2="52" stroke="#7a4a18" stroke-width="1.2"/>
+      <circle cx="32" cy="46" r="3" fill="#ffb43c"/>
+      <!-- 북채 2개 (들어올린) -->
+      <line x1="18" y1="34" x2="26" y2="42" stroke="#5a3a1a" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="17" cy="33" r="2.5" fill="#e8c8a0"/>
+      <line x1="46" y1="34" x2="38" y2="42" stroke="#5a3a1a" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="47" cy="33" r="2.5" fill="#e8c8a0"/>
+    </svg>
+  `;
+}
+
+/* v0.3.8t: 트롤 문지기 전용 스프라이트 — "느리고 거대한 재생형 정예 문지기".
+   큰 체구 + 둔탁한 어깨 + 거친 녹색 트롤 피부 + 곤봉 + 문 지키는 존재감.
+   위압적이되 빠르지 않은 인상 (재생형 정예). */
+function trollGatekeeperSVG() {
+  return `
+    <svg class="troll-gatekeeper-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="트롤 문지기">
+      <!-- 곤봉 (둔탁한 무기, 어깨에 걸침) -->
+      <line x1="48" y1="14" x2="40" y2="40" stroke="#5a3a1a" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="49" cy="13" rx="7" ry="8" fill="#6a4a28" stroke="#3a2614" stroke-width="1.5"/>
+      <circle cx="46" cy="11" r="1.4" fill="#3a2614"/>
+      <circle cx="52" cy="15" r="1.4" fill="#3a2614"/>
+      <!-- 거대한 어깨/몸통 (둔탁) -->
+      <path d="M14 54 Q12 36 20 30 Q26 26 32 26 Q38 26 44 30 Q52 36 50 54 Z"
+            fill="#5a7a42" stroke="#2e3e22" stroke-width="2"/>
+      <!-- 거친 피부 질감 (반점) -->
+      <circle cx="22" cy="42" r="2" fill="#4a6636" opacity="0.7"/>
+      <circle cx="40" cy="44" r="2.5" fill="#4a6636" opacity="0.7"/>
+      <circle cx="30" cy="48" r="1.8" fill="#4a6636" opacity="0.7"/>
+      <!-- 머리 (큰 두상, 낮게 묻힘 — 둔탁) -->
+      <ellipse cx="30" cy="20" rx="11" ry="10" fill="#6a8a4e" stroke="#2e3e22" stroke-width="2"/>
+      <!-- 거친 눈썹 + 작은 눈 (위압) -->
+      <path d="M22 17 L29 18" stroke="#2e3e22" stroke-width="2" stroke-linecap="round"/>
+      <path d="M32 18 L39 16" stroke="#2e3e22" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="25" cy="20" r="1.6" fill="#ffd24a"/>
+      <circle cx="35" cy="20" r="1.6" fill="#ffd24a"/>
+      <!-- 송곳니 (아래턱) -->
+      <path d="M26 27 L27 31 L28 27 Z" fill="#e8e0c0"/>
+      <path d="M33 27 L34 31 L35 27 Z" fill="#e8e0c0"/>
+    </svg>
+  `;
+}
+
+/* v0.3.8u: 히드라 전용 스프라이트 — 다섯 머리 다두룡 (귀엽지만 위압적).
+   거대한 몸체 + 다섯 목/머리, 머리마다 개성 색(독 보라 / 재생 초록 / 포효 회색 /
+   화염 주황 / 물어뜯기 빨강). Project Signal 톤 — 너무 리얼/징그럽지 않게. */
+function hydraSVG() {
+  return `
+    <svg class="hydra-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="히드라">
+      <!-- 거대 몸체 -->
+      <ellipse cx="32" cy="50" rx="20" ry="12" fill="#3a5a4a" stroke="#1e3326" stroke-width="2"/>
+      <ellipse cx="32" cy="48" rx="14" ry="7" fill="#4a6e58" opacity="0.7"/>
+      <!-- 다섯 목 (부채꼴로 펼침) -->
+      <!-- 물어뜯기(빨강) 좌끝 -->
+      <path d="M18 48 Q10 38 12 28" stroke="#7a3a3a" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="12" cy="26" r="5" fill="#a64a4a" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="11" cy="25" r="1.2" fill="#ffe0a0"/>
+      <!-- 독(보라) 좌 -->
+      <path d="M24 48 Q20 34 22 22" stroke="#5a4a6e" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="22" cy="20" r="5" fill="#8a6db0" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="21" cy="19" r="1.2" fill="#d4ff90"/>
+      <!-- 재생(초록) 중앙 -->
+      <path d="M32 47 Q32 30 32 16" stroke="#3a6e4a" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+      <circle cx="32" cy="14" r="5.5" fill="#5ddb8a" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="31" cy="13" r="1.3" fill="#1e3326"/>
+      <circle cx="34" cy="13" r="1.3" fill="#1e3326"/>
+      <!-- 포효(회색) 우 -->
+      <path d="M40 48 Q44 34 42 22" stroke="#5a5a64" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="42" cy="20" r="5" fill="#8a8a98" stroke="#1e3326" stroke-width="1.2"/>
+      <path d="M39 21 Q42 23 45 21" stroke="#1e3326" stroke-width="1" fill="none"/>
+      <!-- 화염(주황) 우끝 -->
+      <path d="M46 48 Q54 38 52 28" stroke="#a6632a" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="52" cy="26" r="5" fill="#e89a3c" stroke="#1e3326" stroke-width="1.2"/>
+      <circle cx="51" cy="25" r="1.2" fill="#fff0b0"/>
+    </svg>
+  `;
 }
 
 function renderUnitHTML(u) {
@@ -10758,12 +11238,30 @@ function renderUnitHTML(u) {
     const race = RACES[u.race];
     const roleColor = ENEMY_ROLES[u.role].color;
     const roleSymbol = ROLE_SYMBOLS[u.role] || "✦";
-    // 이모지를 portrait 가득 채우는 결 — 큰 사이즈
-    portraitInner = `
-      <span class="enemy-emoji">${race.emoji}</span>
-      <div class="role-badge" style="border-color: ${roleColor};">${roleSymbol}</div>
-      ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
-    `;
+    // v0.3.8s~t: 전용 비주얼 가진 준보스는 전용 SVG (일반 이모지 확대판 X)
+    if (u.templateId === "war_drummer" && typeof warDrummerSVG === "function") {
+      portraitInner = `
+        ${warDrummerSVG()}
+        ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
+      `;
+    } else if (u.templateId === "troll_gatekeeper" && typeof trollGatekeeperSVG === "function") {
+      portraitInner = `
+        ${trollGatekeeperSVG()}
+        ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
+      `;
+    } else if (u.templateId === "boss_hydra" && typeof hydraSVG === "function") {
+      portraitInner = `
+        ${hydraSVG()}
+        ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
+      `;
+    } else {
+      // 이모지를 portrait 가득 채우는 결 — 큰 사이즈
+      portraitInner = `
+        <span class="enemy-emoji">${race.emoji}</span>
+        <div class="role-badge" style="border-color: ${roleColor};">${roleSymbol}</div>
+        ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
+      `;
+    }
   } else {
     // 아군: trait or fusion에 따라 다른 아바타/클래스
     if (u.kind === "fusion") {
@@ -11655,6 +12153,51 @@ function drawAoeWave(actor, targets, kind) {
    - 그 다음 중앙에서 작은 원 → 점점 커지는 원형 파동
    - 의도: "마도가 전장을 쓸었다"가 한눈에 읽혀야 함
 */
+/* v0.3.8s: 전쟁 북지기 전용 FX — "고양/강화/템포" 시각 문법.
+   마도/현자의 큰 원형 공격 파동과 분리: 적 진영 3곳에서 작은 원형이
+   0.1초 간격으로 톡톡 순차 발생 (노랑/주황 폭죽 리듬감). */
+function drawDrumBeats(actor, targets) {
+  const svg = document.getElementById("battle-svg");
+  if (!svg) return;
+  syncBattleSvg();
+  const svgRect = svg.getBoundingClientRect();
+  const zone = document.querySelector(".battle-zone.enemy");
+  if (!zone) return;
+  const zRect = zone.getBoundingClientRect();
+  // v0.3.8t: 원 크기↑ + 적 진영 내부/주변 랜덤 위치 (균등분포 X — 더 리듬감/고양감).
+  //   3개 순차는 유지, 산만하지 않게 zone 범위 내(주변 약간 여유)로 제한.
+  const beats = 3;
+  const colors = ["#ffd24a", "#ff9a3c", "#ffc14a"];  // 노랑/주황 계열
+  const margin = 0.12;  // zone 경계 바깥으로 살짝 번지는 여유 (주변까지)
+  for (let i = 0; i < beats; i++) {
+    // 내부/주변 랜덤 (-margin ~ 1+margin), 단 너무 치우치지 않게 중앙 가중
+    const rand = () => {
+      const r = (Math.random() + Math.random()) / 2;   // 중앙 가중 (산만 방지)
+      return -margin + r * (1 + margin * 2);
+    };
+    const cx = zRect.left + zRect.width * rand() - svgRect.left;
+    const cy = zRect.top + zRect.height * rand() - svgRect.top;
+    const color = colors[i % colors.length];
+    const baseR = 15 + Math.floor(Math.random() * 4);   // 15~18 (기존 10보다 큼)
+    setTimeout(() => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("data-drum-beat", "1");
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", cx);
+      circle.setAttribute("cy", cy);
+      circle.setAttribute("r", String(baseR));
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", color);
+      circle.setAttribute("stroke-width", "1.8");
+      circle.style.filter = `drop-shadow(0 0 6px ${color})`;
+      circle.classList.add("mk-drum-beat-circle");
+      g.appendChild(circle);
+      svg.appendChild(g);
+      setTimeout(() => g.remove(), 700);
+    }, i * 110);  // 0.11초 간격 순차 (리듬감)
+  }
+}
+
 function drawCenterPulse(actor, targets, kind = "magic") {
   const svg = document.getElementById("battle-svg");
   if (!svg) return;
@@ -12053,6 +12596,13 @@ const CODEX_ENTRIES = [
       if (!found) console.warn(`  ⚠ FUSION ${f.name}: requires "${reqId}" not found in TRAITS`);
     });
   });
+
+  // v0.3.8r2: DEV 스테이지 테스트 버튼 — 플래그 true일 때만 노출 (일반/친구 빌드는 숨김)
+  if (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) {
+    const devTools = document.getElementById("dev-stage-tools");
+    if (devTools) devTools.style.display = "";
+    console.log("[DEV] stage test tools enabled");
+  }
 })();
 </script>
 </body>
