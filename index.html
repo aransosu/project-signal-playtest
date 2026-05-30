@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8m-test</title>
+<title>Project Signal Mk.II v0.3.8p-stage13-20-soften</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -3719,7 +3719,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8m test (도감 순서)</div>
+      <div class="title-version">MK.II — v0.3.8p (playtime soften)</div>
     </div>
 
     <p class="title-tagline">
@@ -4504,19 +4504,19 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8m-test";
+const BUILD_VERSION = "v0.3.8p-stage13-20-soften";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
 function getEnemyStatMultiplier(stage) {
   if (!ENABLE_STAGE13_TEST_SOFTENING) return 1.0;
   if (stage <= 12) return 1.0;
-  if (stage <= 15) return 0.92;  // S13~15: -8%
-  if (stage <= 18) return 0.90;  // S16~18: -10%
-  if (stage <= 20) return 0.88;  // S19~20: -12%
+  if (stage <= 15) return 0.88;  // S13~15: -12% (v0.3.8p: 0.92→0.88, 검문소 유지하되 압축기 완화)
+  if (stage <= 18) return 0.86;  // S16~18: -14% (v0.3.8p: 0.90→0.86, 중후반 벽으로 남김)
+  if (stage <= 20) return 0.84;  // S19~20: -16% (v0.3.8p: 0.88→0.84, S20 도달 빈도↑ 관측)
   // v0.3.8: 사이클 5 관측 구간
-  if (stage <= 24) return 0.90;  // S21~24: -10% (연장 관측, 살짝 완화)
-  return 1.0;                     // S25 boss: 완화 X — "어디까지 버티나" 온전히 관측
+  if (stage <= 24) return 0.90;  // S21~24: -10% (연장 관측 — v0.3.8p 유지)
+  return 1.0;                     // S25 boss: 완화 X — "어디까지 버티나" 온전히 관측 (v0.3.8p 유지)
 }
 
 /* 적 템플릿 — 종족 + 역할 + 스탯 */
@@ -5827,7 +5827,182 @@ const runState = {
   runId: null,                // 같은 런 식별자 — 후속 분석에서 데이터 묶기
   stageHistory: [],           // [{ stage, outcome, survivorsAlive, actionsThisStage, ... }]
   _stageActionsBaseline: 0,   // 매 스테이지 시작 시 누적 actions 스냅샷 (delta 계산용)
+  // v0.3.8o: 시간 관측 장치 — "몇 분짜리 경험인가" (x1 환산)
+  //   createInitialTimeStats()로 매 런 새로 박음. snapshot에 복사돼 결과창에서 고정.
+  timeStats: null,
 };
+
+/* ---------- v0.3.8n: 결과 안정화 — DEBUG_RESULT 게이트 + stale 콜백 공통 가드 ----------
+   유키 결 (2026-05-30): "정문은 이미 건강하다. 오늘은 옆문을 닫는다.
+                          stale 지연타는 게임에는 조용히 무시하고,
+                          DEBUG_RESULT가 켜져 있을 때만 기록한다."
+
+   주의 (렌 — 코드 진실에 맞춤):
+     유키 헬퍼 예시는 battleState.token / battleState.battleEnding 기준이었으나,
+     이 빌드의 실제 토큰/락은 runState.battleToken / runState.battleEnding / runState.runEnded 다.
+     "거짓을 표시하지 않는다" — 예시 그대로 박으면 조용히 깨지므로 runState 기준으로 박는다.
+*/
+const DEBUG_RESULT = false;   // true일 때만 [RESULT] 로그 출력 (게임 화면엔 영향 X)
+const MAX_STAGE = STAGES.length;   // 25층 관측장. "/20" 하드코딩 정정용 단일 진실.
+
+// DEBUG_RESULT가 켜졌을 때만 [RESULT] 라벨로 console 출력. 게임 동작/표시엔 절대 영향 X.
+function debugResult(label, info = {}) {
+  if (!DEBUG_RESULT) return;
+  console.log(`[RESULT] ${label}`, info);
+}
+
+// 현재 phase (getCurrentPhase 헬퍼가 없으므로 STAGES에서 직접 — 로그용 안전 접근)
+function currentPhaseLabel() {
+  const s = STAGES[(runState.stage || 0) - 1];
+  return s ? s.phase : null;
+}
+
+/* 지연 콜백(마도/현자 파동, 유격수 교란 등 setTimeout 안의 dealDamage)이
+   "죽은 전투의 잔재"인지 판단하는 공통 가드.
+
+   stale 조건 (하나라도 참이면 stale):
+     - runEnded         : 런 최종 결과 이미 확정 (절대 덮으면 안 됨)
+     - battleEnding     : 현재 전투 종료 예약 중 (이 묶음은 이미 끝나는 중)
+     - battleToken 불일치: 콜백 예약 시점 토큰 ≠ 현재 토큰 (다음 스테이지/런/홈으로 넘어감)
+
+   결과를 *바꾸지 않는다*. 무시할지 말지만 판단한다.
+   stale면 DEBUG_RESULT일 때만 기록하고, 게임 화면엔 조용히 무시(true 반환). */
+function isStaleBattleCallback(capturedToken, caller) {
+  const stale =
+    runState.runEnded ||
+    runState.battleEnding ||
+    runState.battleToken !== capturedToken;
+
+  if (stale) {
+    debugResult("ignored stale delayed action", {
+      caller,
+      capturedToken,
+      currentToken: runState.battleToken,
+      stage: runState.stage,
+      phase: currentPhaseLabel(),
+      battleEnding: runState.battleEnding,
+      runEnded: runState.runEnded,
+      hasSnapshot: !!runState.resultSnapshot,
+    });
+    return true;
+  }
+  return false;
+}
+
+/* ---------- v0.3.8o: 시간 관측 장치 — "몇 분짜리 경험인가" (x1 환산) ----------
+   유키 결: x6 반복 플레이로 짧게 돌려도 "원래 x1 기준 플레이타임"을 분석할 수 있어야 한다.
+
+   속도 진실 (이 빌드):  x1 = battleState.speed 2 / x3 = 6 / x6 = 12
+   x1 환산식:  speedRatio = battleState.speed / 2
+              battleX1EquivalentMs += deltaMs * speedRatio
+
+   집계 대상 = "전투 화면에서 실제로 전투가 진행된 시간"만.
+     성장/합체/영입/결과 화면, 일시정지, 종료 예약 중(battleEnding), 런 종료 후는 제외.
+
+   주의 (렌 — 코드 진실에 맞춤):
+     유키 예시는 battleSpeed / battleState.battleEnding 기준이었으나,
+     이 빌드는 battleState.speed / runState.battleEnding 이다. runState/battleState 기준으로 박는다. */
+
+const _PERF_NOW = () => (performance.now ? performance.now() : Date.now());
+
+function createInitialTimeStats() {
+  const now = _PERF_NOW();
+  return {
+    startedAt: now,
+    endedAt: 0,
+    realElapsedMs: 0,          // 런 시작 ~ 결과 확정까지 현실 시간
+    battleRealMs: 0,           // 전투 화면에서 진행된 현실 시간
+    battleX1EquivalentMs: 0,   // battleRealMs를 x1 기준으로 환산
+    lastTickAt: now,
+    speedBucketsMs: { x1: 0, x3: 0, x6: 0, other: 0 },
+  };
+}
+
+// _debugTimeTickAccum: tick 로그 폭주 방지 — 누적 10초 단위로만 [RESULT] timeStats tick 출력
+let _debugTimeTickAccum = 0;
+
+// 전투 루프에서 매 tick 호출. "전투가 실제로 진행 중일 때만" 시간 누적.
+function updateRunTimeStats() {
+  if (!runState || !runState.timeStats) return;
+
+  const ts = runState.timeStats;
+  const now = _PERF_NOW();
+  const deltaMs = Math.max(0, now - ts.lastTickAt);
+  ts.lastTickAt = now;
+
+  const isBattleScreen = document.getElementById("screen-battle")?.classList.contains("active");
+  const shouldCountBattle =
+    isBattleScreen &&
+    !battleState.paused &&
+    !runState.battleEnding &&   // 코드 진실: 락은 runState에 있음
+    !runState.runEnded &&
+    !runState.resultSnapshot;
+
+  if (!shouldCountBattle) return;
+
+  const speed = battleState.speed;
+  const speedRatio = speed / 2;   // x1 기준 환산 (x1=2 → 1.0 / x3=6 → 3.0 / x6=12 → 6.0)
+
+  ts.battleRealMs += deltaMs;
+  ts.battleX1EquivalentMs += deltaMs * speedRatio;
+
+  if (speed === 2) ts.speedBucketsMs.x1 += deltaMs;
+  else if (speed === 6) ts.speedBucketsMs.x3 += deltaMs;
+  else if (speed === 12) ts.speedBucketsMs.x6 += deltaMs;
+  else ts.speedBucketsMs.other += deltaMs;
+
+  // tick 로그는 폭주하니 누적 10초 단위로만
+  if (DEBUG_RESULT) {
+    _debugTimeTickAccum += deltaMs;
+    if (_debugTimeTickAccum >= 10000) {
+      _debugTimeTickAccum = 0;
+      debugResult("timeStats tick", {
+        battleRealMs: Math.round(ts.battleRealMs),
+        battleX1EquivalentMs: Math.round(ts.battleX1EquivalentMs),
+        speed,
+      });
+    }
+  }
+}
+
+// 결과 확정 직전 호출. endedAt/realElapsedMs 박고 averageSpeed 계산해서 반환.
+//   여러 번 불려도 endedAt은 1번만 (snapshot 안정화 결과 일치).
+function finalizeTimeStats() {
+  if (!runState || !runState.timeStats) return null;
+
+  const ts = runState.timeStats;
+  if (!ts.endedAt) {
+    ts.endedAt = _PERF_NOW();
+    ts.realElapsedMs = Math.max(0, ts.endedAt - ts.startedAt);
+  }
+
+  const averageSpeed =
+    ts.battleRealMs > 0 ? ts.battleX1EquivalentMs / ts.battleRealMs : 0;
+
+  debugResult("timeStats finalize", {
+    realElapsedMs: Math.round(ts.realElapsedMs),
+    battleRealMs: Math.round(ts.battleRealMs),
+    battleX1EquivalentMs: Math.round(ts.battleX1EquivalentMs),
+    averageSpeed: Number(averageSpeed.toFixed(2)),
+  });
+
+  return { ...ts, averageSpeed };
+}
+
+// mm:ss (1시간 넘으면 h:mm:ss)
+function formatDuration(ms) {
+  const totalSec = Math.floor((ms || 0) / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function formatAverageSpeed(value) {
+  if (!value || !Number.isFinite(value)) return "-";
+  return `x${value.toFixed(1)}`;
+}
 
 /* ---------- v0.3.7.28: battle-end stale callback 방어 헬퍼들 ---------- */
 
@@ -5850,13 +6025,18 @@ function beginNewBattleSlot() {
   runState.runEnded = false;
   runState.resultSnapshot = null;
   runState.battleToken = (runState.battleToken || 0) + 1;
+  debugResult("beginNewBattleSlot reset", {
+    stage: runState.stage, newToken: runState.battleToken,
+  });
 }
 
 // 런 최종 결과 확정 — 한 번만 박힘
 //   reason: "stage20_clear" | "party_wipe" | "abandon" | ...
 function finalizeRunResult(result, reason) {
   if (runState.runEnded) {
-    console.warn(`[finalizeRunResult] 이미 확정됨 (현재 ${runState.result}). 무시: result=${result} reason=${reason}`);
+    debugResult("ignored because runEnded", {
+      caller: "finalizeRunResult", current: runState.result, attempted: result, reason,
+    });
     return;
   }
   // v0.3.7.29: 마지막 스테이지의 history도 박음 (패배 시 외 누락 방지)
@@ -5865,13 +6045,26 @@ function finalizeRunResult(result, reason) {
   }
   runState.runEnded = true;
   runState.result = result;
+  // v0.3.8o: 시간 확정 — snapshot에 복사해 결과창이 "늦게 그려져도 같은 진실"을 보이게.
+  const tFinal = finalizeTimeStats();
+  const timeSummary = tFinal ? {
+    realElapsed: formatDuration(tFinal.realElapsedMs),
+    battleReal: formatDuration(tFinal.battleRealMs),
+    battleX1Equivalent: formatDuration(tFinal.battleX1EquivalentMs),
+    averageSpeed: formatAverageSpeed(tFinal.averageSpeed),
+  } : null;
   runState.resultSnapshot = {
     result,
     reason,
     stageFinal: runState.stage,
     timestamp: Date.now(),
+    timeStats: tFinal,        // { startedAt, endedAt, realElapsedMs, battleRealMs, battleX1EquivalentMs, speedBucketsMs, averageSpeed }
+    timeSummary,              // 포맷된 표시용 (mm:ss / x5.9)
   };
-  console.log(`[finalizeRunResult] 확정: ${result} (${reason}) at stage ${runState.stage}`);
+  if (tFinal) debugResult("timeStats snapshot attached", timeSummary);
+  debugResult("finalizeRunResult called", {
+    result, reason, stageFinal: runState.stage, token: runState.battleToken,
+  });
   // 진행 중인 다른 timeout이 있으면 정리
   clearPendingBattleEndTimer();
   // 결과 화면 띄움
@@ -6189,6 +6382,11 @@ function initRunFromParty() {
   runState.runId = "run_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
   runState.stageHistory = [];
   runState._stageActionsBaseline = 0;
+  // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
+  //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
+  runState.timeStats = createInitialTimeStats();
+  _debugTimeTickAccum = 0;
+  debugResult("timeStats init", { runId: runState.runId, startedAt: Math.round(runState.timeStats.startedAt) });
   console.log("[initRunFromParty] runId=" + runState.runId);
   runState.units = partyState.slots
     .filter(Boolean)
@@ -6303,7 +6501,7 @@ function loadStage(stageNum) {
   rerollAllOffsets();
 
   // UI
-  document.getElementById("battle-stage-label").textContent = `STAGE ${stage.num} / 20`;
+  document.getElementById("battle-stage-label").textContent = `STAGE ${stage.num} / ${MAX_STAGE}`;
   document.getElementById("battle-stage-name").textContent = stage.name;
   clearEventFeed();
 
@@ -6328,6 +6526,9 @@ function startBattleLoop() {
   if (battleState.tickInterval) clearInterval(battleState.tickInterval);
   battleState.running = true;
   battleState.paused = false;
+  // v0.3.8o: 전투 루프 시작 시 시간 기준점 리셋 — 선택 화면 체류 시간이
+  //   전투 첫 tick의 deltaMs로 새어들어가지 않게 (전투 시간만 집계).
+  if (runState.timeStats) runState.timeStats.lastTickAt = _PERF_NOW();
   battleState.tickInterval = setInterval(tickBattle, 50);
 }
 
@@ -6341,6 +6542,9 @@ function stopBattleLoop() {
 
 function tickBattle() {
   if (battleState.paused || !battleState.running) return;
+
+  // v0.3.8o: 전투 진행 시간 누적 (x1 환산). 자체 5조건 게이트로 전투 시간만 집계.
+  updateRunTimeStats();
 
   runState.tickCount++;
   const speedMult = battleState.speed;
@@ -6658,9 +6862,12 @@ function actDebuff(actor) {
 
   showActionLabel(actor, "교란!", "control");
 
+  // v0.3.8n: 지연 교란타 — 예약 시점 토큰 캡처. fire 때 죽은 전투면 조용히 무시.
+  const _tokDisrupt = runState.battleToken;
   targets.forEach((target, i) => {
     const dmg = Math.floor(actor.atk * 0.5);
     setTimeout(() => {
+      if (isStaleBattleCallback(_tokDisrupt, "disrupt_delay")) return;
       if (!target.alive) return;
       dealDamage(actor, target, dmg);
       target.spd = Math.max(40, Math.floor(target.spd * 0.7));  // 속도 -30%
@@ -6806,8 +7013,11 @@ function actFusion(actor) {
         ...(uninfected.length < 2 ? infected.slice(0, 2 - uninfected.length) : []),
       ].slice(0, 2);
 
+      // v0.3.8n: 지연 중독 부여 — 데미지는 아니지만 죽은 전투의 상태를 건드리지 않게 가드.
+      const _tokPoison = runState.battleToken;
       poisonTargets.forEach((t, i) => {
         setTimeout(() => {
+          if (isStaleBattleCallback(_tokPoison, "trap_poison_delay")) return;
           if (!t.alive) return;
           // v0.3.6: 중독 지속 3턴 → 2턴 (덫꾼이 너무 빠르게 독 바다 만드는 자리 조정)
           t.poisoned = Math.max(t.poisoned || 0, 2);
@@ -7588,8 +7798,11 @@ function actFusion(actor) {
       // 전장 중앙 기준 원형 파동 — 적 전체에게 광역 피해
       // dealDamage는 약간씩 시차로 박아 시각 결 박힘
       const pulseDmg = Math.floor(actor.atk * 1.4);
+      // v0.3.8n: 지연 파동타 — 예약 시점 토큰 캡처. fire 때 죽은 전투면 조용히 무시.
+      const _tokArcane = runState.battleToken;
       aliveEnemies.forEach((t, i) => {
         setTimeout(() => {
+          if (isStaleBattleCallback(_tokArcane, "arcanist_wave")) return;
           if (!t.alive) return;
           dealDamage(actor, t, pulseDmg);
         }, 120 + i * 80);
@@ -7655,8 +7868,11 @@ function actFusion(actor) {
 
       // 광역 피해 — 마도(×1.4)보다 살짝 큼 (×1.5)
       const pulseDmg = Math.floor(actor.atk * 1.5);
+      // v0.3.8n: 지연 파동타 — 예약 시점 토큰 캡처. fire 때 죽은 전투면 조용히 무시.
+      const _tokSage = runState.battleToken;
       aliveEnemies.forEach((t, i) => {
         setTimeout(() => {
+          if (isStaleBattleCallback(_tokSage, "sage_wave")) return;
           if (!t.alive) return;
           dealDamage(actor, t, pulseDmg);
         }, 120 + i * 80);
@@ -8216,8 +8432,19 @@ function finishAction(actor) {
 
 function checkBattleEnd() {
   // v0.3.7.28: 이미 종료 예약 중이거나 런 끝났으면 즉시 return (stale 콜백 방어)
-  if (runState.battleEnding) return;
-  if (runState.runEnded) return;
+  debugResult("checkBattleEnd enter", {
+    stage: runState.stage, phase: currentPhaseLabel(), token: runState.battleToken,
+    battleEnding: runState.battleEnding, runEnded: runState.runEnded,
+    hasSnapshot: !!runState.resultSnapshot,
+  });
+  if (runState.battleEnding) {
+    debugResult("ignored because battleEnding", { stage: runState.stage, token: runState.battleToken });
+    return;
+  }
+  if (runState.runEnded) {
+    debugResult("ignored because runEnded", { stage: runState.stage, token: runState.battleToken });
+    return;
+  }
 
   const alliesAlive = runState.units.some(u => u.alive);
   const enemiesAlive = runState.enemies.some(e => e.alive);
@@ -8226,6 +8453,10 @@ function checkBattleEnd() {
 
   // 종료 확정 — lock 박음
   runState.battleEnding = true;
+  debugResult("battleEnding lock set", {
+    stage: runState.stage, token: runState.battleToken,
+    outcome: !enemiesAlive ? "clear" : "lose",
+  });
   stopBattleLoop();
   // v0.3.7.13: 전투 종료 시 모든 행동선 즉시 clear (잔상 X)
   clearAllActionLines();
@@ -8234,28 +8465,22 @@ function checkBattleEnd() {
   const token = runState.battleToken;
   const stageAtSchedule = runState.stage;
 
-  console.log("[checkBattleEnd]", {
-    stage: runState.stage,
-    battleToken: token,
-    alliesAlive, enemiesAlive,
-    outcome: !enemiesAlive ? "clear" : "lose"
-  });
-
   if (!enemiesAlive) {
     // ─── 적 전멸 — 스테이지 클리어 ───
     pushEvent(`▸ STAGE ${runState.stage} 클리어`, "system");
+    debugResult("stage clear scheduled", { stage: runState.stage, token });
     runState.pendingBattleEndTimer = setTimeout(() => {
       // stale 검증
       if (runState.runEnded) {
-        console.warn("[battleEndTimer ignored: runEnded]");
+        debugResult("ignored because runEnded", { caller: "clearTimer", token });
         return;
       }
       if (runState.battleToken !== token) {
-        console.warn(`[battleEndTimer ignored: stale token] scheduled=${token} current=${runState.battleToken}`);
+        debugResult("ignored stale token", { caller: "clearTimer", scheduled: token, current: runState.battleToken });
         return;
       }
       if (runState.stage !== stageAtSchedule) {
-        console.warn(`[battleEndTimer ignored: stale stage] scheduled=${stageAtSchedule} current=${runState.stage}`);
+        debugResult("ignored stale stage", { caller: "clearTimer", scheduled: stageAtSchedule, current: runState.stage });
         return;
       }
       runState.pendingBattleEndTimer = null;
@@ -8264,18 +8489,19 @@ function checkBattleEnd() {
   } else {
     // ─── 아군 전멸 — 런 종료 (패배) ───
     pushEvent(`▸ 패배`, "death");
+    debugResult("stage defeat scheduled", { stage: runState.stage, token });
     runState.pendingBattleEndTimer = setTimeout(() => {
       // stale 검증
       if (runState.runEnded) {
-        console.warn("[battleEndTimer ignored: runEnded — 이미 결과 확정]");
+        debugResult("ignored because runEnded", { caller: "loseTimer", token });
         return;
       }
       if (runState.battleToken !== token) {
-        console.warn(`[battleEndTimer ignored: stale token (lose)] scheduled=${token} current=${runState.battleToken}`);
+        debugResult("ignored stale token", { caller: "loseTimer", scheduled: token, current: runState.battleToken });
         return;
       }
       if (runState.stage !== stageAtSchedule) {
-        console.warn(`[battleEndTimer ignored: stale stage (lose)] scheduled=${stageAtSchedule} current=${runState.stage}`);
+        debugResult("ignored stale stage", { caller: "loseTimer", scheduled: stageAtSchedule, current: runState.stage });
         return;
       }
       runState.pendingBattleEndTimer = null;
@@ -9071,7 +9297,11 @@ function showResult() {
   const effectiveResult = snap ? snap.result : runState.result;
   const effectiveStage  = snap ? snap.stageFinal : runState.stage;
   const isWin = effectiveResult === "win";
-  console.log("[showResult]", { effectiveResult, effectiveStage, snap, runStateResult: runState.result, runStateStage: runState.stage });
+  debugResult("showResult called", {
+    effectiveResult, effectiveStage,
+    runStateResult: runState.result, runStateStage: runState.stage,
+    hasSnapshot: !!snap, token: runState.battleToken, runEnded: runState.runEnded,
+  });
 
   document.getElementById("result-status").textContent = isWin ? "▸ VICTORY" : "▸ DEFEAT";
   document.getElementById("result-status").className = `result-status ${isWin ? "win" : "lose"}`;
@@ -9093,18 +9323,39 @@ function showResult() {
     .filter(Boolean)
     .join(" · ");
 
-  // 진척도 시각화 (n/20 막대)
-  const progressPct = (effectiveStage / 20) * 100;
+  // 진척도 시각화 (n/MAX_STAGE 막대)
+  // v0.3.8n: snapshot 기준(effectiveStage)으로만. "/20" 하드코딩 제거 → MAX_STAGE(25).
+  //   늦게 렌더돼도 runState.stage 현재값에 흔들리지 않게.
+  const progressPct = (effectiveStage / MAX_STAGE) * 100;
   const progressBar = `
     <div class="result-progress">
       <div class="result-progress-bar" style="width: ${progressPct}%"></div>
-      <div class="result-progress-label">${effectiveStage} / 20</div>
+      <div class="result-progress-label">${effectiveStage} / ${MAX_STAGE}</div>
     </div>
   `;
 
+  // v0.3.8o: 시간 표시 — snapshot.timeSummary 우선 ("늦게 그려져도 같은 진실").
+  //   snapshot이 없는 legacy 경로면 runState.timeStats에서 즉석 계산 (안전망).
+  let timeSummary = snap && snap.timeSummary ? snap.timeSummary : null;
+  if (!timeSummary && runState.timeStats) {
+    const t = runState.timeStats;
+    const avg = t.battleRealMs > 0 ? t.battleX1EquivalentMs / t.battleRealMs : 0;
+    timeSummary = {
+      realElapsed: formatDuration(t.realElapsedMs || Math.max(0, _PERF_NOW() - t.startedAt)),
+      battleX1Equivalent: formatDuration(t.battleX1EquivalentMs),
+      averageSpeed: formatAverageSpeed(avg),
+    };
+  }
+  const timeRows = timeSummary ? `
+    <div class="row"><span class="key">실제 소요</span><span class="val">${timeSummary.realElapsed}</span></div>
+    <div class="row"><span class="key">x1 환산 전투</span><span class="val">${timeSummary.battleX1Equivalent}</span></div>
+    <div class="row"><span class="key">평균 배속</span><span class="val">${timeSummary.averageSpeed}</span></div>
+  ` : "";
+
   summary.innerHTML = `
-    <div class="row highlight"><span class="key">도달</span><span class="val big">STAGE ${runState.stage} / 20</span></div>
+    <div class="row highlight"><span class="key">도달</span><span class="val big">STAGE ${effectiveStage} / ${MAX_STAGE}</span></div>
     ${progressBar}
+    ${timeRows}
     <div class="row"><span class="key">시작 파티</span><span class="val">${initialParty}</span></div>
     <div class="row"><span class="key">합체 이력</span><span class="val">${fusionsDone}</span></div>
     <div class="row"><span class="key">생존자</span><span class="val">${survivors}</span></div>
@@ -9306,6 +9557,43 @@ function saveFootprints(arr) {
 }
 
 /* 현재 런에서 발자취 객체 생성 */
+/* v0.3.8o: 발자취/export용 시간 결 — snapshot.timeStats 우선 (결과 안정화 결 일치) */
+function _footprintTimeStats() {
+  const snapT = runState.resultSnapshot && runState.resultSnapshot.timeStats;
+  const t = snapT || runState.timeStats;
+  if (!t) return null;
+  const averageSpeed = (typeof t.averageSpeed === "number")
+    ? t.averageSpeed
+    : (t.battleRealMs > 0 ? t.battleX1EquivalentMs / t.battleRealMs : 0);
+  return {
+    realElapsedMs: Math.round(t.realElapsedMs || 0),
+    battleRealMs: Math.round(t.battleRealMs || 0),
+    battleX1EquivalentMs: Math.round(t.battleX1EquivalentMs || 0),
+    averageSpeed: Number(averageSpeed.toFixed(2)),
+    speedBucketsMs: t.speedBucketsMs
+      ? {
+          x1: Math.round(t.speedBucketsMs.x1 || 0),
+          x3: Math.round(t.speedBucketsMs.x3 || 0),
+          x6: Math.round(t.speedBucketsMs.x6 || 0),
+          other: Math.round(t.speedBucketsMs.other || 0),
+        }
+      : { x1: 0, x3: 0, x6: 0, other: 0 },
+  };
+}
+
+function _footprintTimeSummary() {
+  const snapS = runState.resultSnapshot && runState.resultSnapshot.timeSummary;
+  if (snapS) return snapS;
+  const ts = _footprintTimeStats();
+  if (!ts) return null;
+  return {
+    realElapsed: formatDuration(ts.realElapsedMs),
+    battleReal: formatDuration(ts.battleRealMs),
+    battleX1Equivalent: formatDuration(ts.battleX1EquivalentMs),
+    averageSpeed: formatAverageSpeed(ts.averageSpeed),
+  };
+}
+
 function createFootprintFromRun() {
   if (!runState.runStats || !runState.runStats.perUnit) return null;
 
@@ -9494,6 +9782,9 @@ function createFootprintFromRun() {
     stageHistory: (runState.stageHistory || []).slice(),
     // v0.3.7.29: "왜 강해졌는가?" 분석용 — 강화 누적
     traitLevels: Object.assign({}, runState.traitLevels || {}),
+    // v0.3.8o: 시간 관측 — snapshot.timeStats 우선 (결과 안정화 결 일치), 없으면 runState
+    timeStats: _footprintTimeStats(),
+    timeSummary: _footprintTimeSummary(),
     totals: {
       damageDealt: totalDmg,
       healDone: totalHeal,
@@ -9672,6 +9963,12 @@ function renderFootprints() {
       ? `<div class="fp-section"><div class="fp-label">결정타</div><div class="fp-text">${h.finalBlow.name}</div></div>`
       : "";
 
+    // v0.3.8o: 시간 한 줄 — 발자취 카드엔 길게 X, 한 줄로 충분
+    const ts = fp.timeSummary;
+    const timeLine = ts
+      ? `<div class="fp-section"><div class="fp-text" style="font-size:11px;color:var(--text-dim);">시간: 실제 ${ts.realElapsed} / x1환산 ${ts.battleX1Equivalent} / 평균 ${ts.averageSpeed}</div></div>`
+      : "";
+
     return `
       <div class="footprint-card ${cls}">
         <div class="fp-row1">
@@ -9680,6 +9977,7 @@ function renderFootprints() {
         </div>
 
         <div class="fp-summary">"${fp.summary}"</div>
+        ${timeLine}
 
         <div class="fp-section">
           <div class="fp-label">최종 파티</div>
@@ -9741,15 +10039,16 @@ function buildBalanceExportPayload() {
     version: BUILD_VERSION,
     stage13Softening: !!ENABLE_STAGE13_TEST_SOFTENING,
     notes: ENABLE_STAGE13_TEST_SOFTENING
-      ? "Stage13+ test softening build (HP/ATK multiplier applied to enemies stage 13+)"
+      ? "Stage13~20 playtime balance softening build"
       : "Standard build",
   };
 
   // 적용 배율 — 테스트 완화 박힌 경우만 (가독성)
   if (ENABLE_STAGE13_TEST_SOFTENING) {
-    build.stage13_15_mult = 0.92;
-    build.stage16_18_mult = 0.90;
-    build.stage19_20_mult = 0.88;
+    build.stage13_15_mult = 0.88;   // v0.3.8p
+    build.stage16_18_mult = 0.86;   // v0.3.8p
+    build.stage19_20_mult = 0.84;   // v0.3.8p
+    build.stage21_24_mult = 0.90;   // 25층 관측장 — 연장(S21~24) 완화 배율 유지 (코드 진실과 일치)
   }
 
   return {
@@ -11211,6 +11510,12 @@ function setSpeed(s) {
 function togglePause() {
   battleState.paused = !battleState.paused;
   document.getElementById("btn-pause").textContent = battleState.paused ? "▶" : "⏸";
+
+  // v0.3.8o1: pause 해제 시 pause 동안의 delta가 x1 환산 전투 시간에 섞이지 않게 기준점 리셋.
+  //   (실제 소요 시간엔 pause/고민 시간이 들어가도 되지만, 전투 시간엔 들어가면 안 됨)
+  if (!battleState.paused && runState.timeStats) {
+    runState.timeStats.lastTickAt = _PERF_NOW();
+  }
 }
 
 /* ---------- mk2 v0.2: 모험 종료 — 타이틀로 ----------
@@ -11251,6 +11556,10 @@ function cancelExitRun() {
   if (modal) modal.remove();
   // 일시정지 해제
   battleState.paused = false;
+  // v0.3.8o1: 종료 확인 모달 체류 시간도 전투 시간에 섞이지 않게 기준점 리셋 (togglePause와 같은 결).
+  if (runState.timeStats) {
+    runState.timeStats.lastTickAt = _PERF_NOW();
+  }
   const pauseBtn = document.getElementById("btn-pause");
   if (pauseBtn) pauseBtn.textContent = "⏸";
 }
@@ -11264,6 +11573,19 @@ function doExitRun() {
 function exitToTitle() {
   // 전투 루프 정지
   stopBattleLoop();
+
+  // v0.3.8n: 홈 이동도 "새 슬롯 진입"과 같은 결로 옆문을 닫는다.
+  //   loadStage/replayRun/initRunFromParty와 대칭 — 예약된 battle-end timer 제거 +
+  //   락 리셋 + token++. (stage=0만으로는 token 검증 안 하는 지연타를 못 막음)
+  clearPendingBattleEndTimer();
+  runState.battleEnding = false;
+  runState.runEnded = false;
+  runState.resultSnapshot = null;
+  runState.battleToken = (runState.battleToken || 0) + 1;
+  debugResult("exitToTitle reset", {
+    stage: runState.stage,
+    newToken: runState.battleToken,
+  });
 
   // 보류 중인 setTimeout이 *지난 상태*에서 발동 안 하도록 stage 리셋
   runState.stage = 0;
