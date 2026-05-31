@@ -4081,7 +4081,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8ab (dev S25 replay)</div>
+      <div class="title-version">MK.II — v0.3.8ac (damage log integrity)</div>
     </div>
 
     <p class="title-tagline">
@@ -4880,7 +4880,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ab-dev-s25-replay-and-hydra-obs";
+const BUILD_VERSION = "v0.3.8ac-damage-log-integrity";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -7221,6 +7221,14 @@ function ensureRunStatsForUnit(u) {
     poisonDamage: 0,
     reflectDamage: 0,
     actionsTaken: 0,
+    // v0.3.8ac: 피해 세부 분류 (damageDealt = 이들의 합 + 직접타. "어떻게 기여했나")
+    directDamage: 0,        // 직접 공격/치명타
+    executeDamage: 0,       // 처형 피해
+    crushDamage: 0,         // 분쇄 피해
+    splashDamage: 0,        // 광역/스플래시
+    // 받은 상태 피해 (damageDealt 아님 — "적/상태이상의 위협")
+    poisonDamageTaken: 0,   // 아군이 적 독으로 받은 피해
+    statusDamageTaken: 0,   // 기타 상태 피해
   };
 }
 
@@ -7245,6 +7253,8 @@ function loadStage(stageNum, enemiesOverride) {
   // 적 인스턴스 생성 (v0.3.8v: DEV override 있으면 그걸로 — seed 관측용)
   const enemyList = (enemiesOverride && enemiesOverride.length) ? enemiesOverride : stage.enemies;
   runState.enemies = enemyList.map(tplId => makeEnemyUnit(tplId));
+  // v0.3.8ac: 히드라 관측 시작 HP 캡처 (object별 받은 피해 검증 기준점)
+  runState.enemies.forEach(e => { if (e.isHydra) e._obsStartHp = e.hp; });
 
   // 아군 HP/게이지/보호막 리셋 (새 스테이지 시작)
   runState.units.forEach(u => {
@@ -7387,8 +7397,10 @@ function executeAction(actor) {
   // v0.3.7.12: 직접 hp 감소 + 즉흥 alive=false 제거. applyStatusDamage로 통일.
   if (actor.poisoned && actor.poisoned > 0) {
     const poisonDmg = Math.floor(actor.maxHp * 0.10);
+    // v0.3.8ac: 독 tick의 주인 = 독을 건 시전자(_poisonSourceUid). 없으면 self 폴백.
+    //   유키 결: "덫꾼/도적이 건 독은 그들의 딜이다." 자해 tick을 시전자 damageDealt로 귀속.
     applyStatusDamage(actor, poisonDmg, {
-      sourceUid: actor.uid,         // 자해 (source=self)
+      sourceUid: actor._poisonSourceUid || actor.uid,
       reason: "poison",
       damageType: "dot",
       floatKind: "poison"
@@ -7776,6 +7788,7 @@ function actFusion(actor) {
       // 중독 부여 (3턴)
       if (target.alive) {
         target.poisoned = Math.max(target.poisoned || 0, 3);
+        target._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자 — 자해 tick을 시전자 딜로 귀속
         pushEvent(`<b>${actor.name}</b> ${isExecution ? "처형" : "독칼"} → ${target.name} (${dmg}${isExecution ? "!" : ""}) 중독`, "attack");
       }
       break;
@@ -7824,6 +7837,7 @@ function actFusion(actor) {
           if (!t.alive) return;
           // v0.3.6: 중독 지속 3턴 → 2턴 (덫꾼이 너무 빠르게 독 바다 만드는 자리 조정)
           t.poisoned = Math.max(t.poisoned || 0, 2);
+          t._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자 (덫꾼)
           drawLine(actor, t, "debuff");
         }, 150 + i * 100);
       });
@@ -8798,6 +8812,72 @@ function hydraObsAllyDeath(unit) {
   }
 }
 
+/* v0.3.8ac(B): 히드라 object별 받은 피해 누적 (id → {damageTaken, byType, bySource, startHp, deadAtAction}). */
+function recordHydraDamageTaken(hydra, src, dmg, type) {
+  if (!hydraObsActive() || dmg <= 0) return;
+  const obs = ensureHydraObs();
+  if (!obs.perObject) obs.perObject = {};
+  const key = hydra.uid;
+  let rec = obs.perObject[key];
+  if (!rec) {
+    rec = obs.perObject[key] = {
+      uid: hydra.uid, name: hydra.name,
+      maxHp: hydra.maxHp, startHp: hydra._obsStartHp != null ? hydra._obsStartHp : hydra.maxHp,
+      damageTaken: 0, byType: {}, bySource: {}, deadAtAction: null,
+    };
+  }
+  rec.damageTaken += dmg;
+  rec.byType[type] = (rec.byType[type] || 0) + dmg;
+  const sname = src ? src.name : "unknown";
+  if (!rec.bySource[sname]) rec.bySource[sname] = { name: sname, jobId: src ? (src.kind === "fusion" ? src.fusionId : src.traitId) : null, damage: 0 };
+  rec.bySource[sname].damage += dmg;
+  if (hydra.hp <= 0 && rec.deadAtAction == null) rec.deadAtAction = obs.totalActions;
+}
+
+/* v0.3.8ac(C): 전투 종료 시 히드라 계기판 정합성 검증 (유저 비노출, 분석용).
+   "CLEAR가 진짜였는가 / 피해 로그가 실제 HP와 맞는가"를 verdict로 남긴다. */
+function recordHydraIntegrityCheck(isClear) {
+  const obs = ensureHydraObs();
+  const hydras = runState.enemies.filter(e => e.isHydra);
+  const poison = hydras.find(e => e.hydraVariant === "poison_regen") || hydras[0];
+  const flame  = hydras.find(e => e.hydraVariant === "flame_roar")  || hydras[1];
+  const fmt = (e) => e ? {
+    name: e.name, hp: Math.max(0, e.hp), maxHp: e.maxHp,
+    alive: !!e.alive, hpPct: e.maxHp > 0 ? Math.round((Math.max(0, e.hp) / e.maxHp) * 100) : 0,
+  } : null;
+
+  obs.hydraClearCheck = {
+    poisonHydra: fmt(poison),
+    flameHydra: fmt(flame),
+    allHydraDead: hydras.every(e => !e.alive || e.hp <= 0),
+    clearTriggeredBy: isClear ? "all_enemies_dead" : "allies_wiped",
+    clearTriggerActionIndex: obs.totalActions,
+  };
+
+  // 정합성: 히드라가 받은 총 피해(관측) vs 아군이 준 총 피해(unitStats 합)
+  const totalHydraDamageTaken = obs.perObject
+    ? Object.values(obs.perObject).reduce((s, r) => s + r.damageTaken, 0) : 0;
+  const perUnit = (runState.runStats && runState.runStats.perUnit) ? Object.values(runState.runStats.perUnit) : [];
+  const totalPlayerDamageDealt = perUnit.reduce((s, u) => s + (u.damageDealt || 0), 0);
+  const expectedTotalHydraHp = hydras.reduce((s, e) => s + e.maxHp, 0);
+  const allHydraDead = hydras.every(e => !e.alive || e.hp <= 0);
+
+  let verdict = "OK";
+  if (isClear && !allHydraDead)                          verdict = "CLEAR_WITH_LIVING_HYDRA";
+  else if (Math.abs(totalHydraDamageTaken - totalPlayerDamageDealt) > expectedTotalHydraHp * 0.25) verdict = "DAMAGE_LOG_MISMATCH";
+  else if (isClear && hydras.some(e => e.hp > 0))        verdict = "HYDRA_HP_LOG_MISMATCH";
+
+  obs.hydraIntegrityCheck = {
+    expectedTotalHydraHp,
+    totalHydraDamageTaken,
+    totalPlayerDamageDealt,
+    damageGap: totalPlayerDamageDealt - totalHydraDamageTaken,
+    allHydraDead,
+    clearResult: isClear ? "CLEAR" : "DEFEAT",
+    verdict,
+  };
+}
+
 function hydraAct(actor) {
   // v0.3.8v: 객체별 머리 풀 (좌=독/재생, 우=화염/포효). 없으면 5머리 전부 (중앙형 seed).
   const heads = actor.hydraHeads && actor.hydraHeads.length
@@ -8832,6 +8912,7 @@ function hydraAct(actor) {
           dealDamage(actor, t, dmg);
         }
         t.poisoned = Math.max(t.poisoned || 0, 3);
+        t._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자(히드라) — 적 출처라 아군 damageDealt 제외됨
         drawLine(actor, t, "debuff");
       });
       break;
@@ -9106,6 +9187,7 @@ function actEnemyAttack(actor) {
   const poisonChance = actor.poisonOnHit;
   if (poisonChance && target.alive && Math.random() < poisonChance) {
     target.poisoned = Math.max(target.poisoned || 0, 2);
+    target._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자 (poisonOnHit)
     showActionLabel(actor, "독침!", "debuff");
     pushEvent(`<b>${target.name}</b> 중독됨 (2턴)`, "debuff");
   }
@@ -9231,6 +9313,7 @@ function dealDamage(actor, target, amount, opts = {}) {
   }
 
   if (dmg > 0) {
+    const hpBeforeDamage = target.hp;   // v0.3.8ac: overkill 제외용 (실제 깎은 양 = min(dmg, 이 값))
     target.hp = Math.max(0, target.hp - dmg);
     // v0.3.8ab: 히드라 관측 누적 — 히드라가 아군에 준 피해(머리별) / 도적 처형 / 분쇄 (히드라전만)
     if (hydraObsActive()) {
@@ -9242,6 +9325,11 @@ function dealDamage(actor, target, amount, opts = {}) {
       if (actor && actor.side === "ally" && target.isHydra) {
         if (opts.isExecute) ensureHydraObs().rogueExecutes++;
         if (opts.isCrush)   ensureHydraObs().crushHits++;
+        // v0.3.8ac(B): 히드라 object별 받은 피해 누적 (실제 깎은 양)
+        recordHydraDamageTaken(target, actor, Math.min(dmg, hpBeforeDamage),
+          opts.isExecute ? "execute" : opts.isCrush ? "crush"
+          : (opts.reason === "reflect" || opts.reason === "binder_reflect") ? "reflect"
+          : opts.isSplash ? "splash" : "direct");
       }
     }
     // v0.3.7.16: 치명/처형 결 시각 분기 (showResultText 거침)
@@ -9278,13 +9366,18 @@ function dealDamage(actor, target, amount, opts = {}) {
     }
     battleState.stats.damageDealt[actor.uid] = (battleState.stats.damageDealt[actor.uid] || 0) + dmg;
     // v0.3.7.23: 런 전체 stats 누적 (아군 시전자만)
+    // v0.3.8ac: damageDealt는 "실제 적 HP를 깎은 양"(overkill 제외) + 세부 분류 분리 (유키 결).
     if (actor && actor.side === "ally") {
-      statsBump(actor.uid, "damageDealt", dmg);
+      const applied = Math.min(dmg, hpBeforeDamage);   // overkill 제외 — 실제 깎은 만큼
+      statsBump(actor.uid, "damageDealt", applied);
+      // 세부 분류 (damageDealt = direct+execute+crush+reflect+splash+poison "어떻게 기여했나")
+      if (opts.isExecute)       statsBump(actor.uid, "executeDamage", applied);
+      else if (opts.isCrush)    statsBump(actor.uid, "crushDamage", applied);
+      else if (opts.reason === "reflect" || opts.reason === "binder_reflect") statsBump(actor.uid, "reflectDamage", applied);
+      else if (opts.isSplash)   statsBump(actor.uid, "splashDamage", applied);
+      else                       statsBump(actor.uid, "directDamage", applied);
       if (opts.isCritical) statsBump(actor.uid, "criticals", 1);
       if (opts.isExecute)  statsBump(actor.uid, "executes",  1);
-      if (opts.reason === "reflect" || opts.reason === "binder_reflect") {
-        statsBump(actor.uid, "reflectDamage", dmg);
-      }
     }
   } else if (target.shield <= 0) {
     // 데미지 0 (예: 보호막 흡수 100%) — 약한 흔들림
@@ -9461,11 +9554,39 @@ function clearAllActionLines() {
    - dealDamage를 거치지 않음 (성벽/금제/보호막 흡수 결과 충돌 방지)
    - 모든 죽음은 markIfDead로 통일
 */
+/* v0.3.8ac: uid로 유닛 찾기 (아군+적 통합) — 상태 피해 집계 시 시전자 판별용 */
+function findUnitByUid(uid) {
+  if (!uid) return null;
+  return runState.units.find(u => u.uid === uid)
+      || runState.enemies.find(e => e.uid === uid)
+      || null;
+}
+
 function applyStatusDamage(target, amount, opts = {}) {
   if (!target || !target.alive) return 0;
   const dmg = Math.max(0, Math.floor(amount));
   if (dmg <= 0) return 0;
+  const before = target.hp;
   target.hp = Math.max(0, target.hp - dmg);
+  const applied = before - target.hp;   // v0.3.8ac: overkill 제외 — 실제 깎은 만큼만 (유키 결)
+
+  // v0.3.8ac: 상태 피해 집계 정합성 (계기판이 전투와 같은 말을 하게).
+  //   유키 결: "독 피해의 주인을 찾아 계기판에 올려라."
+  const src = opts.sourceUid ? findUnitByUid(opts.sourceUid) : null;
+  if (applied > 0) {
+    if (src && src.side === "ally" && target.side === "enemy") {
+      // 아군이 적에게 건 독/도트 = 그 아군의 딜 (damageDealt에 포함 + 세부 poisonDamage)
+      statsBump(src.uid, "damageDealt", applied);
+      statsBump(src.uid, "poisonDamage", applied);
+      // v0.3.8ac(B): 히드라 object별 독 피해 누적
+      if (target.isHydra) recordHydraDamageTaken(target, src, applied, "dot");
+    } else if (target.side === "ally") {
+      // 적이 아군에게 건 독/자해 = 받은 위협 (damageDealt 아님 — damageTaken 계열)
+      statsBump(target.uid, opts.reason === "poison" ? "poisonDamageTaken" : "statusDamageTaken", applied);
+    }
+    // 출처 불명/환경 피해는 어디에도 damageDealt로 넣지 않음 (유키 결: unassigned)
+  }
+
   showFloat(target, `-${dmg}`, opts.floatKind || "poison");
   if (target.alive && target.hp > 0) {
     shakeUnit(target, "mild");
@@ -9570,6 +9691,13 @@ function checkBattleEnd() {
 
   // 종료 확정 — lock 박음
   runState.battleEnding = true;
+
+  // v0.3.8ac: 히드라전 계기판 검증 (요청 C) — 종료 시점에 클리어/정합성 로그 박기.
+  //   "CLEAR가 진짜였는가 / 피해 로그가 실제 HP와 맞는가"를 분석용으로 남긴다(유저 비노출).
+  if (runState.enemies.some(e => e.isHydra)) {
+    recordHydraIntegrityCheck(!enemiesAlive);
+  }
+
   debugResult("battleEnding lock set", {
     stage: runState.stage, token: runState.battleToken,
     outcome: !enemiesAlive ? "clear" : "lose",
@@ -11273,11 +11401,36 @@ function buildBalanceExportPayload() {
       firstDeath: obs.firstDeathName
         ? { name: obs.firstDeathName, atAction: obs.firstDeathAtAction, hydraHpPctThen: obs.firstDeathHydraHpPct }
         : null,
-      hydraPerObject: hydras.map(e => ({ name: e.name, hp: Math.max(0, e.hp), maxHp: e.maxHp,
-        hpPct: e.maxHp > 0 ? Math.round((e.hp / e.maxHp) * 100) : 0 })),
+      // v0.3.8ac(B): object별 받은 피해 상세 (누가 어느 히드라를 어떻게 깎았나)
+      hydraPerObject: obs.perObject ? Object.values(obs.perObject).map(r => {
+        const hydra = (runState.enemies || []).find(e => e.uid === r.uid);
+        const finalHp = hydra ? Math.max(0, hydra.hp) : 0;
+        return {
+          id: r.uid, name: r.name, maxHp: r.maxHp, startHp: r.startHp, finalHp,
+          hpPct: r.maxHp > 0 ? Math.round((finalHp / r.maxHp) * 100) : 0,
+          alive: hydra ? !!hydra.alive : false,
+          deadAtAction: r.deadAtAction,
+          damageTakenTotal: r.damageTaken,
+          damageTakenBySource: Object.values(r.bySource),
+          dotDamageTaken: r.byType.dot || 0,
+          executeDamageTaken: r.byType.execute || 0,
+          reflectDamageTaken: r.byType.reflect || 0,
+          crushDamageTaken: r.byType.crush || 0,
+          directDamageTaken: r.byType.direct || 0,
+          splashDamageTaken: r.byType.splash || 0,
+        };
+      }) : [],
       hydraRemainPct: remainPct,
       clearVerdict,   // 거의_잡음 / 절반_이상_깎음 / 절반도_못깎음 / 한_머리도_못잡음
+      // v0.3.8ac(C): 클리어 판정 + 정합성 검증 (verdict: OK / *_MISMATCH / CLEAR_WITH_LIVING_HYDRA)
+      hydraClearCheck: obs.hydraClearCheck || null,
+      hydraIntegrityCheck: obs.hydraIntegrityCheck || null,
     };
+  }
+  // v0.3.8ac(D): Dev replay 정합성 — devTest일 때 startParty는 비어 있을 수 있고,
+  //   분석은 devPresetMeta.startUnits를 기준으로 본다 (혼동 방지 명시).
+  if (runState && runState.devTest && runState.devTest.enabled) {
+    currentRun.devNote = "DEV 런: startParty는 비어 있을 수 있음. 시작 상태는 devPresetMeta.startUnits 기준.";
   }
 
   return {
