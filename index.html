@@ -2005,6 +2005,15 @@ body {
 .lane[data-count="2"] .unit:nth-child(1) { grid-column: 2 / span 2; }
 .lane[data-count="2"] .unit:nth-child(2) { grid-column: 5 / span 2; }
 
+/* v0.3.8aa: 전열2/후열2 겹침 보정 (A안과 같은 결 — "겹치는 축만 비튼다").
+   전열2(2/span2 + 5/span2)와 후열2가 같은 세로축(2·5칸)에 놓여
+   버프아이콘·스킬텍스트·행동선이 앞뒤로 겹치던 자리.
+   아군 후열2만 안쪽으로 살짝 비껴(3/span2 + 6/span2) 전열2와 세로축 분리 → 비스듬한 대형.
+   · #lane-ally-back 한정 — enemy lane / 전열2 / data-count!=2(후열4 등) 안 건드림.
+   · getUnitCenter 동적측정이라 행동선·아이콘·텍스트 자동 추종. */
+#lane-ally-back[data-count="2"] .unit:nth-child(1) { grid-column: 3 / span 2; }
+#lane-ally-back[data-count="2"] .unit:nth-child(2) { grid-column: 6 / span 2; }
+
 /* 3명 — 좌/중/우 */
 .lane[data-count="3"] .unit:nth-child(1) { grid-column: 1 / span 2; }
 .lane[data-count="3"] .unit:nth-child(2) { grid-column: 4 / span 2; }
@@ -2347,7 +2356,10 @@ body {
 
 /* v0.3.8z: 페이즈 전환 오라 FX (트롤 첫 사례, 다음 보스 재사용).
    재생 FX(초록 펄스, 매 행동 "왜 안 죽나")와 역할 분리 — 오라는 "상태가 바뀌었다"(전환 지속).
-   iOS Safari 가볍게: box-shadow + filter keyframe만 (SMIL/무거운 합성 X). */
+   iOS Safari 가볍게: box-shadow + filter keyframe만 (SMIL/무거운 합성 X).
+   v0.3.8aa: transform 제거 — large-enemy의 transform:scale을 덮어써 대형 적이 작아지던 버그 수정.
+     (transform은 하나만 적용됨. 오라가 translateX를 박으면 scale(1.55)가 풀림.)
+     떨림 효과는 filter brightness 변주로 대체 — 크기 규칙과 충돌하지 않음. */
 .unit.phase-aura-rage .unit-portrait {
   box-shadow: 0 0 0 2px rgba(255,90,50,0.75), 0 0 22px rgba(255,90,40,0.55) !important;
   animation: phase-aura-rage-pulse 1.1s ease-in-out infinite;
@@ -2356,15 +2368,15 @@ body {
   0%, 100% { filter: brightness(1.05) saturate(1.15); }
   50%      { filter: brightness(1.3) saturate(1.4); }
 }
-/* 난폭화 = 더 격렬한 오라 (빠르고 강한 붉은 광휘 + 살짝 떨림) */
+/* 난폭화 = 더 격렬한 오라 (빠르고 강한 붉은 광휘). transform 안 씀 — scale 보존. */
 .unit.phase-aura-berserk .unit-portrait {
   box-shadow: 0 0 0 3px rgba(255,60,30,0.9), 0 0 28px rgba(255,50,20,0.7) !important;
-  animation: phase-aura-berserk-pulse 0.6s ease-in-out infinite;
+  animation: phase-aura-berserk-pulse 0.5s ease-in-out infinite;
 }
 @keyframes phase-aura-berserk-pulse {
-  0%, 100% { filter: brightness(1.1) saturate(1.3); transform: translateX(0); }
-  25%      { filter: brightness(1.45) saturate(1.6); transform: translateX(-0.6px); }
-  75%      { filter: brightness(1.45) saturate(1.6); transform: translateX(0.6px); }
+  0%, 100% { filter: brightness(1.1) saturate(1.3); }
+  30%      { filter: brightness(1.5) saturate(1.7); }
+  60%      { filter: brightness(1.25) saturate(1.5); }
 }
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ─── */
@@ -3012,6 +3024,15 @@ body {
   font-weight: 900;
   letter-spacing: -0.03em;
   text-shadow: 0 0 5px rgba(255,120,120,0.95), 0 0 10px rgba(255,60,60,0.6), 0 1px 2px rgba(0,0,0,0.95);
+}
+/* v0.3.8aa: 분쇄 결 — 둔탁한 주황/호박색 (도적 처형의 빨강과 구분).
+   "찍어누른다" 무게 — 크고 묵직, 누적될수록 강해지는 트롤/정예/보스 개성. */
+.float-number.crush {
+  color: #ffb04a;
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 6px rgba(255,150,40,0.95), 0 0 12px rgba(200,90,20,0.7), 0 2px 3px rgba(0,0,0,0.95);
 }
 .float-number.snipe {
   color: #ff7a7a;
@@ -4060,7 +4081,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8z (phase transition)</div>
+      <div class="title-version">MK.II — v0.3.8aa (consistency pass)</div>
     </div>
 
     <p class="title-tagline">
@@ -4859,7 +4880,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8z-phase-transition-language";
+const BUILD_VERSION = "v0.3.8aa-consistency-pass";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -5086,12 +5107,16 @@ const ENEMY_TEMPLATES = {
     //     introText      : 전환 순간 시전자 위 텍스트 ([광폭화!]/[난폭화!]/[2페이즈!]/[맹독화!]...)
     //     fxClass        : 유닛 카드에 입히는 오라 class (.phase-aura-* — 분노/독/화염 오라)
     //     avatarPhase    : 아바타 교체 훅 (스프라이트 함수에 넘기는 표정 단계 — "angry"/"berserk"...)
+    //     traitLabel     : 전환 후 특성명 (도감/툴팁 표시 — "재생"→"광폭화"→"분쇄". 정체성 변화)
     //   재사용 자리 확보: HP조건/부위파괴/장기전 트리거는 미래 자리(아래 enrageAfter/frenzyAfter처럼
     //   행동 수 게이트로 시작. 트리거 종류만 늘리면 됨 — 거대 매니저는 안 만든다).
+    //   다음 보스 재사용 예: phases:{ p2:{introText:"2페이즈!",fxClass:"phase-aura-flame",
+    //     avatarPhase:"flaming",traitLabel:"맹독화"} } — 데이터만 박으면 applyPhaseTransition이 처리.
     phases: {
-      enrage: { introText: "광폭화!", fxClass: "phase-aura-rage",    avatarPhase: "angry"   },
-      frenzy: { introText: "난폭화!", fxClass: "phase-aura-berserk", avatarPhase: "berserk" },
+      enrage: { introText: "광폭화!", fxClass: "phase-aura-rage",    avatarPhase: "angry",   traitLabel: "광폭화" },
+      frenzy: { introText: "난폭화!", fxClass: "phase-aura-berserk", avatarPhase: "berserk", traitLabel: "분쇄"   },
     },
+    baseTraitLabel: "재생",   // 평소 특성명 (페이즈 전 — "재생하는 문지기")
     heavyHitter: true,        // 둔탁/무거운 반응 톤 (느린 거구)
     displayName: "트롤 문지기",
   },
@@ -6999,6 +7024,8 @@ function makeEnemyUnit(templateId) {
     // v0.3.8z: 페이즈 전환 공통 훅
     phases: tpl.phases || null,        // 페이즈 전환 데이터 (없으면 전환 연출 없음)
     _phaseKey: null,                   // 현재 활성 페이즈 키 (아바타 교체/오라 추적)
+    baseTraitLabel: tpl.baseTraitLabel || null,  // 평소 특성명
+    _traitLabel: tpl.baseTraitLabel || null,     // 현재 특성명 (페이즈 따라 변화)
     drumGaugePct: tpl.drumGaugePct || 0,
     drumEnrageGaugePct: tpl.drumEnrageGaugePct || 0,
     // v0.3.8u: 히드라 필드
@@ -8936,8 +8963,9 @@ function actEnemyAttack(actor) {
     }
     showActionLabel(actor, "분쇄!", "attack");
     pushEvent(`<b>${actor.name}</b>가 전장을 내리찍습니다 — 분쇄!`, "death");
-    // isExecute 시각결 재활용(빨강 강조 흔들림) — "찍어누른다" 톤. 실제 처형 플래그 아님.
-    dealDamage(actor, target, crushDmg, { isExecute: true, reason: "crush" });
+    // v0.3.8aa: 분쇄 전용 시각결(isCrush) — 도적 [처형](isExecute)과 정체성 분리.
+    //   분쇄 = "같은 전투 중 공격할수록 피해가 누적되는" 트롤/정예/보스용 개성.
+    dealDamage(actor, target, crushDmg, { isCrush: true, reason: "crush" });
     drawLine(actor, target, "attack");
     // 분쇄는 단일 강공 — 난폭화 2명타격/일반타 대신. 재생은 아래 공통 자리에서 그대로 처리.
     if (actor._pendingSelfHeal && actor.selfHealPct > 0 && actor.alive && actor.hp < actor.maxHp) {
@@ -9110,7 +9138,8 @@ function dealDamage(actor, target, amount, opts = {}) {
     //   - execute (도적 처형) → 빨강 강조
     //   - critical (치명타) → 주황 강조
     //   - 일반 → 기존 damage 결
-    const resultType = opts.isExecute ? "execute"
+    const resultType = opts.isCrush ? "crush"
+                     : opts.isExecute ? "execute"
                      : opts.isSnipe ? "snipe"
                      : opts.isCritical ? "critical"
                      : "damage";
@@ -9118,9 +9147,10 @@ function dealDamage(actor, target, amount, opts = {}) {
     if (target.alive) {
       // 리액션 분기 — HP 비율 / 도발 끌림 여부에 따라
       //   v0.3.7.16: 치명/처형이면 hit-critical-strong 결로 박힘
+      //   v0.3.8aa: 분쇄(isCrush)도 강한 흔들림 — "찍어누른다" 둔탁 톤
       const hpPct = (target.hp / target.maxHp) * 100;
-      if (opts.isExecute || opts.isCritical || opts.isSnipe) {
-        // 치명/처형 — 별도 강한 흔들림 (별도 클래스로 박음)
+      if (opts.isExecute || opts.isCritical || opts.isSnipe || opts.isCrush) {
+        // 치명/처형/분쇄 — 별도 강한 흔들림 (별도 클래스로 박음)
         const el = document.querySelector(`[data-uid="${target.uid}"]`);
         if (el) {
           el.classList.add("hit-critical-strong");
@@ -11507,6 +11537,7 @@ function applyPhaseTransition(actor, phaseKey) {
   if (!actor || !actor.phases || !actor.phases[phaseKey]) return;
   const ph = actor.phases[phaseKey];
   actor._phaseKey = ph.avatarPhase || phaseKey;   // 아바타 교체 훅 (renderUnitHTML이 읽음)
+  if (ph.traitLabel) actor._traitLabel = ph.traitLabel;   // v0.3.8aa: 특성명 변화 (재생→광폭화→분쇄)
 
   const el = document.querySelector(`[data-uid="${actor.uid}"]`);
   if (el) {
@@ -11941,6 +11972,8 @@ function _emitResultText(target, payload, seq = 0) {
     text = `치명 -${amount}`;
   } else if (type === "execute") {
     text = `처형 -${amount}`;
+  } else if (type === "crush") {
+    text = `분쇄 -${amount}`;   // v0.3.8aa: 분쇄 — 누적 강화 개성 (도적 처형과 분리)
   } else if (type === "snipe") {
     text = `저격 -${amount}`;   // v0.3.8: 추적자 저격 — 대상 쪽 빨강 (처형 결 계열)
   } else if (type === "damage") {
