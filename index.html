@@ -4081,7 +4081,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8aa (consistency pass)</div>
+      <div class="title-version">MK.II — v0.3.8ab (dev S25 replay)</div>
     </div>
 
     <p class="title-tagline">
@@ -4880,7 +4880,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8aa-consistency-pass";
+const BUILD_VERSION = "v0.3.8ab-dev-s25-replay-and-hydra-obs";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -4910,6 +4910,7 @@ const DEV_MODE_MENU = [
     { presetKey: "s25_hydra_A",       desc: "균형형 (용창/성직자/파수궁/수호자)" },
     { presetKey: "s25_hydra_B",       desc: "현자형 (현자/성직자/성벽/정화사)" },
     { presetKey: "s25_hydra_C",       desc: "독·처형형 (덫꾼/도적/성직자/금제)" },
+    { presetKey: "s25_hydra_real_heal8", desc: "★실제도달 재현 (도적/성직자/금제/사제, heal8) — 진짜 보스 테스트" },
   ]},
 ];
 
@@ -4949,6 +4950,10 @@ const DEV_STAGE_PRESETS = {
   s25_hydra_A: {
     label: "S25 히드라 A (균형형)",
     startStage: 25,
+    // v0.3.8ab: 누적 성장 재현 (유키 결: Dev는 치트가 아니라 실험실 — 선택 누적을 복제).
+    purpose: "물리 딜 + 후열 압박 + 보조 실드 테스트",
+    type: "combo_test",
+    traitLevels: { snipe: 5, heal: 3, guard: 2 },   // 용창(snipe계) 딜 + 성직자/파수궁 보조
     party: [
       { kind: "fusion", id: "dragoon",  lvl: 5 },  // 용창
       { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자
@@ -4959,6 +4964,9 @@ const DEV_STAGE_PRESETS = {
   s25_hydra_B: {
     label: "S25 히드라 B (현자형)",
     startStage: 25,
+    purpose: "광역/템포/정화/방어형 파티 테스트",
+    type: "combo_test",
+    traitLevels: { blessing: 3, heal: 3, guard: 3, disrupt: 3 },  // 현자/정화/성벽 광역·제어·방어
     party: [
       { kind: "fusion", id: "sage",     lvl: 5 },  // 현자
       { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자
@@ -4969,11 +4977,30 @@ const DEV_STAGE_PRESETS = {
   s25_hydra_C: {
     label: "S25 히드라 C (독/처형형)",
     startStage: 25,
+    purpose: "독/처형/제어/힐 sustain 테스트",
+    type: "combo_test",
+    traitLevels: { heal: 7, snipe: 3, guard: 2, disrupt: 2 },  // sustain 라인 + 도적 딜 + 덫꾼 제어
     party: [
       { kind: "fusion", id: "trapper",  lvl: 5 },  // 덫꾼
       { kind: "fusion", id: "rogue",    lvl: 5 },  // 도적
       { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자
       { kind: "fusion", id: "binder",   lvl: 4 },  // 금제
+    ],
+  },
+  // v0.3.8ab: 실제 일반런 S25 도달 파티 재현 (사제 몰빵 성장 루트).
+  //   유키 결: Project Signal의 강함은 선택 누적에서 나온다 — Dev도 그 누적을 복제해야 진짜 보스 테스트.
+  //   발자취 근거: 도적9214딜/64킬/처형187 · 성직자8221힐 · 사제6614힐/lv8 · 금제2200딜/532힐/198실드.
+  s25_hydra_real_heal8: {
+    label: "S25 히드라 (실제도달 재현 — 사제몰빵)",
+    startStage: 25,
+    purpose: "실제 일반런 S25 도달 파티 재현 / 사제 몰빵 성장 기반",
+    type: "real_run_replay_like",
+    traitLevels: { heal: 8, snipe: 2 },   // 실제 도달 로그: heal 8 몰빵, snipe 2
+    party: [
+      { kind: "fusion", id: "rogue",    lvl: 5 },  // 도적 — 처형 루트 핵심 딜러
+      { kind: "fusion", id: "cleric",   lvl: 4 },  // 성직자 — 메인 힐러
+      { kind: "fusion", id: "binder",   lvl: 4 },  // 금제 — 전열 유지/유틸
+      { kind: "trait",  id: "heal" },              // 사제 — 몰빵 성장의 핵심 (traitLevels.heal 8 반영)
     ],
   },
   // v0.3.8v: 중앙형 히드라 seed 관측 (보존된 boss_hydra를 enemiesOverride로 띄움)
@@ -5348,29 +5375,51 @@ function devJumpToStage(presetKey) {
   partyState.slots = ["", "", ""];
   initRunFromParty();
 
-  // 2) units를 preset으로 교체 (기본직업 + 합체 혼합 조립)
+  // v0.3.8ab: 누적 성장 주입 — 유닛 생성 *전*에 traitLevels를 박아야 makeAllyUnit/makeFusionUnit이
+  //   그 누적을 읽어 강화/계승을 재현한다 (유키 결: Dev는 치트가 아니라 실험실).
+  //   initRunFromParty가 traitLevels를 비운 직후 주입 → 그 다음 유닛 생성이 누적 반영.
+  if (preset.traitLevels) {
+    runState.traitLevels = Object.assign({}, preset.traitLevels);
+  }
+
+  // 2) units를 preset으로 교체 (기본직업 + 합체 혼합 조립 — traitLevels 누적 자동 반영)
   runState.units = preset.party.map(p => {
     if (p.kind === "fusion") {
-      const u = makeFusionUnit(p.id);   // 재료 인스턴스 없이 — 계승 레벨은 아래서 근사 주입
+      const u = makeFusionUnit(p.id);   // 재료 traitLevels는 위에서 주입됨 → 계승 강함 재현
       if (p.lvl && p.lvl > 0) {
         u._inheritedLevel = p.lvl;
         u.level = p.lvl;
       }
       return u;
     }
-    return makeAllyUnit(p.id);
+    return makeAllyUnit(p.id);          // 기본직업 — traitLevels[traitId] 강화 자동 반영
   });
   runState.units.forEach(u => ensureRunStatsForUnit(u));
 
-  // 3) DEV 표식 — 오염 방지 (export/결과/발자취에서 일반 런과 구분)
+  // 3) DEV 표식 — 오염 방지 + 관측 해석용 프리셋 메타 (요청 3)
   runState.devTest = {
     enabled: true,
     source: "dev_mode",
     testId: preset.testId || presetKey,
     startStage: preset.startStage,
     preset: presetKey,
+    // v0.3.8ab: devPresetMeta — 로그 해석을 위한 프리셋 정보 (시작 누적/스탯/재현형 여부)
+    devPresetMeta: {
+      presetName: presetKey,
+      label: preset.label || presetKey,
+      purpose: preset.purpose || "",
+      type: preset.type || "combo_test",   // real_run_replay_like | combo_test
+      traitLevels: Object.assign({}, preset.traitLevels || {}),
+      startUnits: runState.units.map(u => ({
+        name: u.name,
+        kind: u.kind,
+        level: u.level || 0,
+        inheritedLevel: u._inheritedLevel || 0,
+        maxHp: u.maxHp, atk: u.atk, def: u.def, spd: u.spd,
+      })),
+    },
   };
-  debugResult("dev stage jump", { preset: presetKey, startStage: preset.startStage });
+  debugResult("dev stage jump", { preset: presetKey, startStage: preset.startStage, meta: runState.devTest.devPresetMeta });
 
   // 4) 목표 스테이지 진입 (preset에 enemiesOverride 있으면 적 교체 — seed 관측용)
   runState.stage = preset.startStage;
@@ -7186,6 +7235,9 @@ function loadStage(stageNum, enemiesOverride) {
   const stage = STAGES[stageNum - 1];
   if (!stage) return;
 
+  // v0.3.8ab: 히드라 관측 리셋 — 새 전투마다 새로 누적 (이전 전투 데이터 섞임 방지)
+  runState.hydraObs = null;
+
   // v0.3.7.28: 새 전투 슬롯 진입 — 이전 timeout 정리 + token 증가
   //   "예약된 과거가 현재를 덮어쓰면 안 된다."
   beginNewBattleSlot();
@@ -8702,6 +8754,50 @@ function actFusion(actor) {
    5개 머리(독/재생/포효/화염/물어뜯기) 중 하나를 선택해 실행.
    선택: 랜덤이되 직전 머리 반복 회피 + 재생 연속 금지 + HP 90%↑면 재생 우선순위↓.
    광폭화(_enraged) 시 공격 계열 피해 ×enrageAtkBoost (재생은 안 올림). */
+/* v0.3.8ab: 히드라전 관측 누적 (요청 4). DEV 런(또는 DEBUG_RESULT)에서만 모은다.
+   유키 결: 히드라 너프 전에 "졌지만 납득되는 보스인가"를 로그로 본다.
+   가볍게 — runState.hydraObs에 머리 행동/피해/처형/최초사망만 누적. 전투 로직엔 영향 없음. */
+function hydraObsActive() {
+  return !!(runState && (runState.devTest || (typeof DEBUG_RESULT !== "undefined" && DEBUG_RESULT)));
+}
+function ensureHydraObs() {
+  if (!runState.hydraObs) {
+    runState.hydraObs = {
+      headActions: {},     // headType → 횟수
+      headDamage: {},      // headType → 누적 피해
+      totalActions: 0,     // 히드라전 총 적 행동 수
+      rogueExecutes: 0,    // 도적 처형 발동 횟수 (히드라전)
+      crushHits: 0,        // 분쇄 발동 (히드라전)
+      firstDeathUid: null, // 아군 최초 사망자
+      firstDeathName: null,
+      firstDeathAtAction: null,        // 최초 사망 시점(총 actions 기준)
+      firstDeathHydraHpPct: null,      // 최초 사망 시 히드라 합산 HP%
+    };
+  }
+  return runState.hydraObs;
+}
+function hydraObsHead(headType, dmg) {
+  if (!hydraObsActive()) return;
+  const obs = ensureHydraObs();
+  obs.headActions[headType] = (obs.headActions[headType] || 0) + 1;
+  if (dmg > 0) obs.headDamage[headType] = (obs.headDamage[headType] || 0) + dmg;
+}
+function hydraObsAllyDeath(unit) {
+  if (!hydraObsActive() || !runState.hydraObs) return;
+  const obs = runState.hydraObs;
+  if (obs.firstDeathUid) return;   // 최초 1명만
+  obs.firstDeathUid = unit.uid;
+  obs.firstDeathName = unit.name;
+  obs.firstDeathAtAction = obs.totalActions;
+  // 최초 사망 시점 히드라 합산 HP%
+  const hydras = runState.enemies.filter(e => e.isHydra);
+  if (hydras.length) {
+    const hp = hydras.reduce((s, e) => s + Math.max(0, e.hp), 0);
+    const mx = hydras.reduce((s, e) => s + e.maxHp, 0);
+    obs.firstDeathHydraHpPct = mx > 0 ? Math.round((hp / mx) * 100) : null;
+  }
+}
+
 function hydraAct(actor) {
   // v0.3.8v: 객체별 머리 풀 (좌=독/재생, 우=화염/포효). 없으면 5머리 전부 (중앙형 seed).
   const heads = actor.hydraHeads && actor.hydraHeads.length
@@ -8717,6 +8813,8 @@ function hydraAct(actor) {
   if (pool.length === 0) pool = heads.slice();
   const head = pool[Math.floor(Math.random() * pool.length)];
   actor._lastHead = head;
+  // v0.3.8ab: 히드라 관측 — 머리 행동 카운트 + 총 actions (피해는 각 머리 분기에서 누적)
+  if (hydraObsActive()) { ensureHydraObs().totalActions++; hydraObsHead(head, 0); }
 
   const atkMul = actor._enraged ? (actor.enrageAtkBoost || 1.2) : 1.0;
   const aliveAllies = runState.units.filter(u => u.alive);
@@ -9134,6 +9232,18 @@ function dealDamage(actor, target, amount, opts = {}) {
 
   if (dmg > 0) {
     target.hp = Math.max(0, target.hp - dmg);
+    // v0.3.8ab: 히드라 관측 누적 — 히드라가 아군에 준 피해(머리별) / 도적 처형 / 분쇄 (히드라전만)
+    if (hydraObsActive()) {
+      if (actor && actor.isHydra && target.side === "ally" && actor._lastHead) {
+        const obs = ensureHydraObs();
+        obs.headDamage[actor._lastHead] = (obs.headDamage[actor._lastHead] || 0) + dmg;
+      }
+      // 아군→히드라 처형/분쇄 기여
+      if (actor && actor.side === "ally" && target.isHydra) {
+        if (opts.isExecute) ensureHydraObs().rogueExecutes++;
+        if (opts.isCrush)   ensureHydraObs().crushHits++;
+      }
+    }
     // v0.3.7.16: 치명/처형 결 시각 분기 (showResultText 거침)
     //   - execute (도적 처형) → 빨강 강조
     //   - critical (치명타) → 주황 강조
@@ -9236,6 +9346,8 @@ function markIfDead(unit, opts = {}) {
   // 1) 사망 확정
   unit.alive = false;
   unit.gauge = 0;
+  // v0.3.8ab: 히드라 관측 — 아군 최초 사망자/시점/히드라 잔존도 (히드라전만, 최초 1명)
+  if (unit.side === "ally" && typeof hydraObsAllyDeath === "function") hydraObsAllyDeath(unit);
 
   // 2) 전투 상태 정리 — 죽으면 모든 상태 해제
   unit.shield = 0;
@@ -11117,6 +11229,10 @@ function buildBalanceExportPayload() {
       "troll_regen_lowered_007",
       "troll_two_stage_frenzy",
       "troll_stalemate_breaker",
+      "dev_s25_preset_accumulation_replay",
+      "hydra_observation_log",
+      "crush_trait_separate_from_execute",
+      "phase_transition_common_framework",
     ],
     devStageTestBuild: (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) || false,
   };
@@ -11129,11 +11245,47 @@ function buildBalanceExportPayload() {
     build.stage21_24_mult = 0.86;   // v0.3.8q
   }
 
+  // v0.3.8ab: 현재 DEV 런의 프리셋 메타 + 히드라 관측 (요청 3·4 — 로그 해석용)
+  const currentRun = {};
+  if (runState && runState.devTest && runState.devTest.devPresetMeta) {
+    currentRun.devPresetMeta = runState.devTest.devPresetMeta;
+  }
+  if (runState && runState.hydraObs) {
+    const obs = runState.hydraObs;
+    // 전멸 시 히드라 잔존도 라벨 (졌지만 납득되는가 / 수치벽인가)
+    const hydras = (runState.enemies || []).filter(e => e.isHydra);
+    const hydraHp = hydras.reduce((s, e) => s + Math.max(0, e.hp), 0);
+    const hydraMax = hydras.reduce((s, e) => s + e.maxHp, 0);
+    const remainPct = hydraMax > 0 ? Math.round((hydraHp / hydraMax) * 100) : null;
+    let clearVerdict = "unknown";
+    if (remainPct !== null) {
+      if (remainPct <= 5)        clearVerdict = "거의_잡음";
+      else if (remainPct <= 50)  clearVerdict = "절반_이상_깎음";
+      else if (remainPct < 100)  clearVerdict = "절반도_못깎음";
+      else                        clearVerdict = "한_머리도_못잡음";
+    }
+    currentRun.hydraObs = {
+      headActions: obs.headActions,
+      headDamage: obs.headDamage,
+      totalActions: obs.totalActions,
+      rogueExecutes: obs.rogueExecutes,
+      crushHits: obs.crushHits,
+      firstDeath: obs.firstDeathName
+        ? { name: obs.firstDeathName, atAction: obs.firstDeathAtAction, hydraHpPctThen: obs.firstDeathHydraHpPct }
+        : null,
+      hydraPerObject: hydras.map(e => ({ name: e.name, hp: Math.max(0, e.hp), maxHp: e.maxHp,
+        hpPct: e.maxHp > 0 ? Math.round((e.hp / e.maxHp) * 100) : 0 })),
+      hydraRemainPct: remainPct,
+      clearVerdict,   // 거의_잡음 / 절반_이상_깎음 / 절반도_못깎음 / 한_머리도_못잡음
+    };
+  }
+
   return {
     exportType: "project_signal_balance_footprints",
     exportVersion: 2,  // v0.3.7.29: runId / stageHistory / 성장 결 추가
     exportedAt: new Date().toISOString(),
     build,
+    currentRun,   // v0.3.8ab: 현재 DEV 런 프리셋 메타 + 히드라 관측
     footprintCount: list.length,
     footprints: list,
   };
