@@ -4081,7 +4081,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8ac (damage log integrity)</div>
+      <div class="title-version">MK.II — v0.3.8ad (hydra v2 three-phase)</div>
     </div>
 
     <p class="title-tagline">
@@ -4880,7 +4880,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ac-damage-log-integrity";
+const BUILD_VERSION = "v0.3.8ad-hydra-v2-three-phase";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -5084,6 +5084,8 @@ const ENEMY_TEMPLATES = {
     isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
     enrageAfter: 8, enrageAtkBoost: 1.20, hydraRegenPct: 0.06,
     hydraHeads: ["poison", "regen", "bite"],   // 좌측: 독/재생 중심
+    // v0.3.8ad: P3 압축 페이즈 언어 (v0.3.8z phase 틀 재사용 — 트롤과 같은 전환 언어)
+    phases: { compress: { introText: "발광!", fxClass: "phase-aura-berserk", avatarPhase: null, traitLabel: "압축" } },
     displayName: "독 히드라",
   },
   hydra_right: {
@@ -5092,6 +5094,7 @@ const ENEMY_TEMPLATES = {
     isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
     enrageAfter: 8, enrageAtkBoost: 1.20, hydraRegenPct: 0,
     hydraHeads: ["flame", "roar", "bite"],     // 우측: 화염/포효/물어뜯기
+    phases: { compress: { introText: "발광!", fxClass: "phase-aura-berserk", avatarPhase: null, traitLabel: "압축" } },
     displayName: "화염 히드라",
   },
 
@@ -7245,6 +7248,8 @@ function loadStage(stageNum, enemiesOverride) {
 
   // v0.3.8ab: 히드라 관측 리셋 — 새 전투마다 새로 누적 (이전 전투 데이터 섞임 방지)
   runState.hydraObs = null;
+  // v0.3.8ad: 히드라 페이즈 카운트 리셋 (새 전투는 P1부터)
+  runState.hydraActionCount = 0;
 
   // v0.3.7.28: 새 전투 슬롯 진입 — 이전 timeout 정리 + token 증가
   //   "예약된 과거가 현재를 덮어쓰면 안 된다."
@@ -8878,7 +8883,50 @@ function recordHydraIntegrityCheck(isClear) {
   };
 }
 
+/* v0.3.8ad: S25 히드라 3페이즈 (유키 결 — 장면형 보스, 밸런스 완성 아님).
+   "한 번에 다 죽이는 센 적"이 아니라 "머리 성향을 읽고 직업으로 대응하는 장면형 보스."
+   페이즈 기준 = 히드라 전체 행동 수(runState.hydraActionCount, 좌우 합산).
+     P1 관찰(0~20): atkMul 0.70 / spdMul 0.90 — "죽기 전에 읽을 시간". enrage/burst 억제.
+     P2 대응(20~60): atkMul 1.00 / spdMul 1.00 — 직업 정체성 대응 구간 (정상 화력).
+     P3 압축(60+):  atkMul 1.15 / regen 0.5배 — heal8 장기 교착 방지("이제 끝내야 한다").
+   phase 전환 언어는 v0.3.8z 재사용(introText/오라). 트롤·히드라가 같은 전환 언어. */
+function getHydraPhase() {
+  const n = runState.hydraActionCount || 0;
+  if (n < 20) return 1;
+  if (n < 60) return 2;
+  return 3;
+}
+function hydraPhaseAtkMul(phase) {
+  return phase === 1 ? 0.70 : phase === 3 ? 1.15 : 1.00;
+}
+function hydraPhaseRegenMul(phase) {
+  return phase === 3 ? 0.5 : 1.0;   // P3: 재생 절반 (압축)
+}
+
 function hydraAct(actor) {
+  // v0.3.8ad: 히드라 전체 행동 수 누적 (좌우 합산 — 페이즈 판정 기준)
+  runState.hydraActionCount = (runState.hydraActionCount || 0) + 1;
+  const _phaseBefore = actor._hydraPhase || 1;
+  const _phaseNow = getHydraPhase();
+  // 페이즈 전환 순간 — phase 언어로 장면 신호 (P2/P3 진입 시 1회)
+  if (_phaseNow > _phaseBefore) {
+    actor._hydraPhase = _phaseNow;
+    if (_phaseNow === 2 && typeof showActionLabel === "function") {
+      showActionLabel(actor, "히드라 각성!", "attack");
+      pushEvent(`<b>${actor.name}</b>의 머리들이 본격적으로 움직이기 시작합니다.`, "death");
+    } else if (_phaseNow === 3) {
+      // P3 압축 — phase 언어(오라) 재사용
+      if (actor.phases && actor.phases.compress && typeof applyPhaseTransition === "function") {
+        applyPhaseTransition(actor, "compress");
+      } else if (typeof showActionLabel === "function") {
+        showActionLabel(actor, "발광!", "attack");
+      }
+      pushEvent(`<b>${actor.name}</b>의 상처가 들끓고, 남은 머리들이 난폭해집니다.`, "death");
+    }
+  } else {
+    actor._hydraPhase = _phaseNow;
+  }
+
   // v0.3.8v: 객체별 머리 풀 (좌=독/재생, 우=화염/포효). 없으면 5머리 전부 (중앙형 seed).
   const heads = actor.hydraHeads && actor.hydraHeads.length
     ? actor.hydraHeads.slice()
@@ -8891,12 +8939,22 @@ function hydraAct(actor) {
   if (actor._lastHead === "regen") pool = pool.filter(h => h !== "regen");
   if (hpPct >= 0.90) pool = pool.filter(h => h !== "regen");
   if (pool.length === 0) pool = heads.slice();
+  const phase = getHydraPhase();
+  // v0.3.8ad: P1 burst 억제 — 초반 10~15 action 동안 고압박 머리(bite/flame) 2연속 차단.
+  //   "죽기 전에 읽을 시간"(유키). pool에서 직전이 고압박이면 이번엔 빼본다.
+  const HIGH_PRESSURE = ["bite", "flame"];
+  if (phase === 1 && (runState.hydraActionCount || 0) <= 15 && HIGH_PRESSURE.includes(actor._lastHead)) {
+    const calmer = pool.filter(h => !HIGH_PRESSURE.includes(h));
+    if (calmer.length > 0) pool = calmer;
+  }
   const head = pool[Math.floor(Math.random() * pool.length)];
   actor._lastHead = head;
   // v0.3.8ab: 히드라 관측 — 머리 행동 카운트 + 총 actions (피해는 각 머리 분기에서 누적)
   if (hydraObsActive()) { ensureHydraObs().totalActions++; hydraObsHead(head, 0); }
 
-  const atkMul = actor._enraged ? (actor.enrageAtkBoost || 1.2) : 1.0;
+  // v0.3.8ad: 페이즈 화력 곱 — P1 0.70 / P2 1.00 / P3 1.15 (광폭화 위에 페이즈 곱)
+  const phaseAtkMul = hydraPhaseAtkMul(phase);
+  const atkMul = (actor._enraged ? (actor.enrageAtkBoost || 1.2) : 1.0) * phaseAtkMul;
   const aliveAllies = runState.units.filter(u => u.alive);
 
   switch (head) {
@@ -8921,7 +8979,8 @@ function hydraAct(actor) {
       // 재생 머리 — maxHp N% 회복 (보수적)
       showActionLabel(actor, "재생 머리", "heal");
       pushEvent(`히드라 — 재생 머리: 살점이 다시 돋아납니다`, "heal");
-      const amt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06));
+      // v0.3.8ad: P3 압축 — 재생량 0.5배 ("이제 끝내야 한다". heal8 장기 교착 방지)
+      const amt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06) * hydraPhaseRegenMul(getHydraPhase()));
       doHeal(actor, actor, amt);
       const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
       if (el) { el.classList.add("regen-pulse"); setTimeout(() => el.classList.remove("regen-pulse"), 700); }
@@ -8973,7 +9032,10 @@ function actEnemyAttack(actor) {
     actor._enemyActionCount = (actor._enemyActionCount || 0) + 1;
 
     // 광폭화 발동 (N번째 행동 이후, 1회만)
-    if (actor.enrageAfter > 0 && !actor._enraged && actor._enemyActionCount >= actor.enrageAfter) {
+    // v0.3.8ad: 히드라 광폭화는 P2(action 20+)부터 — P1 관찰 구간엔 비활성 (유키 결).
+    //   다른 적(트롤 등)은 기존대로 enrageAfter 그대로.
+    const hydraEnrageOk = !actor.isHydra || getHydraPhase() >= 2;
+    if (actor.enrageAfter > 0 && !actor._enraged && actor._enemyActionCount >= actor.enrageAfter && hydraEnrageOk) {
       actor._enraged = true;
       if (actor.isHydra) {
         // 히드라: 공격 계열 +20% (재생량은 안 올림 — 장기전 방지)
