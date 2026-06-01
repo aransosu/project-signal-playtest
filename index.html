@@ -2014,6 +2014,59 @@ body {
 #lane-ally-back[data-count="2"] .unit:nth-child(1) { grid-column: 3 / span 2; }
 #lane-ally-back[data-count="2"] .unit:nth-child(2) { grid-column: 6 / span 2; }
 
+/* v0.3.8af-hotfix: 전열1 + 후열2 삼각 배치 보정.
+   전사/사제/궁수 같은 시작 조합 — 전열1(3/span2)과 후열 첫째(3/span2)가
+   같은 세로축에 겹쳐 텍스트·행동선·유닛이 다시 포개지던 자리.
+   전체 lane 규칙·전열2+후열2 보정은 그대로. 이 조합(전열1+후열2)만 별도 보정.
+   후열 둘을 좌/우로 벌려 전열1과 삼각형 → 같은 세로 라인 겹침 해소.
+   · 후열3/후열4 등 잘 읽히는 배치는 data-ally-back-count로 격리돼 안 건드림.
+   · getUnitCenter 동적측정이라 행동선·아이콘·텍스트 자동 추종. */
+.battlefield[data-ally-front-count="1"][data-ally-back-count="2"]
+  #lane-ally-back[data-count="2"] .unit:nth-child(1) { grid-column: 1 / span 2; }
+.battlefield[data-ally-front-count="1"][data-ally-back-count="2"]
+  #lane-ally-back[data-count="2"] .unit:nth-child(2) { grid-column: 6 / span 2; }
+
+/* v0.3.8af3-hotfix: 전열2 + 후열2 사다리꼴 배치 보정.
+   도적/성기사/전사/궁수 같은 조합 — aa 보정(전열 2·5 / 후열 3·6)이
+   둘 다 오른쪽으로 한 칸 평행 이동이라, 전열 둘째(중심≈6)와 후열 둘째(중심≈7)가
+   여전히 같은 세로축 근처에 겹쳐 보이던 자리(성기사↔궁수).
+   전열2를 안쪽으로 모으고(3·5) 후열2를 바깥으로 벌려(1·6) 사다리꼴 →
+   앞뒤 유닛이 같은 세로 라인에 놓이지 않게.
+   · 이 조합(전열2+후열2)만 별도 보정 — front1+back2 핫픽스·후열3/4·대형 적 안 건드림.
+   · getUnitCenter 동적측정이라 행동선·아이콘·텍스트 자동 추종. */
+.battlefield[data-ally-front-count="2"][data-ally-back-count="2"]
+  #lane-ally-front[data-count="2"] .unit:nth-child(1) { grid-column: 3 / span 2; }
+.battlefield[data-ally-front-count="2"][data-ally-back-count="2"]
+  #lane-ally-front[data-count="2"] .unit:nth-child(2) { grid-column: 5 / span 2; }
+.battlefield[data-ally-front-count="2"][data-ally-back-count="2"]
+  #lane-ally-back[data-count="2"] .unit:nth-child(1) { grid-column: 1 / span 2; }
+.battlefield[data-ally-front-count="2"][data-ally-back-count="2"]
+  #lane-ally-back[data-count="2"] .unit:nth-child(2) { grid-column: 7 / span 2; }
+
+/* ============================================================
+   v0.3.8af3-poly3: 아군 진영 조합 배치 규칙 (한 자리에 묶음 — "같은 결은 함께")
+   원칙: 전체 lane 시스템은 안 건드린다. 아군 전열/후열 인원 조합에서
+         앞뒤 유닛이 같은 세로축에 겹치는 조합만 .battlefield[data-ally-*]로 비튼다.
+         적 lane / 대형 적(트롤·북지기·히드라) / 후열3·4 등은 안 건드림.
+         getUnitCenter 동적측정이라 행동선·아이콘·텍스트 자동 추종.
+
+   조합별 보정 현황 (앞=전열 중심칸 / 뒤=후열 중심칸, 8칸 그리드 기준):
+   ┌─────────────┬──────────────────────┬──────────────────────┐
+   │ 조합        │ 전열 중심            │ 후열 중심            │
+   ├─────────────┼──────────────────────┼──────────────────────┤
+   │ front1+back2│ 3(기본 유지)         │ 2·7 (좌우로 벌림)    │
+   │ front2+back2│ 4·6 (안쪽 모음)      │ 2·8 (바깥 벌림)      │
+   │ front3+back1│ 2·5·8 (기본 유지)    │ 6 (우측 비틈)        │
+   └─────────────┴──────────────────────┴──────────────────────┘
+   미보정 조합(겹침 없음): front1+back1 / front2+back1 / front2+back3 등 — 손맛 받으면 추가.
+
+   front3+back1: 용창/전사/수호자/성직자 같은 조합 —
+     전열3(좌2·중5·우8)의 중앙(중심5)과 후열1(기본 4/span2=중심5)이 같은 세로축에 겹침(전사↔성직자).
+     후열1을 우측으로 비틀어(5/span2=중심6) 전열 중앙과 분리. 전열3은 기본 유지. */
+.battlefield[data-ally-front-count="3"][data-ally-back-count="1"]
+  #lane-ally-back[data-count="1"] .unit:nth-child(1) { grid-column: 5 / span 2; }
+/* ============================================================ */
+
 /* 3명 — 좌/중/우 */
 .lane[data-count="3"] .unit:nth-child(1) { grid-column: 1 / span 2; }
 .lane[data-count="3"] .unit:nth-child(2) { grid-column: 4 / span 2; }
@@ -3353,6 +3406,152 @@ body {
 .tactic-chip .chip-trait { color: var(--signal); }
 
 /* ============================================================
+   v0.3.8af: 모험 선택 화면 (입구) — "어떤 모험을 시작했는가"
+   ============================================================ */
+#screen-adventure { padding: 32px 18px 40px; gap: 0; }
+.adv-header { text-align: center; margin-bottom: 22px; }
+.adv-title {
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 900;
+  font-size: 24px; color: var(--text); letter-spacing: 1px;
+}
+.adv-sub {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--signal-dim); margin-top: 6px;
+}
+.adv-list { display: flex; flex-direction: column; gap: 14px; max-width: 460px; width: 100%; margin: 0 auto; }
+.adv-card {
+  background: var(--bg-2); border: 1.5px solid var(--signal-dim);
+  border-radius: 8px; padding: 18px 16px; cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.adv-card:active { transform: scale(0.985); }
+.adv-card.adv-open:hover { border-color: var(--signal); background: rgba(255,201,74,0.06); }
+.adv-card-top { display: flex; align-items: center; gap: 10px; }
+.adv-card-icon { font-size: 22px; }
+.adv-card-name { font-family: 'Noto Sans KR', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.adv-card-tag {
+  margin-left: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; padding: 3px 8px; border-radius: 3px;
+  background: rgba(255,201,74,0.12); color: var(--signal); letter-spacing: .5px;
+}
+.adv-card-desc { font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+.adv-card-marks { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-faint); margin-top: 8px; }
+.adv-card-record {
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bg-3);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--accent);
+}
+/* 잠금 카드 — 자리 예고만 (약속 아님) */
+.adv-card.adv-locked {
+  background: var(--bg); border-style: dashed; border-color: var(--text-faint);
+  cursor: not-allowed; opacity: 0.62;
+}
+.adv-card.adv-locked .adv-card-name { color: var(--text-faint); }
+.adv-card.adv-locked .adv-card-tag { background: var(--bg-3); color: var(--text-faint); }
+.adv-back-row { max-width: 460px; width: 100%; margin: 22px auto 0; }
+
+/* ============================================================
+   v0.3.8af: 스테이지 진행표 화면 (첫 지도) — "이번 런의 현재 위치"
+   ============================================================ */
+#screen-stage-map { padding: 28px 16px 36px; gap: 0; }
+.map-header { text-align: center; margin-bottom: 6px; }
+.map-title { font-family: 'Noto Sans KR', sans-serif; font-weight: 900; font-size: 20px; color: var(--text); }
+.map-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--signal-dim); margin-top: 5px; }
+.map-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+  max-width: 460px; width: 100%; margin: 18px auto 0;
+}
+.map-node {
+  position: relative; aspect-ratio: 1 / 1; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 1.5px solid var(--bg-3); background: var(--bg-2); padding: 4px;
+}
+/* v0.3.8af3-poly2: 정보 위계 — 좌표=좌상단 작게 / 정체=중앙 큰 아이콘 / 설명=하단 라벨.
+   "칸의 중심 정보는 stage number가 아니라 event identity" (나라님 결). */
+.map-node-coord {
+  position: absolute; top: 3px; left: 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700;
+  color: var(--text-faint); letter-spacing: .3px; line-height: 1;
+}
+.map-node-center { font-size: 22px; line-height: 1; }
+.map-node-center-plain { font-size: 13px; color: var(--text-faint); opacity: 0.55; }  /* 일반 칸 — 덜 튀게 */
+.map-node-label {
+  font-size: 8px; font-family: 'Noto Sans KR', sans-serif; color: var(--text-dim);
+  text-align: center; margin-top: 2px; line-height: 1.05; font-weight: 600;
+}
+/* v0.3.8af3-poly: 진행판 = 모험의 서 + 예언의 서.
+   사건 타입별 색 언어로 "곧 결속/합류/검문/보스"를 미리 읽게.
+   거짓 표시 금지 — 라벨은 STAGES phase 진실에서 박는다 (합체=fusion phase 자동). */
+.map-event-tag {
+  font-size: 7px; font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  letter-spacing: .3px; margin-top: 1px; line-height: 1;
+}
+.map-node[data-event="fusion"] { border-color: rgba(160,120,220,0.5); }
+.map-node[data-event="fusion"] .map-node-label { color: #b48ee0; }      /* ✦ 결속 — 마법 보라 */
+.map-node[data-event="recruit"] { border-color: rgba(78,168,222,0.5); }
+.map-node[data-event="recruit"] .map-node-label { color: var(--accent-glow); } /* 합류 — 청록 */
+.map-node[data-event="gatekeeper"] { border-color: rgba(150,160,120,0.55); }
+.map-node[data-event="gatekeeper"] .map-node-label { color: #b8c08a; }  /* 문지기 — 돌빛 */
+.map-node[data-event="checkpoint"] { border-color: rgba(255,180,74,0.55); }
+.map-node[data-event="checkpoint"] .map-node-label { color: #ffb44a; }  /* ⚠ 검문 — 경고 */
+.map-node[data-event="boss"] { border-color: rgba(230,90,80,0.6); }
+.map-node[data-event="boss"] .map-node-label { color: #e6685a; }        /* BOSS — 위험 빨강 */
+/* cleared/current 상태가 사건색을 덮지 않게 — 상태는 box-shadow로, 사건은 border-color로 분담 */
+/* 상태별 — 우리 색 언어: cleared 밝게 / current signal / 미도달 흐리게 */
+.map-node.cleared { border-color: var(--accent); background: rgba(78,168,222,0.10); }
+.map-node.cleared .map-node-coord { color: var(--accent-glow); }
+.map-node.cleared .map-node-center-plain { opacity: 0.4; }
+.map-node.current {
+  border-color: var(--signal); background: rgba(255,201,74,0.12);
+  box-shadow: 0 0 0 1px var(--signal), 0 0 12px rgba(255,201,74,0.25);
+}
+.map-node.current .map-node-coord { color: var(--signal); }
+.map-node.locked { opacity: 0.4; }
+.map-node.locked .map-node-coord { color: var(--text-faint); }
+.map-node.special-node { border-width: 2px; }
+.map-legend {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  max-width: 460px; margin: 16px auto 0; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-faint);
+}
+.map-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.map-legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.map-proceed-row { max-width: 460px; width: 100%; margin: 22px auto 0; display: flex; flex-direction: column; gap: 10px; }
+.map-proceed-btn {
+  padding: 15px; background: linear-gradient(180deg, var(--signal), var(--signal-dim));
+  color: #1a1408; font-family: 'Noto Sans KR', sans-serif; font-weight: 700; font-size: 15px;
+  border: none; border-radius: 6px; cursor: pointer;
+}
+.map-proceed-btn:active { transform: scale(0.99); }
+
+/* v0.3.8af3: 진행표 자동 이동 연출 — "멈춰 누르는 화면"이 아니라 "올라가는 전환".
+   과한 연출 금지 — 1~1.5초 짧은 호흡 (나라님 결). CSS @keyframes만 (SMIL X — 코드 결). */
+/* 방금 클리어한 노드 — 점등 */
+.map-node.just-cleared {
+  animation: map-clear-light 0.6s ease-out;
+}
+@keyframes map-clear-light {
+  0%   { box-shadow: 0 0 0 0 rgba(78,168,222,0); }
+  40%  { box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(78,168,222,0.55); }
+  100% { box-shadow: 0 0 0 1px var(--accent), 0 0 8px rgba(78,168,222,0.2); }
+}
+/* 다음 도전 노드 — signal pulse (이동의 도착점) */
+.map-node.next-pulse {
+  animation: map-next-pulse 0.9s ease-in-out 0.4s 2;
+}
+@keyframes map-next-pulse {
+  0%,100% { box-shadow: 0 0 0 1px var(--signal), 0 0 6px rgba(255,201,74,0.2); }
+  50%     { box-shadow: 0 0 0 2px var(--signal), 0 0 18px rgba(255,201,74,0.6); }
+}
+/* 자동 진행 중 — 탭하면 즉시 진행 안내 + fallback 버튼 보조 처리 */
+.map-auto-hint {
+  text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--text-faint); margin-top: 14px; letter-spacing: .5px;
+}
+.map-proceed-row.is-auto .map-proceed-btn {
+  background: var(--bg-2); color: var(--text-dim);
+  border: 1px solid var(--bg-3); font-size: 12px; padding: 10px;
+}
+
+/* ============================================================
    결과 화면
    ============================================================ */
 
@@ -4081,7 +4280,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8ad (hydra v2 three-phase)</div>
+      <div class="title-version">MK.II — v0.3.8af3 (formation rules — 진영 조합 정리)</div>
     </div>
 
     <p class="title-tagline">
@@ -4089,7 +4288,7 @@ body {
       <strong>선택의 누적</strong>으로 강해지는 게임.
     </p>
 
-    <button class="title-start" onclick="startGame()">새 작전 시작</button>
+    <button class="title-start" onclick="openAdventureSelect()">새 작전 시작</button>
 
     <button class="title-codex" onclick="openCodex()">📖 영웅 도감</button>
     <button class="title-codex title-footprints" onclick="openFootprints()">🌸 발자취</button>
@@ -4101,6 +4300,18 @@ body {
     <div class="title-foot">
       Phase 1 · 2 Build<br>
       Data Skeleton + Trait Select
+    </div>
+  </section>
+
+  <!-- v0.3.8af: 모험 선택 화면 (입구) -->
+  <section class="screen" id="screen-adventure">
+    <div class="adv-header">
+      <div class="adv-title">모험의 선택</div>
+      <div class="adv-sub">어떤 길을 오를 것인가</div>
+    </div>
+    <div id="adv-list" class="adv-list"><!-- JS가 카드 렌더 --></div>
+    <div class="adv-back-row">
+      <button class="title-codex" style="width:100%;" onclick="backToTitle()">← 타이틀</button>
     </div>
   </section>
 
@@ -4201,6 +4412,31 @@ body {
         세 명의 기본 직업을 모두 골라줘
       </button>
     </div>
+  </section>
+
+  <!-- v0.3.8af: 스테이지 진행표 화면 (첫 지도) -->
+  <section class="screen" id="screen-stage-map">
+    <div class="map-header">
+      <div class="map-title" id="map-title">스테이지 진행표</div>
+      <div class="map-sub" id="map-sub">25층 관측장</div>
+    </div>
+    <div id="map-grid" class="map-grid"><!-- JS가 노드 렌더 --></div>
+    <div class="map-legend">
+      <span><i style="background:var(--accent);"></i>클리어</span>
+      <span><i style="background:var(--signal);"></i>현재 도전</span>
+      <span><i style="background:var(--bg-3);"></i>미도달</span>
+    </div>
+    <div class="map-legend" style="margin-top:8px;">
+      <span><i style="background:#b48ee0;"></i>✦ 결속</span>
+      <span><i style="background:var(--accent-glow);"></i>👥 합류</span>
+      <span><i style="background:#b8c08a;"></i>🗿 문지기</span>
+      <span><i style="background:#ffb44a;"></i>⚠ 검문</span>
+      <span><i style="background:#e6685a;"></i>BOSS</span>
+    </div>
+    <div class="map-proceed-row">
+      <button class="map-proceed-btn" id="map-proceed-btn" onclick="proceedFromStageMap()">▸ 다음 스테이지 진행</button>
+    </div>
+    <div class="map-auto-hint" id="map-auto-hint" style="display:none;">화면을 탭하면 바로 진행</div>
   </section>
 
   <!-- ============================================================
@@ -5347,6 +5583,250 @@ function startGame() {
   showScreen("screen-trait-select");
 }
 
+/* ============================================================
+   v0.3.8af: 모험 선택 + 스테이지 진행표 Shell
+   결: "모험의 입구를 박는다. 반복 호흡(전투 후 재노출)은 af2."
+   안 건드림 — 전투/히드라/계기판/roster 5자리/timeStats/발자취/DEV 점프.
+   ============================================================ */
+
+// ── adventureProgress: 발자취와 분리된 별도 키 (발자취 구조 안 깨짐) ──
+const ADVENTURE_PROGRESS_KEY = "project_signal_adventure_progress_v1";
+function loadAdventureProgress() {
+  try {
+    const raw = localStorage.getItem(ADVENTURE_PROGRESS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) || {};
+  } catch (e) {
+    console.warn("[adventureProgress] load 실패:", e);
+    return {};
+  }
+}
+function saveAdventureProgress(obj) {
+  try {
+    localStorage.setItem(ADVENTURE_PROGRESS_KEY, JSON.stringify(obj));
+  } catch (e) {
+    console.warn("[adventureProgress] save 실패:", e);
+  }
+}
+/* run 종료 시 결과 기반 갱신 (유키 결 — af 저장은 최소만, 중간 스테이지 저장은 af2).
+   reachedStage = 도달한 최고 스테이지, clearedStage = 클리어한 최고 스테이지. */
+function updateAdventureProgress(reachedStage, clearedStage, lastResult) {
+  // DEV 런은 모험 진행에 섞지 않는다 (실험실 결 — 유키)
+  if (runState && runState.devTest && runState.devTest.enabled) return;
+  const prog = loadAdventureProgress();
+  const basic = prog.basic || { bestReachedStage: 0, bestClearedStage: 0, lastResult: null, updatedAt: null };
+  basic.bestReachedStage = Math.max(basic.bestReachedStage || 0, reachedStage || 0);
+  basic.bestClearedStage = Math.max(basic.bestClearedStage || 0, clearedStage || 0);
+  basic.lastResult = lastResult || basic.lastResult;
+  basic.updatedAt = new Date().toISOString();
+  prog.basic = basic;
+  saveAdventureProgress(prog);
+}
+
+// ── 모험 정의 (테마별 실제 규칙은 af 범위 아님 — 기본 모험 1개 + 잠금 자리 예고) ──
+const ADVENTURES_BASIC = {
+  id: "basic", icon: "🗺",
+  name: "기본 모험 — 25층 관측장",
+  desc: "선택의 누적으로 25층을 오른다. S10 트롤 문지기 · S20 전쟁 북지기 · S25 히드라가 길을 막는다.",
+  marks: "관문: S10 트롤 · S15 검문소 · S20 북지기 · S25 히드라",
+};
+// 잠금 카드 — 약속이 아니라 "세계가 넓어질 수 있다는 그림자"만 (유키 결)
+const ADVENTURES_LOCKED = [
+  { id: "poison",   icon: "🜂", name: "중독의 길",   tag: "준비 중" },
+  { id: "assassin", icon: "🗡", name: "암살자의 길", tag: "준비 중" },
+  { id: "troll",    icon: "🗿", name: "트롤의 길",   tag: "준비 중" },
+];
+
+function openAdventureSelect() {
+  const list = document.getElementById("adv-list");
+  const prog = loadAdventureProgress();
+  const basic = prog.basic;
+  // 모험 카드 = 최고 기록 / 최근 결과 (지난 기록 — 현재 런 진행도와 섞지 않음)
+  let recordHtml = "";
+  if (basic && (basic.bestReachedStage || basic.bestClearedStage)) {
+    const cleared = basic.bestClearedStage || 0;
+    const reached = basic.bestReachedStage || 0;
+    const last = basic.lastResult === "clear" ? "최근: 클리어"
+               : basic.lastResult === "defeat" ? "최근: 패배" : "";
+    recordHtml = `<div class="adv-card-record">최고 도달 S${reached} · 최고 클리어 S${cleared}${last ? " · " + last : ""}</div>`;
+  } else {
+    recordHtml = `<div class="adv-card-record">아직 기록 없음 — 첫 모험을 시작하자</div>`;
+  }
+
+  const basicCard = `
+    <div class="adv-card adv-open" onclick="startBasicAdventure()">
+      <div class="adv-card-top">
+        <span class="adv-card-icon">${ADVENTURES_BASIC.icon}</span>
+        <span class="adv-card-name">${ADVENTURES_BASIC.name}</span>
+        <span class="adv-card-tag">선택 가능</span>
+      </div>
+      <div class="adv-card-desc">${ADVENTURES_BASIC.desc}</div>
+      <div class="adv-card-marks">${ADVENTURES_BASIC.marks}</div>
+      ${recordHtml}
+    </div>`;
+
+  const lockedCards = ADVENTURES_LOCKED.map(a => `
+    <div class="adv-card adv-locked">
+      <div class="adv-card-top">
+        <span class="adv-card-icon">${a.icon}</span>
+        <span class="adv-card-name">${a.name}</span>
+        <span class="adv-card-tag">${a.tag}</span>
+      </div>
+      <div class="adv-card-desc">아직 선택할 수 없습니다.</div>
+    </div>`).join("");
+
+  list.innerHTML = basicCard + lockedCards;
+  showScreen("screen-adventure");
+}
+
+// 기본 모험 선택 → 기존 직업 선택 진입 (startGame은 직업 선택 진입 역할 유지)
+function startBasicAdventure() {
+  runState.adventureId = "basic";   // export 표식용 (UI 흐름엔 영향 없음)
+  startGame();
+}
+
+// ── 스테이지 진행표 렌더 ──
+// 현재 런의 위치만 보여준다 (지난 기록은 모험 카드 몫 — 섞지 않음, 유키 결)
+const STAGE_MAP_SPECIAL = {
+  9:  { icon: "👥", label: "합류", event: "recruit", tag: "👥 합류" },   // S9 클리어 후 4번째 영입 (코드 진실)
+  10: { icon: "🗿", label: "트롤", event: "gatekeeper", tag: "문지기" },
+  15: { icon: "⚠", label: "검문", event: "checkpoint", tag: "⚠ 검문" },
+  20: { icon: "🥁", label: "북지기", event: "boss", tag: "BOSS" },
+  25: { icon: "🐍", label: "히드라", event: "boss", tag: "최종 목적지" },
+};
+/* v0.3.8af3-poly: 사건의 서 — 진행판 노드의 사건 태그를 STAGES phase 진실에서 박는다.
+   거짓 표시 금지: 합체(✦ 결속)는 phase==="fusion"인 stage에서만 (하드코딩 아님).
+   합류(👥)는 S9 클리어 후 4번째 영입이 실제 일어나는 칸 (onStageClear prep/9 진실). */
+function getStageMapEvent(stageNum) {
+  // 이름 있는 특수 노드 우선 (합류/트롤/검문/북지기/히드라)
+  if (STAGE_MAP_SPECIAL[stageNum]) {
+    const sp = STAGE_MAP_SPECIAL[stageNum];
+    return { event: sp.event, tag: sp.tag, label: sp.label, icon: sp.icon };
+  }
+  // 그 외 — STAGES phase로 사건 판별 (코드 진실)
+  const st = (typeof STAGES !== "undefined") ? STAGES[stageNum - 1] : null;
+  if (st && st.phase === "fusion") {
+    return { event: "fusion", tag: "결속", label: "결속", icon: "✦" };
+  }
+  return null;   // 일반 전투 칸
+}
+// v0.3.8af2: 진행표 mode 상태 — initial(직업선택 직후 최초) / betweenStages(클리어 후 호흡)
+let stageMapMode = "initial";
+// v0.3.8af3: 자동 이동 연출 상태 — 타이머 / 탭 핸들러 / stale 가드 토큰
+let stageMapAutoTimer = null;
+let stageMapTapHandler = null;
+let stageMapAutoToken = 0;
+/* openStageMap — 진행표는 stage를 올리는 곳이 아니다.
+   "방금 어디까지 왔고, 다음 어디로 갈지"만 보여준다 (유키 결).
+   stage 증가는 [다음 스테이지 진행] 버튼(realProceedToNextStage)에서만. */
+function openStageMap(opts) {
+  opts = opts || {};
+  stageMapMode = opts.mode || "initial";
+  const grid = document.getElementById("map-grid");
+  const total = (typeof STAGES !== "undefined" && STAGES.length) ? STAGES.length : 25;
+  // 다음 도전 스테이지 — initial이면 현재 stage(보통 1), betweenStages면 방금 깬 층+1
+  const nextStage = opts.nextStage || (runState.stage || 1);
+  // 표시 전용: 이번 런에서 클리어한 스테이지 집합 (진행 로직과 안 섞음 — 유키 결)
+  const cleared = (runState.clearedStages || []);
+  let nodes = "";
+  for (let s = 1; s <= total; s++) {
+    const ev = getStageMapEvent(s);   // 사건의 서 — phase 진실 기반
+    let cls = "map-node";
+    if (cleared.includes(s))      cls += " cleared";   // 이번 런 클리어 = 밝게
+    else if (s === nextStage)     cls += " current";   // 다음 도전 = signal 강조
+    else                          cls += " locked";    // 미도달 = 흐리게
+    if (ev) cls += " special-node";
+    const dataEv = ev ? ` data-event="${ev.event}"` : "";
+    // 정보 위계 (나라님 결): 좌표=좌상단 작게 / 정체=중앙 큰 아이콘 / 설명=하단 라벨.
+    const coord = `<div class="map-node-coord">S${String(s).padStart(2, "0")}</div>`;
+    // 중앙 아이콘 — 특수 칸은 사건 아이콘 크게, 일반 칸은 작은 전투 점(덜 튀게)
+    const centerIcon = ev
+      ? `<div class="map-node-center">${ev.icon}</div>`
+      : `<div class="map-node-center map-node-center-plain">⚔</div>`;
+    const lab = ev && ev.label
+      ? `<div class="map-node-label">${ev.label}</div>` : "";
+    nodes += `<div class="${cls}"${dataEv}>${coord}${centerIcon}${lab}</div>`;
+  }
+  grid.innerHTML = nodes;
+
+  // 문구 — 방금 깬 층과 다음 도전 층을 분리해서 표현 (유키 결: "현재 스테이지 S3" 금지)
+  const titleEl = document.getElementById("map-title");
+  const subEl = document.getElementById("map-sub");
+  if (stageMapMode === "betweenStages") {
+    const clearedStage = opts.clearedStage || (nextStage - 1);
+    if (titleEl) titleEl.textContent = `S${clearedStage} 클리어`;
+    if (subEl)   subEl.textContent = `다음 목표: S${nextStage}`;
+  } else {
+    if (titleEl) titleEl.textContent = `모험 시작`;
+    if (subEl)   subEl.textContent = `첫 목표: S${nextStage}`;
+  }
+  const btn = document.getElementById("map-proceed-btn");
+  if (btn) btn.textContent = (stageMapMode === "betweenStages")
+    ? "▸ 바로 진행" : "▸ 첫 스테이지 진행";
+
+  // v0.3.8af3: 이전 자동 진행 타이머 정리 (stale 가드 — 화면 재진입/중첩 방지)
+  cancelStageMapAuto();
+  const proceedRow = document.querySelector(".map-proceed-row");
+  let hintEl = document.getElementById("map-auto-hint");
+
+  showScreen("screen-stage-map");
+
+  if (stageMapMode === "betweenStages") {
+    // 자동 이동 연출 — 클리어 점등 → 다음 노드 signal pulse → 1.5초 후 자동 진입.
+    //   조작은 최소화, 탭하면 즉시 진행. fallback 버튼은 보조 처리로 남긴다 (나라님 결).
+    const clearedStage = opts.clearedStage || (nextStage - 1);
+    const grid2 = document.getElementById("map-grid");
+    if (grid2) {
+      const nodeEls = grid2.querySelectorAll(".map-node");
+      // 노드는 1-indexed stage 순서 → nth는 stage-1
+      const clearedEl = nodeEls[clearedStage - 1];
+      const nextEl = nodeEls[nextStage - 1];
+      if (clearedEl) clearedEl.classList.add("just-cleared");
+      if (nextEl) nextEl.classList.add("next-pulse");
+    }
+    if (proceedRow) proceedRow.classList.add("is-auto");
+    if (hintEl) { hintEl.style.display = ""; hintEl.textContent = "화면을 탭하면 바로 진행"; }
+
+    // 토큰 기반 stale 가드: 이 진행표 표시의 고유 토큰. 진입 시점에 토큰 일치할 때만 진행.
+    const myToken = ++stageMapAutoToken;
+    const go = () => {
+      if (myToken !== stageMapAutoToken) return;   // 이미 다른 흐름으로 넘어감 → 무시
+      if (!document.getElementById("screen-stage-map").classList.contains("active")) return;
+      cancelStageMapAuto();
+      realProceedToNextStage();
+    };
+    // 1.5초 후 자동 진입
+    stageMapAutoTimer = setTimeout(go, 1500);
+    // 탭 시 즉시 진행 (화면 어디든)
+    stageMapTapHandler = () => go();
+    const mapScreen = document.getElementById("screen-stage-map");
+    if (mapScreen) mapScreen.addEventListener("click", stageMapTapHandler, { once: true });
+  } else {
+    // initial — 버튼 유지 (확인할 시간, 나라님 결). 자동 진행 안 함.
+    if (proceedRow) proceedRow.classList.remove("is-auto");
+    if (hintEl) hintEl.style.display = "none";
+  }
+}
+// 자동 진행 타이머/핸들러 정리 (stale 가드)
+function cancelStageMapAuto() {
+  if (stageMapAutoTimer) { clearTimeout(stageMapAutoTimer); stageMapAutoTimer = null; }
+  if (stageMapTapHandler) {
+    const mapScreen = document.getElementById("screen-stage-map");
+    if (mapScreen) mapScreen.removeEventListener("click", stageMapTapHandler);
+    stageMapTapHandler = null;
+  }
+}
+// 진행표 [버튼] — mode에 따라 갈라진다. (자동 진행의 fallback 버튼도 이걸 부름)
+function proceedFromStageMap() {
+  if (stageMapMode === "initial") {
+    startBattle();                 // 최초: 기존 startBattle (S1 진입)
+  } else {
+    cancelStageMapAuto();          // 버튼 직접 누름 → 자동 타이머 정리
+    stageMapAutoToken++;           // 토큰 무효화 (타이머가 또 부르지 않게)
+    realProceedToNextStage();      // 클리어 후: 여기서만 stage++ → 다음 전투
+  }
+}
+
 /* ─── v0.3.8r2: 개발용 스테이지 점프 ───
    preset 파티를 즉석 조립 → 목표 스테이지로 바로 진입.
    runState.devTest에 표식을 박아 일반 런 데이터와 섞이지 않게 한다. */
@@ -6402,9 +6882,9 @@ function updateConfirmBar() {
 function confirmTraits() {
   const count = partyState.slots.filter(Boolean).length;
   if (count !== 3) return;
-  // v0.3.7: 작전 편성 확인 페이지 제거 → 바로 전투 진입
-  // (renderReview / screen-review 거치지 않음. 댑스 하나 줄임)
-  startBattle();
+  // v0.3.8af: 직업 선택 완료 → 스테이지 진행표 최초 1회 노출 (mode: initial).
+  //   진행표의 [첫 스테이지 진행] 버튼이 startBattle()을 호출한다.
+  openStageMap({ mode: "initial", nextStage: runState.stage || 1 });
 }
 
 /* ============================================================
@@ -6517,6 +6997,9 @@ const THEMES = {
 
 const runState = {
   stage: 1,
+  // v0.3.8af2: 이번 런에서 클리어한 스테이지 (표시 전용 — 진행 로직과 안 섞음, 유키 결).
+  //   진행표 렌더에서만 참조. 진행 판단은 기존 runState.stage 흐름 유지.
+  clearedStages: [],
   themeId: "beginner",   // mk2 v0.2: 4테마 — beginner / poison / assassin / troll
   units: [],          // 아군 유닛 인스턴스 (합체로 변동)
   enemies: [],        // 현재 스테이지 적 인스턴스
@@ -7163,6 +7646,7 @@ function showThreatIntro(stage, onDone) {
 
 function initRunFromParty() {
   runState.stage = 1;
+  runState.clearedStages = [];   // v0.3.8af2: 새 런 — 클리어 표시 리셋
   runState.traitLevels = {};
   runState.fusionHistory = [];
   runState.result = null;
@@ -9824,6 +10308,12 @@ function onStageClear() {
   const stage = STAGES[stageNum - 1];
   const phase = stage ? stage.phase : null;
 
+  // v0.3.8af2: 방금 클리어한 stage를 표시 전용 집합에 기록 (진행 로직과 분리 — 유키 결).
+  //   진행표가 "밝게 표시 / 다음 도전 계산"에만 참조한다.
+  if (!runState.clearedStages.includes(stageNum)) {
+    runState.clearedStages.push(stageNum);
+  }
+
   // v0.3.7.29: 스테이지 종료 history push (pacing 분석용)
   //   v0.3.8: boss(S25)가 최종 → outcome "ending"은 boss에서.
   //   v0.3.8c (피드백): fusionHere = "실제로 합체가 발생했는가" 기준으로 통일.
@@ -10099,7 +10589,26 @@ window.validateFusionData = function() {
 };
 
 /* 분기 없이 바로 다음 스테이지 */
+/* v0.3.8af2: 다음 전투로 가는 정문.
+   진행표는 stage를 올리지 않는다 — "방금 어디까지 왔고 다음 어디로 갈지"만 보여준다.
+   stage 증가는 realProceedToNextStage(진행표 버튼)에서만 (유키 결).
+   모든 다음-전투 진입(성장/합체/영입/폴백)이 이 문을 지난다 — 옆문 함정 박멸. */
 function proceedToNextStage() {
+  const clearedStage = runState.stage;
+  // S25(최종) 클리어 후엔 다음 층이 없다 → 결과/발자취 (진행표 X, 유키 결)
+  if (clearedStage >= MAX_STAGE) {
+    finalizeRunResult("win", "final_stage_cleared");
+    showResult();
+    return;
+  }
+  openStageMap({
+    mode: "betweenStages",
+    clearedStage: clearedStage,
+    nextStage: clearedStage + 1,
+  });
+}
+// 진행표 [다음 스테이지 진행] → 실제 다음 전투 진입. 여기서만 stage++.
+function realProceedToNextStage() {
   runState.stage++;
   loadStage(runState.stage);
   enterBattleScreen();
@@ -10121,9 +10630,7 @@ function showGrowth() {
   // ─── 가드 ───
   if (traitUnits.length === 0) {
     pushEvent("성장시킬 기본 직업 없음 — 다음 스테이지로", "system");
-    runState.stage++;
-    loadStage(runState.stage);
-    enterBattleScreen();
+    proceedToNextStage();   // v0.3.8af2: 진행표 정문 경유 (옆문 통일)
     return;
   }
 
@@ -10170,9 +10677,7 @@ function pickGrowth(traitId) {
     }
     return u;
   });
-  runState.stage++;
-  loadStage(runState.stage);
-  enterBattleScreen();
+  proceedToNextStage();   // v0.3.8af2: 성장 완료 → 진행표 정문 경유 (옆문 통일)
 }
 
 /* ---------- v0.3.1: 예고 화면 제거 — phase 분기가 대체 ----------
@@ -10392,9 +10897,7 @@ function skipFusion() {
     showFourthMember();
     return;
   }
-  runState.stage++;
-  loadStage(runState.stage);
-  enterBattleScreen();
+  proceedToNextStage();   // v0.3.8af2: 합체 건너뜀 → 진행표 정문 경유 (옆문 통일)
 }
 
 /* ---------- 합체 동행 선택 (안 A — 6개 통합 카드 한 화면) ----------
@@ -10418,9 +10921,7 @@ function showFusionCompanion() {
   if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
     runState.pendingFourthMember = false;
-    runState.stage++;
-    loadStage(runState.stage);
-    enterBattleScreen();
+    proceedToNextStage();   // v0.3.8af2: 영입 폴백 → 진행표 정문 경유 (옆문 통일)
     return;
   }
   showScreen("screen-fusion-companion");
@@ -10597,9 +11098,7 @@ function showFourthMember() {
   if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
     runState.pendingFourthMember = false;
-    runState.stage++;
-    loadStage(runState.stage);
-    enterBattleScreen();
+    proceedToNextStage();   // v0.3.8af2: 영입 폴백 → 진행표 정문 경유 (옆문 통일)
     return;
   }
   showScreen("screen-fusion-companion");
@@ -10616,9 +11115,7 @@ function showCompanionChoice() {
   );
   if (!ok) {
     pushEvent("영입 가능한 기본 직업 없음 — 다음 스테이지로", "system");
-    runState.stage++;
-    loadStage(runState.stage);
-    enterBattleScreen();
+    proceedToNextStage();   // v0.3.8af2: 영입 폴백 → 진행표 정문 경유 (옆문 통일)
     return;
   }
   showScreen("screen-fusion-companion");
@@ -10716,6 +11213,16 @@ function showResult() {
       if (fp) saveFootprint(fp);
     } catch (e) {
       console.warn("[footprints] 저장 실패:", e);
+    }
+    // v0.3.8af: 모험 진행 요약 갱신 (별도 키 — 발자취 구조 안 건드림).
+    //   reached = 도달 stage, cleared = 승리 시에만 그 stage까지 클리어로 본다.
+    try {
+      const isWin = runState.result === "win";
+      const reached = runState.stage || 0;
+      const cleared = isWin ? reached : (reached > 0 ? reached - 1 : 0);
+      updateAdventureProgress(reached, cleared, isWin ? "clear" : "defeat");
+    } catch (e) {
+      console.warn("[adventureProgress] 갱신 실패:", e);
     }
   }
 
@@ -11667,6 +12174,15 @@ function initBattlefield() {
   const allyBack  = runState.units.filter(u => u.role === "back");
   setLane("lane-ally-front", allyFront);
   setLane("lane-ally-back",  allyBack);
+
+  // v0.3.8af-hotfix: 전열/후열 카운트를 battlefield에 박는다.
+  //   formation-specific override(전열1+후열2 삼각 배치)가 이 속성으로 잡힌다.
+  //   전체 lane 규칙은 안 건드림 — 겹치는 축만 비트는 자리 (x/aa 시인성 결의 연장).
+  const battlefield = document.getElementById("battlefield");
+  if (battlefield) {
+    battlefield.setAttribute("data-ally-front-count", allyFront.length);
+    battlefield.setAttribute("data-ally-back-count", allyBack.length);
+  }
 }
 
 /* ---------- v0.3.7.21: 상태 아이콘 시스템 ----------
