@@ -9241,6 +9241,10 @@ function ensureHydraObs() {
       totalActions: 0,     // 히드라전 총 적 행동 수
       rogueExecutes: 0,    // 도적 처형 발동 횟수 (히드라전)
       crushHits: 0,        // 분쇄 발동 (히드라전)
+      // v0.3.8ai: 재생 관측 (재생 곡선 B안 검증용 — 유키 결)
+      regenCount: 0,                       // regen 발동 총 횟수
+      regenTotal: 0,                       // regen 총 회복량
+      regenByPhase: { 1: 0, 2: 0, 3: 0 },  // phase별 regen 총량
       firstDeathUid: null, // 아군 최초 사망자
       firstDeathName: null,
       firstDeathAtAction: null,        // 최초 사망 시점(총 actions 기준)
@@ -9354,7 +9358,11 @@ function hydraPhaseAtkMul(phase) {
   return phase === 1 ? 0.70 : phase === 3 ? 1.15 : 1.00;
 }
 function hydraPhaseRegenMul(phase) {
-  return phase === 3 ? 0.5 : 1.0;   // P3: 재생 절반 (압축)
+  // v0.3.8ai: 재생 페이즈 곡선 (B안 — 비독 루트 숨구멍).
+  //   유키 결: "재생 머리는 재생한다, 다만 후반으로 갈수록 약해진다."
+  //   P1 풀 재생(읽는 구간) → P2 0.7(비독이 못 버티던 구간 풀어줌) → P3 0.4(압축, 끝내야 한다).
+  //   기본 재생률(hydraRegenPct 0.06)·HP·ATK·DEF는 안 건드림 — 곡선만. 독/우머리 불변.
+  return phase === 1 ? 1.0 : phase === 2 ? 0.7 : 0.4;
 }
 
 function hydraAct(actor) {
@@ -9433,9 +9441,17 @@ function hydraAct(actor) {
       // 재생 머리 — maxHp N% 회복 (보수적)
       showActionLabel(actor, "재생 머리", "heal");
       pushEvent(`히드라 — 재생 머리: 살점이 다시 돋아납니다`, "heal");
-      // v0.3.8ad: P3 압축 — 재생량 0.5배 ("이제 끝내야 한다". heal8 장기 교착 방지)
-      const amt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06) * hydraPhaseRegenMul(getHydraPhase()));
+      // v0.3.8ad→ai: 재생 페이즈 곡선 P1 1.0 / P2 0.7 / P3 0.4 (비독 루트 숨구멍 — 유키 결)
+      const _rphase = getHydraPhase();
+      const amt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06) * hydraPhaseRegenMul(_rphase));
       doHeal(actor, actor, amt);
+      // v0.3.8ai: 재생 관측 — 곡선 효과 검증 (발동 횟수/총량/phase별)
+      if (hydraObsActive()) {
+        const _obs = ensureHydraObs();
+        _obs.regenCount++;
+        _obs.regenTotal += amt;
+        _obs.regenByPhase[_rphase] = (_obs.regenByPhase[_rphase] || 0) + amt;
+      }
       const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
       if (el) { el.classList.add("regen-pulse"); setTimeout(() => el.classList.remove("regen-pulse"), 700); }
       break;
@@ -11938,6 +11954,26 @@ function buildBalanceExportPayload() {
       }) : [],
       hydraRemainPct: remainPct,
       clearVerdict,   // 거의_잡음 / 절반_이상_깎음 / 절반도_못깎음 / 한_머리도_못잡음
+      // v0.3.8ai: 재생 곡선(B안) 검증 — 발동 횟수/총량/phase별 + poison 비중 (유키 결)
+      regen: {
+        count: obs.regenCount || 0,
+        total: obs.regenTotal || 0,
+        byPhase: obs.regenByPhase || { 1: 0, 2: 0, 3: 0 },
+        note: "P1 1.0 / P2 0.7 / P3 0.4 곡선. 비독 루트 숨구멍 — 좌머리 정체성 유지",
+      },
+      damageMix: (() => {
+        // 히드라전 피해 구성 — poison 비중이 "독 유일정답"인지 보는 핵심 지표
+        const pu = (runState.runStats && runState.runStats.perUnit)
+          ? Object.values(runState.runStats.perUnit) : [];
+        const total = pu.reduce((s, u) => s + (u.damageDealt || 0), 0);
+        const poison = pu.reduce((s, u) => s + (u.poisonDamage || 0), 0);
+        return {
+          totalDamageDealt: total,
+          poisonDamage: poison,
+          poisonPct: total > 0 ? Math.round((poison / total) * 100) : 0,
+          nonPoisonDamage: total - poison,
+        };
+      })(),
       // v0.3.8ac(C): 클리어 판정 + 정합성 검증 (verdict: OK / *_MISMATCH / CLEAR_WITH_LIVING_HYDRA)
       hydraClearCheck: obs.hydraClearCheck || null,
       hydraIntegrityCheck: obs.hydraIntegrityCheck || null,
