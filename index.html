@@ -2609,6 +2609,173 @@ body {
 .threat-intro .ti-line { font-size: 15px; color: #e0e0ec; line-height: 1.5; margin-bottom: 18px; }
 .threat-intro .ti-hint { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
 
+/* ═══ v0.3.8af: 진행판 (모험의 서 / 진행 네비게이션) ═══
+   유키 결: "진행판은 길이다. 나라님이 원한 건 표지판이 아니라 길을 지나가는 감정."
+   전투와 전투 사이 자동 interstitial — showProgressBoard가 0.9초 노출 후 자동 전투 진입.
+   threat-intro와 같은 결(자동/탭 스킵)이되, 이건 "길"이라 screen으로 박는다. */
+#screen-progress-board {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: var(--bg);
+}
+.pb-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  width: 100%;
+  max-width: 420px;
+}
+#screen-progress-board.pb-show .pb-inner { opacity: 1; transform: translateY(0); }
+
+/* 상단 작은 좌표 배지 */
+.pb-coord {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  margin-bottom: 2px;
+}
+#pb-coord-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--signal);
+}
+.pb-coord-max {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.05em; color: var(--text-dim);
+}
+
+/* ═══ 25칸 5x5 달력형 진행판 (주인공) — "전체 길이 먼저 보인다" ═══ */
+.pb-map {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+  width: 100%;
+  max-width: 340px;
+  margin: 4px auto 2px;
+}
+.pb-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+/* v0.3.8ah: stage number는 보조 좌표 — 좌상단에 작게 (절대배치, 중앙 아이콘과 겹치지 않게) */
+.pb-cell-num {
+  position: absolute;
+  top: 2px; left: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  line-height: 1;
+  color: var(--text-dim);
+  opacity: 0.6;
+  pointer-events: none;
+}
+/* v0.3.8ah: 목적 아이콘이 주인공 — 칸 중앙에 크게. "숫자보다 목적이 먼저 읽힌다." */
+.pb-cell-icon {
+  font-size: 19px;
+  line-height: 1;
+  color: var(--text-dim);
+}
+
+/* ── 진행 상태 위계 ── */
+/* 지나온 칸 — 어둡게 채워져 "여기까지 왔다" */
+.pb-cell.pb-past {
+  background: rgba(255,201,74,0.06);
+  border-color: var(--signal-dim);
+  opacity: 0.5;
+}
+.pb-cell.pb-past .pb-cell-icon { color: var(--signal-dim); }
+/* 앞으로 갈 칸 — 조용히 (길은 보이되 흐리게) */
+.pb-cell.pb-future { opacity: 0.78; }
+/* 다음 칸 — 살짝 밝게 "곧 간다" */
+.pb-cell.pb-next {
+  border-color: var(--signal-dim);
+  box-shadow: 0 0 0 1px rgba(255,201,74,0.15);
+}
+.pb-cell.pb-next .pb-cell-icon { color: var(--text); }
+/* 현재 칸 — 가장 강하게 + 맥박 */
+.pb-cell.pb-current {
+  background: rgba(255,201,74,0.16);
+  border-color: var(--signal);
+  box-shadow: 0 0 12px rgba(255,201,74,0.5);
+  transform: scale(1.12);
+  z-index: 2;
+  animation: pb-pulse 1.15s ease-in-out infinite;
+}
+.pb-cell.pb-current .pb-cell-num { color: var(--signal); opacity: 1; }
+.pb-cell.pb-current .pb-cell-icon { color: var(--signal); font-size: 22px; }  /* 이모지는 color 안 먹으니 크기로도 강조 */
+@keyframes pb-pulse {
+  0%, 100% { box-shadow: 0 0 9px rgba(255,201,74,0.45); }
+  50%      { box-shadow: 0 0 18px rgba(255,201,74,0.8); }
+}
+
+/* ── 장소 정체성 (앞으로 올 주요 사건이 미리 보인다) ── */
+/* 결속/합류/검문/보스는 일반 성장·정비·전투보다 눈에 띄게 (테두리 색) */
+.pb-cell.pb-major { border-width: 1.5px; }
+.pb-cell.pb-kind-fusion.pb-major:not(.pb-past)  { border-color: #7da7d9; }            /* 결속 — 푸른 */
+.pb-cell.pb-kind-recruit.pb-major:not(.pb-past) { border-color: #6fc18f; }            /* 합류 — 초록 */
+.pb-cell.pb-kind-proof.pb-major:not(.pb-past)   { border-color: #d99a4e; }            /* 검문 — 주황 */
+.pb-cell.pb-kind-boss.pb-major:not(.pb-past)    { border-color: #d96f6f; box-shadow: 0 0 7px rgba(217,111,111,0.3); } /* 보스 — 붉은 */
+.pb-cell.pb-kind-fusion.pb-major:not(.pb-past)  .pb-cell-icon { color: #7da7d9; }
+.pb-cell.pb-kind-recruit.pb-major:not(.pb-past) .pb-cell-icon { color: #6fc18f; }
+.pb-cell.pb-kind-proof.pb-major:not(.pb-past)   .pb-cell-icon { color: #d99a4e; }
+.pb-cell.pb-kind-boss.pb-major:not(.pb-past)    .pb-cell-icon { color: #d96f6f; }
+/* 현재 칸이 주요 사건이면 — current 강조가 정체성 색을 이긴다 (위에서 이미 signal로 덮음) */
+
+/* ═══ 현재 칸 상세 (보조) — "지금 들어갈 칸의 확대" ═══ */
+.pb-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 7px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  max-width: 340px;
+}
+.pb-detail-icon {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--signal);
+  text-shadow: 0 0 10px rgba(255,201,74,0.35);
+}
+.pb-detail-label {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.pb-detail-line {
+  font-size: 11px;
+  color: var(--signal-dim);
+  letter-spacing: 0.02em;
+  width: 100%;
+}
+.pb-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.12em;
+  margin-top: 10px;
+}
+
 /* ─── v0.3.8r1: 전쟁 북지기(후열 3칸) 대형감 강화 + 잘림 방지 ─── */
 .unit.large-enemy.pattern-back3 .unit-portrait {
   transform: scale(1.55);
@@ -4342,13 +4509,38 @@ body {
   </section>
 
   <!-- ============================================================
+       v0.3.8af→ag: 진행판 (모험의 서 / 진행 지도) — 전투와 전투 사이 자동 interstitial.
+       유키 결: "정보적으로는 지도, 감성적으로는 모험의 서. 25칸 전체 말판이 주인공."
+       · 25칸 5x5 달력형 보드가 주인공 — 각 칸이 getStageKind로 자기 정체성(아이콘+번호) 표시.
+       · 현재 칸 상세 카드는 보조 — "지금 들어갈 칸의 확대".
+       · 별도 screen. 수동 정지 X. showProgressBoard가 자동 노출 → 자동 전투 진입.
+       ============================================================ -->
+  <section class="screen" id="screen-progress-board">
+    <div class="pb-inner" id="pb-inner">
+      <div class="pb-coord"><span id="pb-coord-num">S1</span><span class="pb-coord-max" id="pb-coord-max">/ 25</span></div>
+
+      <!-- 25칸 달력형 진행판 (주인공) — 전체 길이 먼저 보인다 -->
+      <div class="pb-map" id="pb-map"></div>
+
+      <!-- 현재 칸 상세 (보조) — 지금 들어갈 칸의 확대 -->
+      <div class="pb-detail">
+        <span class="pb-detail-icon" id="pb-icon">◆</span>
+        <span class="pb-detail-label" id="pb-label">성장</span>
+        <span class="pb-detail-line" id="pb-line">선택의 누적을 더합니다.</span>
+      </div>
+
+      <div class="pb-hint" id="pb-hint">탭하여 진입</div>
+    </div>
+  </section>
+
+  <!-- ============================================================
        전투 화면
        ============================================================ -->
   <section class="screen" id="screen-battle">
     <div class="battle-top">
-      <!-- v0.3.8ae: 진행판 정보 위계 — "이 칸이 어떤 장소인가"가 stage number보다 먼저 읽히게.
-           좌상단 작은 좌표배지 / 중앙 큰 상징 아이콘 / 하단 큰 라벨 / 그 아래 짧은 보조문장(=다음 칸 예고).
-           내용은 getStageKind(stage) 단일 진입점이 채운다 (진행판/예고 공용 진실 원천). -->
+      <!-- v0.3.8ae→af: 전투 중 "현재 위치 표지판" (진행판 아님 — 진행판은 screen-progress-board).
+           좌상단 작은 좌표배지 / 중앙 상징 아이콘+라벨 / 하단 이름+보조문장. getStageKind 공용.
+           내용은 getStageKind(stage) 단일 진입점이 채운다 (표지판/진행판 공용 진실 원천). -->
       <div class="battle-stage-row">
         <div class="stage-coord" id="stage-coord">
           <span class="stage-coord-num" id="battle-stage-label">S1</span>
@@ -5324,9 +5516,12 @@ function getStageKind(stage) {
   const base = STAGE_KIND_META[stage.phase] || STAGE_KIND_META._fallback;
   let meta = { label: base.label, icon: base.icon, line: base.line };
   // S9 진실: phase는 prep(정비)이지만 클리어 후 새 동료가 합류한다(onStageClear S9 분기).
-  //   진행판이 "정비"로만 보여주면 합류라는 진실을 놓친다 → 보조문장에 합류 예고를 얹는다.
+  //   유키 결(ah): "신규 영입"은 중요 칸 — 지도에서 합류가 아이콘으로 먼저 읽혀야 한다.
+  //   정비 전투지만 플레이어에겐 "여기서 동료가 합류한다"가 핵심 정보 → label/icon/line 모두 합류로.
   if (stage.recruitsAfter) {
-    meta.line = STAGE_KIND_META.recruit.line;  // "새 동료가 합류할 수 있습니다."
+    meta.label = STAGE_KIND_META.recruit.label;  // "합류"
+    meta.icon  = STAGE_KIND_META.recruit.icon;   // "✛"
+    meta.line  = STAGE_KIND_META.recruit.line;   // "새 동료가 합류할 수 있습니다."
   }
   // stage별 특수 문구 override (S10/S20/S25 등) — line/label/icon 중 있는 것만 덮음.
   if (stage.kindOverride) {
@@ -5373,7 +5568,7 @@ const STAGES = [
     name: "두 번째 입증", desc: "문지기가 길을 막는다 — 4인 파티 입장 시험. 직후 새 동료 합류",
     enemies: ["troll_gatekeeper"], themeId: null,
     threatIntro: { title: "트롤 문지기 등장", line: "\"이 문을 지나가려면, 힘을 증명해라.\"" },
-    kindOverride: { label: "검문", icon: "⚑", line: "문지기가 길을 막습니다." } },   // v0.3.8ae: recruit phase지만 진행판은 "검문"으로 읽힘 (문지기전 → 직후 합류)
+    kindOverride: { label: "검문", icon: "🛡️", line: "문지기가 길을 막습니다." } },   // v0.3.8ae/ah: 검문(고유 아이콘=트롤 문지기)
 
   /* ===== 사이클 3 (11~15): 1차 직업 확장 + 독 몬스터 검증 환경 (v0.3.4) ===== */
   { num: 11, cycle: 3, phase: "growth",
@@ -5412,7 +5607,7 @@ const STAGES = [
     name: "마지막 벽", desc: "뒤에서 북을 치는 자가 전장을 조율한다 — 1막의 끝, 그러나 끝이 아니다",
     enemies: ["troll_guard", "orc_guard", "troll_guard", "war_drummer"], themeId: null,
     threatIntro: { title: "전쟁 북지기 등장", line: "\"둥… 둥… 적의 박자가 빨라집니다.\"" },
-    kindOverride: { label: "보스", icon: "☠", line: "전장의 박자가 흔들립니다." } },   // v0.3.8ae: proof지만 준보스 — 진행판은 "보스" 정체성
+    kindOverride: { label: "보스", icon: "🥁", line: "전장의 박자가 흔들립니다." } },   // v0.3.8ae/ah: 보스(고유 아이콘=전쟁 북지기)
 
   /* ===== v0.3.8: 사이클 5 (21~25) — 롱런 관측장 =====
      목적: 밸런스 완성 X. "조합의 긴 호흡 / 어디까지 이어지나" 관측.
@@ -5435,7 +5630,7 @@ const STAGES = [
     name: "관측장의 끝 — 히드라", desc: "두 마리의 거대한 괴물이 전장을 가득 채운다",
     enemies: ["hydra_left", "hydra_right"], themeId: null,
     threatIntro: { title: "히드라 등장", line: "\"두 머리의 괴물이, 전장을 가득 메웁니다.\"" },
-    kindOverride: { label: "보스", icon: "☠", line: "두 개의 머리가 길 끝에서 기다립니다." } },   // v0.3.8v: 다중 객체형 / v0.3.8ae: 진행판 보스 문구
+    kindOverride: { label: "보스", icon: "🐉", line: "두 개의 머리가 길 끝에서 기다립니다." } },   // v0.3.8v / ah: 보스(고유 아이콘=히드라)
   /* v0.3.8v: S25 = 신규 다중 히드라(hydra_left 독/재생 + hydra_right 화염/포효).
      중앙형 boss_hydra는 seed로 보존 — DEV preset(s25_hydra_seed)에서 enemiesOverride로 관측. */
 ];
@@ -7274,8 +7469,16 @@ function startBattle() {
   enterBattleScreen();
 }
 
-// 전투 화면 진입 공통 — SVG 동기화 + 루프 시작
+// 전투 화면 진입 공통 (정문) — v0.3.8af: 진행판(길)을 먼저 지나고 → 실제 전투로.
+//   모든 전투 진입(startBattle/proceed/growth/fusion/recruit/dev/replay)이 이 한 곳을 지난다.
+//   진행판은 자동 interstitial — 0.9초 노출 후 자동으로 실제 전투 화면 진입 (탭하면 즉시 스킵).
 function enterBattleScreen() {
+  const stageNum = runState.stage || 1;
+  showProgressBoard(stageNum, () => _enterBattleScreenActual());
+}
+
+// 실제 전투 화면 진입 — SVG 동기화 + threatIntro + 루프 시작 (기존 enterBattleScreen 본문)
+function _enterBattleScreenActual() {
   showScreen("screen-battle");
   // battlefield의 flex:1이 계산된 뒤 동기화 (한 프레임 + 안전망)
   requestAnimationFrame(() => {
@@ -7291,6 +7494,73 @@ function enterBattleScreen() {
   } else {
     startBattleLoop();
   }
+}
+
+/* v0.3.8af→ag: 진행판 — 전투와 전투 사이 "길을 지나가는" 자동 interstitial.
+   ag: 25칸 5x5 달력형 지도로 승격 (전체 길이 주인공, 현재 칸 상세는 보조).
+   유키 결: "정보적으로는 지도, 감성적으로는 모험의 서. 25칸 전체 말판이 주인공."
+   showThreatIntro와 같은 결: 자동 노출 → onDone 1회 호출(자동/탭 중복 방지).
+   getStageKind(stage) 단일 진입점으로 각 칸/상세 채움 (표지판과 같은 진실 원천). */
+function showProgressBoard(stageNum, onDone) {
+  const stage = STAGES[stageNum - 1];
+  if (!stage) { onDone && onDone(); return; }   // 가드: 스테이지 없으면 바로 통과
+  const kind = getStageKind(stage);
+
+  // 내용 채우기 — 현재 칸 상세 (보조 카드)
+  const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  setText("pb-coord-num", `S${stage.num}`);
+  setText("pb-coord-max", `/ ${MAX_STAGE}`);
+  setText("pb-icon", kind.icon);
+  setText("pb-label", kind.label);
+  setText("pb-line", kind.line);
+
+  // 25칸 5x5 달력형 진행판 (주인공) — 각 칸이 자기 phase 정체성을 표시.
+  //   "전체 길이 먼저 보인다 / 현재 위치가 강하게 / 지나온 길 / 앞의 결속·합류·검문·보스가 미리 보인다."
+  //   getStageKind 단일 진입점 재사용 — 표지판/상세카드/지도 칸이 같은 진실을 읽는다.
+  const map = document.getElementById("pb-map");
+  if (map) {
+    let html = "";
+    for (let i = 1; i <= MAX_STAGE; i++) {
+      const st = STAGES[i - 1];
+      if (!st) continue;
+      const k = getStageKind(st);
+      // phase별 정체성 class — CSS가 색/테두리로 위계를 준다 (성장/정비/전투 < 결속/합류/검문/보스)
+      const kindKey = (st.recruitsAfter ? "recruit"
+                      : (st.kindOverride && st.kindOverride.label === "검문") ? "proof"
+                      : (st.kindOverride && st.kindOverride.label === "보스") ? "boss"
+                      : st.phase) || "growth";
+      const cls = ["pb-cell", `pb-kind-${kindKey}`];
+      if (i < stage.num)       cls.push("pb-past");     // 지나온 칸 — 어둡게 채워짐
+      else if (i === stage.num) cls.push("pb-current"); // 현재 칸 — 가장 강하게 (pulse)
+      else if (i === stage.num + 1) cls.push("pb-next");// 다음 칸 — 살짝 밝게 "곧 간다"
+      else                      cls.push("pb-future");  // 앞으로 갈 칸
+      // 중요 칸(결속/합류/검문/보스)은 일반 성장보다 눈에 띄게 (CSS pb-major)
+      if (["fusion","recruit","proof","boss"].includes(kindKey)) cls.push("pb-major");
+      html += `<div class="${cls.join(" ")}">`
+            +   `<span class="pb-cell-num">${i}</span>`
+            +   `<span class="pb-cell-icon">${k.icon}</span>`
+            + `</div>`;
+    }
+    map.innerHTML = html;
+  }
+
+  showScreen("screen-progress-board");
+  const boardEl = document.getElementById("screen-progress-board");
+  if (boardEl) boardEl.classList.remove("pb-show");   // 이전 노출 잔상 정리 (연속 진행판 fade-in 보장)
+  // 다음 프레임에 pb-show (fade-in)
+  requestAnimationFrame(() => { if (boardEl) boardEl.classList.add("pb-show"); });
+
+  // 자동/탭 진입 — 정확히 1번만 (showThreatIntro와 같은 결)
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (boardEl) boardEl.classList.remove("pb-show");
+    if (boardEl) boardEl.removeEventListener("click", finish);
+    onDone && onDone();
+  };
+  if (boardEl) boardEl.addEventListener("click", finish);
+  setTimeout(finish, 1400);   // 1.4초 — 25칸 지도를 한 번 훑을 호흡 (탭하면 즉시 스킵). 손맛 보고 조정.
 }
 
 /* v0.3.8r1: 정예/보스 등장 인트로 오버레이.
