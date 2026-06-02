@@ -333,6 +333,18 @@ body {
   margin-top: 4px;
   text-shadow: 0 0 8px rgba(255,201,74,0.5);
 }
+/* v0.3.8ak2: 개발 검수 빌드 표시 배지 */
+.dev-unlock-banner {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #ff8c64;
+  border: 1px solid rgba(255,140,100,0.5);
+  border-radius: 3px;
+  padding: 2px 8px;
+}
 
 .title-tagline {
   font-size: 14px;
@@ -2540,6 +2552,8 @@ body {
 }
 .dev-mode-title { font-size: 20px; font-weight: 800; color: #ffd0b8; }
 .dev-mode-sub { font-size: 11px; color: rgba(255,140,100,0.7); margin-top: 4px; }
+.dev-unlock-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.dev-unlock-status { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--signal-dim); }
 .dev-mode-list {
   flex: 1;
   min-height: 0;
@@ -4097,6 +4111,125 @@ body {
   margin-top: 6px;
 }
 
+/* ═══ v0.3.8ak: 테마 선택 화면 ═══ */
+#screen-theme-select { justify-content: flex-start; gap: 14px; }
+.theme-select-header { display: flex; flex-direction: column; gap: 6px; }
+.theme-select-title { font-weight: 800; font-size: 20px; color: var(--text); letter-spacing: 0.02em; }
+.theme-select-sub { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.theme-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.theme-card {
+  text-align: left;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--theme-color, var(--signal));
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "icon name" "icon desc" "icon flavor";
+  column-gap: 14px;
+  row-gap: 3px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  color: inherit;
+  font-family: inherit;
+}
+.theme-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--theme-color, var(--signal));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+.theme-card-icon {
+  grid-area: icon;
+  font-size: 34px;
+  align-self: center;
+  line-height: 1;
+}
+.theme-card-name {
+  grid-area: name;
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text);
+}
+.theme-card-name small { font-weight: 600; font-size: 11px; color: var(--text-dim); }
+.theme-card-desc {
+  grid-area: desc;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.theme-card-flavor {
+  grid-area: flavor;
+  font-size: 11px;
+  color: var(--theme-color, var(--signal-dim));
+  opacity: 0.85;
+  margin-top: 2px;
+}
+.theme-card-soon { opacity: 0.45; cursor: not-allowed; }
+.theme-select-header .dev-back-btn { align-self: flex-start; }
+
+/* ═══ v0.3.8ak1: 해금 연출 오버레이 ═══ */
+.unlock-intro {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,10,14,0.92);
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  padding: 24px;
+}
+.unlock-intro.show { opacity: 1; }
+.unlock-intro-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  text-align: center;
+  max-width: 380px;
+  transform: translateY(10px);
+  transition: transform 0.35s ease;
+}
+.unlock-intro.show .unlock-intro-inner { transform: translateY(0); }
+.unlock-intro-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.35em;
+  color: var(--signal);
+  text-shadow: 0 0 14px rgba(255,201,74,0.5);
+}
+.unlock-intro-title { font-weight: 900; font-size: 24px; color: var(--text); letter-spacing: -0.01em; }
+.unlock-intro-sub { font-size: 13px; color: var(--signal-dim); margin-bottom: 6px; }
+.unlock-intro-list {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%;
+  margin: 6px 0 10px;
+}
+.unlock-item {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--signal);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+}
+.unlock-item small { color: var(--text-dim); font-size: 11px; }
+.unlock-intro-btn {
+  background: var(--signal);
+  color: #1a1206;
+  font-weight: 800; font-size: 15px;
+  border: none; border-radius: 8px;
+  padding: 13px 30px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: transform 0.15s ease;
+}
+.unlock-intro-btn:hover { transform: translateY(-2px); }
+
+
+
 .continue-btn {
   padding: 14px 16px;
   background: linear-gradient(180deg, var(--signal), var(--signal-dim));
@@ -4347,7 +4480,8 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8ad (hydra v2 three-phase)</div>
+      <div class="title-version">MK.II — v0.3.8ak2 (dev playtest · all unlocked)</div>
+      <div class="dev-unlock-banner" id="dev-unlock-banner" style="display:none;">⚙ DEV · ALL UNLOCKED</div>
     </div>
 
     <p class="title-tagline">
@@ -4370,12 +4504,50 @@ body {
     </div>
   </section>
 
+  <!-- ============================================================
+       v0.3.8ak: 테마 선택 — "이번 길의 운명". 직업 선택 전에 끼움.
+       THEMES 4종(초보자/중독/암살자/트롤). 선택 시 runState.themeId 세팅 → 직업 선택.
+       카드는 JS(renderThemeSelect)가 THEMES에서 그린다 — 단일 진실 원천.
+       ============================================================ -->
+  <section class="screen" id="screen-theme-select">
+    <div class="theme-select-header">
+      <button class="dev-back-btn" onclick="backToTitle()">← 타이틀</button>
+      <div class="theme-select-title">이번 길을 고르세요</div>
+      <div class="theme-select-sub">테마는 이번 모험의 운명입니다 — 적 구성과 길 끝의 보스가 달라집니다.</div>
+    </div>
+    <div class="theme-select-list" id="theme-select-list"></div>
+  </section>
+
+  <!-- ============================================================
+       v0.3.8ak1: 첫 신호 완주 해금 연출 (한 번만). "이제부터 진짜 모험."
+       ============================================================ -->
+  <div class="unlock-intro" id="unlock-intro" style="display:none;">
+    <div class="unlock-intro-inner">
+      <div class="unlock-intro-badge">SIGNAL UNLOCKED</div>
+      <div class="unlock-intro-title">첫 신호를 완주했습니다</div>
+      <div class="unlock-intro-sub">이제부터 진짜 모험이 시작됩니다.</div>
+      <div class="unlock-intro-list">
+        <div class="unlock-item">⚡ <b>x2 빠른 진행</b> 해금</div>
+        <div class="unlock-item">🟣 <b>중독이 깔린 길</b> 해금</div>
+        <div class="unlock-item">🗡️ <b>암살자의 길</b> <small>(준비 중)</small></div>
+        <div class="unlock-item">🪨 <b>트롤의 길</b> <small>(준비 중)</small></div>
+      </div>
+      <button class="unlock-intro-btn" onclick="closeUnlockIntro()">새로운 길로</button>
+    </div>
+  </div>
+
   <!-- v0.3.8v: DEV 모드 화면 (스크롤 메뉴) -->
   <section class="screen" id="screen-dev-mode">
     <div class="dev-mode-header">
       <button class="dev-back-btn" onclick="backToTitle()">← 타이틀</button>
       <div class="dev-mode-title">🛠 DEV 모드</div>
       <div class="dev-mode-sub">개발/기획 관측용 — 일반 런과 분리 기록됨</div>
+      <!-- v0.3.8ak1: 해금 진행 상태 도구 (홈빌드 테스트 중 상태 꼬임 방지) -->
+      <div class="dev-unlock-tools">
+        <span id="dev-unlock-status" class="dev-unlock-status">해금: ?</span>
+        <button class="dev-btn" onclick="devToggleForceUnlock()">강제해금 토글</button>
+        <button class="dev-btn" onclick="devResetUnlock()">해금 리셋</button>
+      </div>
     </div>
     <div id="dev-mode-list" class="dev-mode-list"><!-- JS가 섹션/항목 렌더 --></div>
   </section>
@@ -4553,13 +4725,12 @@ body {
         <div class="battle-controls">
           <button class="battle-btn battle-btn-exit" id="btn-exit" onclick="confirmExitRun()" title="모험 종료">✕</button>
           <button class="battle-btn" id="btn-pause" onclick="togglePause()">⏸</button>
-          <!-- v0.3.7: 속도 버튼 재구성 — x1/x3/x6
-               내부값: x1=2 (기본), x3=6 (이전 x3과 동일), x6=12 (디버그 최대)
-               x6은 게이지 증가 배수만 ×2 — tick/사망/타겟팅 결 불변 (로직 안전)
-          -->
-          <button class="battle-btn active" id="btn-x1" onclick="setSpeed(2)">x1</button>
-          <button class="battle-btn" id="btn-x3" onclick="setSpeed(6)">x3</button>
-          <button class="battle-btn" id="btn-x6" onclick="setSpeed(12)">x6</button>
+          <!-- v0.3.7→ak1: 속도 버튼. 릴리즈 내부값: x1=3 / x2=6 / x6=12(DEV).
+               게이지 증가 배수만 — tick/사망/타겟팅 결 불변 (로직 안전).
+               해금 전: 전부 숨김(기본 x1=3 고정). 해금 후: x1/x2 노출. DEV: x6도. (updateSpeedButtonsVisibility) -->
+          <button class="battle-btn active" id="btn-x1" onclick="setSpeed(3)" style="display:none;">x1</button>
+          <button class="battle-btn" id="btn-x3" onclick="setSpeed(6)" style="display:none;">x2</button>
+          <button class="battle-btn" id="btn-x6" onclick="setSpeed(12)" style="display:none;">x6</button>
         </div>
       </div>
       <!-- 스테이지 고유 이름 + 다음 칸 예고 보조문장 (한 줄, 진행을 방해하지 않게 짧게) -->
@@ -5202,6 +5373,22 @@ const DEV_STAGE_TEST = true;
    (DEV_STAGE_TEST는 하위호환 — 둘 중 하나라도 true면 노출) */
 const DEV_MODE_ENABLED = true;
 
+// v0.3.8ak1: DEV 강제 해금 — true면 배속/테마 잠금 무시 (홈빌드 테스트용. 릴리즈는 false).
+//   실제 해금 진행(ps_hasClearedBeginner)과 별개 — 잠금 흐름을 거치지 않고 바로 관측할 때.
+let DEV_FORCE_UNLOCK = false;
+
+/* ═══ v0.3.8ak2: 개발 검수 빌드 전체 해금 (유키/나라님 결) ═══
+   true  = 지금처럼 나라님이 손맛/밸런스를 검수하는 개발 빌드:
+           · 모든 테마(beginner/poison/assassin/troll) 선택 가능
+           · 속도 x1 / x6 버튼 노출 (x1=전장 호흡 관측 / x6=반복 테스트·로그 수집)
+           · 해금 여부와 무관하게 전부 열림 (잠금 때문에 관측 막히지 않게)
+   false = 릴리즈 모드 (해금 구조 그대로 — 첫 25 클리어 전 테마/배속 잠금 + "이제부터 진짜 모험" 연출)
+   ※ 릴리즈 해금 구조(ps_hasClearedBeginner / renderThemeSelect 잠금 / showUnlockIntro)는
+     삭제하지 않고 보존한다. 이 플래그는 그 위에 얹는 *우회 스위치*다.
+   ※ DEV 클리어가 릴리즈 해금 플래그를 꼬이게 하지 않음 (해금 저장은 여전히 devTest 제외 조건). */
+const DEV_PLAYTEST_UNLOCK_ALL = true;
+
+
 // DEV 모드 메뉴 구성 — 목적별 섹션 + 항목 설명 (presetKey는 DEV_STAGE_PRESETS 키)
 const DEV_MODE_MENU = [
   { section: "전투 시인성 테스트", items: [
@@ -5377,6 +5564,36 @@ const ENEMY_TEMPLATES = {
     enrageAtkBoost: 1.20,      // 광폭화 시 공격 계열 +20% (재생량은 안 올림 — 장기전 방지)
     hydraRegenPct: 0.06,       // 재생 머리: maxHp 6% (보수적 — 전투 늘어지지 않게)
     displayName: "히드라",
+  },
+
+  /* ═══ v0.3.8ak: 중독 테마 "중독이 깔린 길" 첫 몹 (1단계) ═══
+     유키 결: "독이 깔린 길에서 정화/속도전/회복/제어/역중독 중 자기 해독법을 찾는 테마."
+     기존 독 인프라 활용 (poisonOnHit / poisoned 상태 / 중독 배지·FX / 정화사 정화) — 새 시스템 안 만듦.
+     독이 걸리는 순간은 명확하게: 이름/아이콘/행동라벨/FX/로그가 같은 말을 하게 (거짓 표시 방지). */
+  poison_goblin: {   // A. 독침 고블린 — 초반 일반몹, 확률 독으로 테마 예고
+    race: "goblin", role: "ranged", hp: 50, atk: 11, def: 1, spd: 98,
+    poisonOnHit: 0.45,   // 공격 시 45% 중독 ("이 길은 독이 있구나")
+    displayName: "독침 고블린", themeTag: "poison",
+  },
+  plague_caster: {   // B. 맹독술사 — 핵심 일반/준정예, 확정 독 ("정화사 필요성")
+    race: "orc", role: "caster", hp: 80, atk: 12, def: 2, spd: 88,
+    poisonOnHit: 1.0,    // 확정 중독 (1단계: 가장 낮은 HP 타겟팅은 후속 — 일단 확정 독으로 명확히)
+    displayName: "맹독술사", themeTag: "poison",
+  },
+  poison_gatekeeper: {   // C. S10 독늪 문지기 — 테마 문지기 (트롤 참조: 큰 몹이나 재생 없음 / HP 낮음 / 확정 독)
+    race: "troll", role: "guard", hp: 620, atk: 16, def: 3, spd: 48,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    // 트롤(HP800/재생0.07)보다 낮은 HP·재생 없음 — "이 길은 독을 대비해야 한다"의 첫 문지기.
+    poisonOnHit: 1.0,           // 확정 독 패턴 (매 공격 중독 — 방치하면 누적)
+    poisonBonusVsPoisoned: 0.5, // v0.3.8ak: 이미 중독된 대상에게 추가 피해 50% (독 방치 위험)
+    enrageAfter: 10, enrageAtkBoost: 1.25,   // 장기전 압박 (트롤보다 약하게)
+    phases: {
+      enrage: { introText: "맹독 분출!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "맹독" },
+    },
+    baseTraitLabel: "독늪",
+    threatIntro: { title: "독늪 문지기 등장", line: "\"이 늪을 건너려면… 독을 견뎌라.\"" },
+    heavyHitter: true,
+    displayName: "독늪 문지기", themeTag: "poison",
   },
 
   /* ─── v0.3.8v: 다중 객체형 히드라 (field boss) ───
@@ -5635,6 +5852,61 @@ const STAGES = [
      중앙형 boss_hydra는 seed로 보존 — DEV preset(s25_hydra_seed)에서 enemiesOverride로 관측. */
 ];
 
+/* ═══ v0.3.8ak: 테마 엔진 — "공용 모험 리듬 위에 얹히는 이번 길의 운명" (유키 결) ═══
+   STAGES를 테마별로 복제하지 않는다. phase 구조(growth/fusion/prep/proof/recruit/boss)와
+   진행판 언어는 Project Signal 공용 뼈대. 테마는 그 위에 enemies/name/boss/진행판만 override.
+   "선택의 누적 / 모험의 서" 감정은 테마 무관 공용 — 결이 흐려지지 않게.
+
+   THEME_STAGE_OVERRIDES[themeId][stageNum] = {
+     name?, enemies?, threatIntro?, kindOverride?(진행판 아이콘/라벨/문장)
+   }
+   beginner는 override 없음 → 기존 STAGES 그대로 (히드라 aj 관측 격리). */
+const THEME_STAGE_OVERRIDES = {
+  poison: {
+    // 일반 구간 — 독 몹으로 테마를 깐다 (1단계: 독침고블린/맹독술사 중심. 나머지 칸은 점진 침투)
+    3:  { enemies: ["poison_goblin", "poison_goblin", "goblin_melee"] },
+    6:  { enemies: ["poison_goblin", "plague_caster", "goblin_ranged"] },
+    8:  { enemies: ["plague_caster", "poison_goblin", "poison_goblin", "orc_melee"] },
+    // S10 — 독늪 문지기 (테마 문지기. 확정 독 / 재생 없음 / 트롤보다 낮은 HP)
+    10: {
+      name: "독늪의 문지기",
+      enemies: ["poison_gatekeeper"],
+      threatIntro: { title: "독늪 문지기 등장", line: "\"이 늪을 건너려면… 독을 견뎌라.\"" },
+      kindOverride: { label: "검문", icon: "🟣", line: "독늪의 문지기가 길을 막습니다." },
+    },
+    13: { enemies: ["plague_caster", "poison_goblin", "orc_caster", "poison_goblin"] },
+    18: { enemies: ["plague_caster", "plague_caster", "poison_goblin", "orc_melee"] },
+    // S20 — 역병술사 (자리·이름·진행판만. 실제 보스 구현은 후속 — 유키 결)
+    20: {
+      name: "역병술사",
+      enemies: ["plague_caster", "plague_caster", "orc_guard", "orc_caster"],   // 골격: 맹독술사 다수로 자리 표시
+      threatIntro: { title: "역병술사 등장", line: "\"독은… 퍼지는 것이다.\"" },
+      kindOverride: { label: "보스", icon: "🧪", line: "역병술사가 길을 막습니다." },
+    },
+    // S25 — 독의 왕 / 역병 히드라 (자리·이름·진행판만. 실제 보스 후속)
+    25: {
+      name: "독의 왕 — 역병 히드라",
+      // 골격: beginner 히드라 객체 재사용 (실제 테마 보스 hydra는 후속). aj 수치 안 건드림.
+      enemies: ["hydra_left", "hydra_right"],
+      threatIntro: { title: "독의 왕 등장", line: "\"독의 길 끝에서, 네 해독법을 증명하라.\"" },
+      kindOverride: { label: "보스", icon: "🐍", line: "독의 왕이 길 끝에서 기다립니다." },
+    },
+  },
+  // assassin / troll 은 1단계에선 override 없음 (자리만 — 후속). beginner는 항상 override 없음.
+};
+
+/* 테마가 적용된 스테이지를 푼다 (단일 진입점).
+   공용 STAGES[stageNum-1]을 기준으로, 테마 override가 있으면 name/enemies/threatIntro/kindOverride만 덮는다.
+   phase·cycle·num 등 공용 뼈대는 절대 안 건드림 (페이즈 언어/진행판 리듬 보존). */
+function getStageForTheme(stageNum, themeId) {
+  const base = STAGES[stageNum - 1];
+  if (!base) return base;
+  const ov = THEME_STAGE_OVERRIDES[themeId] && THEME_STAGE_OVERRIDES[themeId][stageNum];
+  if (!ov) return base;
+  // 공용 뼈대 보존 + override 얹기 (얕은 병합 — 덮는 키만)
+  return Object.assign({}, base, ov);
+}
+
 /* ---------- 아군 직업 베이스 스탯 (v0.1.5 결 계승) ---------- */
 
 const TRAIT_STATS = {
@@ -5703,12 +5975,68 @@ function showScreen(id) {
 }
 
 function startGame() {
+  // v0.3.8ak: 직업 선택 전에 테마 선택 — "이번 길의 운명"을 먼저 고른다.
+  renderThemeSelect();
+  showScreen("screen-theme-select");
+}
+
+/* v0.3.8ak: 테마 선택 카드 렌더 (THEMES 단일 진실 원천에서).
+   v0.3.8ak1: 해금 반영 — 첫 25 클리어 전엔 beginner만. 나머지는 잠금 ("완주하면 열림").
+   v0.3.8ak2: DEV_PLAYTEST_UNLOCK_ALL이면 4종 다 선택 가능 (검수용).
+              단 assassin/troll은 전용 스테이지 override가 아직 없어 beginner 구성으로 진행 — 정직하게 표시. */
+function renderThemeSelect() {
+  const list = document.getElementById("theme-select-list");
+  if (!list) return;
+  const unlocked = isContentUnlocked();
+  const devAll = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL);
+  // 전용 스테이지가 실제로 구현된 테마 (THEME_STAGE_OVERRIDES 기준 — 현재 poison만)
+  const hasThemeStages = (id) => id === "beginner" || !!THEME_STAGE_OVERRIDES[id];
+  const order = ["beginner", "poison", "assassin", "troll"];
+  let html = "";
+  for (const id of order) {
+    const t = THEMES[id];
+    if (!t) continue;
+    // 선택 가능 여부: DEV 전체해금이면 전부 가능. 아니면 릴리즈 규칙(beginner 항상 / poison 해금 시 / assassin·troll 준비중).
+    const themeReady = devAll ? true
+                     : (id === "beginner") ? true
+                     : (id === "poison")   ? unlocked
+                     : false;
+    const lockedByProgress = !devAll && !unlocked && id !== "beginner";
+    let badge = "";
+    if (lockedByProgress)              badge = ` <small>🔒 첫 신호를 완주하면 열립니다</small>`;
+    else if (!hasThemeStages(id))      badge = ` <small>(전용 스테이지 미구현 — 기본 구성으로 진행)</small>`;
+    else if (!themeReady)              badge = ` <small>(준비 중)</small>`;
+    html += `<button class="theme-card${themeReady ? "" : " theme-card-soon"}" `
+          + (themeReady ? `onclick="selectThemeAndStart('${id}')"` : `disabled`)
+          + ` style="--theme-color:${t.color}">`
+          +   `<span class="theme-card-icon">${themeReady ? t.icon : "🔒"}</span>`
+          +   `<span class="theme-card-name">${t.name}${badge}</span>`
+          +   `<span class="theme-card-desc">${t.desc}</span>`
+          +   `<span class="theme-card-flavor">${t.flavor}</span>`
+          + `</button>`;
+  }
+  list.innerHTML = html;
+}
+
+/* v0.3.8ak: 테마 확정 → runState.themeId 세팅 → 직업 선택으로. */
+function selectThemeAndStart(themeId) {
+  runState.themeId = THEMES[themeId] ? themeId : "beginner";
+  applyThemeVisualClass(runState.themeId);   // v0.3.8ak1: theme class 자리 (배경 공기감은 ak2)
   // 파티 상태 초기화 (v0.3.0: slots 3칸 비움)
   partyState.slots = ["", "", ""];
   renderTraitSections();
   renderMiniPreview();
   updateConfirmBar();
   showScreen("screen-trait-select");
+}
+
+/* v0.3.8ak1: 테마별 시각 class 훅 (#app에 theme-{id}). 실제 배경/색감 CSS는 ak2.
+   유키 결: "ak1은 자리만, ak2에서 세계의 공기를 바꾼다." */
+function applyThemeVisualClass(themeId) {
+  const app = document.getElementById("app");
+  if (!app) return;
+  app.classList.remove("theme-beginner", "theme-poison", "theme-assassin", "theme-troll");
+  app.classList.add(`theme-${themeId || "beginner"}`);
 }
 
 /* ─── v0.3.8r2: 개발용 스테이지 점프 ───
@@ -5732,6 +6060,27 @@ function openDevMode() {
     }).join("");
   }
   showScreen("screen-dev-mode");
+  devRefreshUnlockStatus();
+}
+
+/* v0.3.8ak1: DEV 해금 도구 — 상태 표시 / 강제해금 토글 / 리셋. */
+function devRefreshUnlockStatus() {
+  const el = document.getElementById("dev-unlock-status");
+  if (!el) return;
+  const cleared = hasClearedBeginner();
+  const forced = (typeof DEV_FORCE_UNLOCK !== "undefined" && DEV_FORCE_UNLOCK);
+  el.textContent = `해금: ${cleared ? "✅완주" : "🔒미완주"}${forced ? " / 강제ON" : ""}`;
+}
+function devToggleForceUnlock() {
+  DEV_FORCE_UNLOCK = !DEV_FORCE_UNLOCK;
+  devRefreshUnlockStatus();
+}
+function devResetUnlock() {
+  setClearedBeginner(false);
+  setUnlockIntroSeen(false);
+  DEV_FORCE_UNLOCK = false;
+  devRefreshUnlockStatus();
+  console.log("[DEV] 해금 상태 리셋됨 (미완주로)");
 }
 
 function devJumpToStage(presetKey) {
@@ -7020,14 +7369,16 @@ function updateRunTimeStats() {
   if (!shouldCountBattle) return;
 
   const speed = battleState.speed;
-  const speedRatio = speed / 2;   // x1 기준 환산 (x1=2 → 1.0 / x3=6 → 3.0 / x6=12 → 6.0)
+  // v0.3.8ak1: x1 환산 기준을 릴리즈 기본속도로 (old x1=2 / release x1=3).
+  //   speed 3 → 1.0 / 6 → 2.0 / 12 → 4.0. 기존 speedBucketsMs 라벨은 유지하되 새 값에 매핑.
+  const speedRatio = speed / RELEASE_BASE_SPEED;
 
   ts.battleRealMs += deltaMs;
   ts.battleX1EquivalentMs += deltaMs * speedRatio;
 
-  if (speed === 2) ts.speedBucketsMs.x1 += deltaMs;
-  else if (speed === 6) ts.speedBucketsMs.x3 += deltaMs;
-  else if (speed === 12) ts.speedBucketsMs.x6 += deltaMs;
+  if (speed === RELEASE_BASE_SPEED) ts.speedBucketsMs.x1 += deltaMs;       // 3 = 릴리즈 x1
+  else if (speed === RELEASE_FAST_SPEED) ts.speedBucketsMs.x3 += deltaMs;  // 6 = 릴리즈 x2 (버킷 라벨 x3 재사용)
+  else if (speed === DEV_FAST_SPEED) ts.speedBucketsMs.x6 += deltaMs;      // 12 = DEV x6
   else ts.speedBucketsMs.other += deltaMs;
 
   // tick 로그는 폭주하니 누적 10초 단위로만
@@ -7211,10 +7562,18 @@ function markFusionHappenedThisStage(stageNum) {
 
 /* ---------- 전투 상태 ---------- */
 
+/* ═══ v0.3.8ak1: 릴리즈 속도 기준 (유키 결) ═══
+   첫 플레이 속도 버튼 숨김 + 기본 속도를 기존 speed 2보다 빠르게.
+   old x1 = 2 (기존 로그 비교 기준) / release x1 = 3 / release x2 = 6 / DEV x6 = 12 (개발 전용).
+   게이지 증가 배수라 로직 안전. x1 환산식도 RELEASE_BASE_SPEED 기준으로 맞춤. */
+const RELEASE_BASE_SPEED = 3;   // 릴리즈 x1 (기본 — 버튼 숨김 상태에서도 이 속도)
+const RELEASE_FAST_SPEED = 6;   // 해금 후 x2
+const DEV_FAST_SPEED = 12;      // 개발 전용 x6 (release UI에서 숨김)
+
 const battleState = {
   running: false,
   paused: false,
-  speed: 2,
+  speed: RELEASE_BASE_SPEED,   // v0.3.8ak1: 기본 3 (구 2 → 약간 빠르게)
   tickInterval: null,
   stats: {
     damageDealt: {},   // unitId → total
@@ -7480,6 +7839,7 @@ function enterBattleScreen() {
 // 실제 전투 화면 진입 — SVG 동기화 + threatIntro + 루프 시작 (기존 enterBattleScreen 본문)
 function _enterBattleScreenActual() {
   showScreen("screen-battle");
+  updateSpeedButtonsVisibility();   // v0.3.8ak1: 해금 상태에 따라 배속 버튼 노출/숨김
   // battlefield의 flex:1이 계산된 뒤 동기화 (한 프레임 + 안전망)
   requestAnimationFrame(() => {
     syncBattleSvg();
@@ -7488,7 +7848,7 @@ function _enterBattleScreenActual() {
 
   // v0.3.8r1: 정예/문지기/보스 인트로 — threatIntro 태그가 있는 스테이지만.
   //   인트로 동안 전투 루프 시작을 잠깐 늦춤. 탭하면 즉시 스킵.
-  const stage = STAGES[(runState.stage || 0) - 1];
+  const stage = getStageForTheme((runState.stage || 0), runState.themeId);   // v0.3.8ak: 테마 반영 (독늪 문지기 인트로 등)
   if (stage && stage.threatIntro) {
     showThreatIntro(stage, () => startBattleLoop());
   } else {
@@ -7502,7 +7862,7 @@ function _enterBattleScreenActual() {
    showThreatIntro와 같은 결: 자동 노출 → onDone 1회 호출(자동/탭 중복 방지).
    getStageKind(stage) 단일 진입점으로 각 칸/상세 채움 (표지판과 같은 진실 원천). */
 function showProgressBoard(stageNum, onDone) {
-  const stage = STAGES[stageNum - 1];
+  const stage = getStageForTheme(stageNum, runState.themeId);   // v0.3.8ak: 테마 반영
   if (!stage) { onDone && onDone(); return; }   // 가드: 스테이지 없으면 바로 통과
   const kind = getStageKind(stage);
 
@@ -7521,7 +7881,7 @@ function showProgressBoard(stageNum, onDone) {
   if (map) {
     let html = "";
     for (let i = 1; i <= MAX_STAGE; i++) {
-      const st = STAGES[i - 1];
+      const st = getStageForTheme(i, runState.themeId);   // v0.3.8ak: 각 칸도 테마 반영
       if (!st) continue;
       const k = getStageKind(st);
       // phase별 정체성 class — CSS가 색/테두리로 위계를 준다 (성장/정비/전투 < 결속/합류/검문/보스)
@@ -7682,7 +8042,7 @@ function statsBump(uid, key, n = 1) {
 }
 
 function loadStage(stageNum, enemiesOverride) {
-  const stage = STAGES[stageNum - 1];
+  const stage = getStageForTheme(stageNum, runState.themeId);   // v0.3.8ak: 테마 반영 (enemies/name 등)
   if (!stage) return;
 
   // v0.3.8ab: 히드라 관측 리셋 — 새 전투마다 새로 누적 (이전 전투 데이터 섞임 방지)
@@ -7698,7 +8058,8 @@ function loadStage(stageNum, enemiesOverride) {
   const enemyList = (enemiesOverride && enemiesOverride.length) ? enemiesOverride : stage.enemies;
   runState.enemies = enemyList.map(tplId => makeEnemyUnit(tplId));
   // v0.3.8ac: 히드라 관측 시작 HP 캡처 (object별 받은 피해 검증 기준점)
-  runState.enemies.forEach(e => { if (e.isHydra) e._obsStartHp = e.hp; });
+  //   v0.3.8aj: 비독 압박 누적도 전투 시작 시 0 (makeEnemyUnit 새 객체라 자동이나 명시 — 함정 방지)
+  runState.enemies.forEach(e => { if (e.isHydra) { e._obsStartHp = e.hp; e._recentNonDotPressure = 0; } });
 
   // 아군 HP/게이지/보호막 리셋 (새 스테이지 시작)
   runState.units.forEach(u => {
@@ -9245,6 +9606,8 @@ function ensureHydraObs() {
       regenCount: 0,                       // regen 발동 총 횟수
       regenTotal: 0,                       // regen 총 회복량
       regenByPhase: { 1: 0, 2: 0, 3: 0 },  // phase별 regen 총량
+      regenSuppressedTotal: 0,             // v0.3.8aj: 비독 압박으로 깎인 재생 총량
+      pressureConsumedTotal: 0,            // v0.3.8aj: 재생 발동 시 소비된 비독 압박 누적
       firstDeathUid: null, // 아군 최초 사망자
       firstDeathName: null,
       firstDeathAtAction: null,        // 최초 사망 시점(총 actions 기준)
@@ -9358,11 +9721,10 @@ function hydraPhaseAtkMul(phase) {
   return phase === 1 ? 0.70 : phase === 3 ? 1.15 : 1.00;
 }
 function hydraPhaseRegenMul(phase) {
-  // v0.3.8ai: 재생 페이즈 곡선 (B안 — 비독 루트 숨구멍).
-  //   유키 결: "재생 머리는 재생한다, 다만 후반으로 갈수록 약해진다."
-  //   P1 풀 재생(읽는 구간) → P2 0.7(비독이 못 버티던 구간 풀어줌) → P3 0.4(압축, 끝내야 한다).
-  //   기본 재생률(hydraRegenPct 0.06)·HP·ATK·DEF는 안 건드림 — 곡선만. 독/우머리 불변.
-  return phase === 1 ? 1.0 : phase === 2 ? 0.7 : 0.4;
+  // v0.3.8ai→aj: 재생 페이즈 곡선 보수화 (B안 단독 실패 — 성공 루트만 쉬워졌음, 유키 결).
+  //   곡선은 거의 원복 수준으로 되돌리고(P2 0.9 / P3 0.5), 핵심 조정은 pressure-based suppression(aj)으로 옮김.
+  //   P1 1.0(읽는 구간) → P2 0.9 → P3 0.5(압축). 좌머리 정체성 유지.
+  return phase === 1 ? 1.0 : phase === 2 ? 0.9 : 0.5;
 }
 
 function hydraAct(actor) {
@@ -9441,16 +9803,30 @@ function hydraAct(actor) {
       // 재생 머리 — maxHp N% 회복 (보수적)
       showActionLabel(actor, "재생 머리", "heal");
       pushEvent(`히드라 — 재생 머리: 살점이 다시 돋아납니다`, "heal");
-      // v0.3.8ad→ai: 재생 페이즈 곡선 P1 1.0 / P2 0.7 / P3 0.4 (비독 루트 숨구멍 — 유키 결)
       const _rphase = getHydraPhase();
-      const amt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06) * hydraPhaseRegenMul(_rphase));
+      // 1) 곡선 기반 기본 회복량 (aj: P1 1.0 / P2 0.9 / P3 0.5)
+      const baseAmt = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06) * hydraPhaseRegenMul(_rphase));
+      // 2) v0.3.8aj A-lite: 비독 직접/광역 압박이 재생을 누른다 (pressure-based suppression).
+      //    pressure를 "회복 한 번 분량" 기준으로 환산 → 압박이 클수록 회복 배율 ↓ (단 최소 0.4 — 정체성 유지).
+      //    유키 예시: 작으면 ~1.0 / 중간 ~0.7 / 충분 ~0.4~0.5. 도달 즉시 0은 안 됨.
+      const pressure = actor._recentNonDotPressure || 0;
+      const fullBase = Math.floor(actor.maxHp * (actor.hydraRegenPct || 0.06));   // phase 무관 기준치 (66)
+      const ratio = fullBase > 0 ? pressure / fullBase : 0;   // 압박이 기준 회복의 몇 배인가
+      // ratio 0→1.0 / 1배→0.7 / 2배 이상→0.4 (선형 감쇠, 0.4 하한)
+      const suppressMul = Math.max(0.4, 1.0 - ratio * 0.3);
+      const amt = Math.max(1, Math.floor(baseAmt * suppressMul));   // 재생 0 방지
+      const suppressed = Math.max(0, baseAmt - amt);   // 압박으로 깎인 회복량 (계측)
       doHeal(actor, actor, amt);
-      // v0.3.8ai: 재생 관측 — 곡선 효과 검증 (발동 횟수/총량/phase별)
+      // 3) 발동 후 압박 초기화 (다음 재생까지 새로 쌓아야 함)
+      actor._recentNonDotPressure = 0;
+      // 4) 재생 관측 — 곡선 + suppression 검증 (유키 계측 요청)
       if (hydraObsActive()) {
         const _obs = ensureHydraObs();
         _obs.regenCount++;
         _obs.regenTotal += amt;
         _obs.regenByPhase[_rphase] = (_obs.regenByPhase[_rphase] || 0) + amt;
+        _obs.regenSuppressedTotal = (_obs.regenSuppressedTotal || 0) + suppressed;
+        _obs.pressureConsumedTotal = (_obs.pressureConsumedTotal || 0) + pressure;
       }
       const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
       if (el) { el.classList.add("regen-pulse"); setTimeout(() => el.classList.remove("regen-pulse"), 700); }
@@ -9847,6 +10223,19 @@ function dealDamage(actor, target, amount, opts = {}) {
   if (dmg > 0) {
     const hpBeforeDamage = target.hp;   // v0.3.8ac: overkill 제외용 (실제 깎은 양 = min(dmg, 이 값))
     target.hp = Math.max(0, target.hp - dmg);
+    // v0.3.8aj: 비독 압박 누적 (A-lite — pressure-based regen suppression). 유키 결.
+    //   "좌 머리는 여전히 재생하지만, 최근 비독 직접/광역 피해로 압박받았다면 다음 재생이 줄어든다."
+    //   이 dealDamage 경로엔 독(dot)이 안 들어온다(독은 applyStatusDamage 별도 경로) → 독은 자동 제외.
+    //   pressure 인정: direct/splash(현자 광역·균형 직접) = 1.0배, crush = 0.5배(분쇄는 보조 압박).
+    //   제외: execute(도적 이미 강함) / reflect(능동 압박 아님). 관측 모드와 무관하게 항상 작동.
+    if (actor && actor.side === "ally" && target.isHydra && target.hydraRegenPct > 0) {
+      const applied = Math.min(dmg, hpBeforeDamage);   // overkill 제외
+      let w = 0;
+      if (opts.isExecute || opts.reason === "reflect" || opts.reason === "binder_reflect") w = 0;
+      else if (opts.isCrush) w = 0.5;
+      else w = 1.0;   // direct / splash 등 일반 직접·광역
+      if (w > 0) target._recentNonDotPressure = (target._recentNonDotPressure || 0) + applied * w;
+    }
     // v0.3.8ab: 히드라 관측 누적 — 히드라가 아군에 준 피해(머리별) / 도적 처형 / 분쇄 (히드라전만)
     if (hydraObsActive()) {
       if (actor && actor.isHydra && target.side === "ally" && actor._lastHead) {
@@ -10317,6 +10706,17 @@ function onStageClear() {
 
   // v0.3.8: 최종 결과는 boss(S25)에서만. S20은 더 이상 ending 아님.
   if (phase === "boss") {
+    // v0.3.8ak1: beginner S25 첫 클리어 → 배속/테마 해금 (devTest 제외 — 유키 결).
+    //   "첫 신호를 완주하면 새 길이 열린다." 일반 beginner 모험 완주일 때만.
+    // v0.3.8ak2: 검수 빌드(DEV_PLAYTEST_UNLOCK_ALL)에선 해금 플래그를 건드리지 않는다.
+    //   나라님 주의: DEV 전체해금 중 beginner 완주가 릴리즈 해금 플래그를 꼬이게 하면 안 됨.
+    //   → 나중에 false로 돌렸을 때 "첫 클리어 → 진짜 모험" 감정선을 깨끗하게 테스트할 수 있게 보존.
+    const isDevRun = !!(runState.devTest && runState.devTest.enabled);
+    const devAll = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL);
+    if (runState.themeId === "beginner" && stageNum >= MAX_STAGE && !isDevRun && !devAll && !hasClearedBeginner()) {
+      setClearedBeginner(true);
+      runState._justUnlocked = true;   // finalizeRunResult/결과화면이 해금 연출을 띄울 신호
+    }
     finalizeRunResult("win", "stage25_boss_clear");
     return;
   }
@@ -11190,6 +11590,27 @@ function showResult() {
   }
 
   showScreen("screen-result");
+
+  // v0.3.8ak1: 첫 신호 완주 해금 연출 — beginner S25 첫 클리어 시 한 번만.
+  if (runState._justUnlocked && !hasSeenUnlockIntro()) {
+    runState._justUnlocked = false;
+    setUnlockIntroSeen(true);
+    setTimeout(() => showUnlockIntro(), 700);   // 결과 화면 잠깐 본 뒤 연출
+  }
+}
+
+/* v0.3.8ak1: 해금 연출 표시/닫기 — "이제부터 진짜 모험." */
+function showUnlockIntro() {
+  const ov = document.getElementById("unlock-intro");
+  if (!ov) return;
+  ov.style.display = "flex";
+  requestAnimationFrame(() => ov.classList.add("show"));
+}
+function closeUnlockIntro() {
+  const ov = document.getElementById("unlock-intro");
+  if (!ov) return;
+  ov.classList.remove("show");
+  setTimeout(() => { ov.style.display = "none"; }, 300);
 }
 
 /* ---------- v0.3.7.23: 전투 종료 분석 리포트 ----------
@@ -11345,6 +11766,38 @@ function renderResultReport() {
 */
 const FOOTPRINT_STORAGE_KEY = "project_signal_footprints_v1";
 const MAX_FOOTPRINTS = 10;
+
+/* ═══ v0.3.8ak1: 해금 진행 상태 (릴리즈 플로우) ═══
+   유키 결: "잠금은 '못 들어갑니다'가 아니다. '첫 신호를 완주하면 새 길이 열립니다'다."
+   beginner S25 첫 클리어(devTest 아님) → 배속 x2 + 테마 3종(중독/암살자/트롤) 해금.
+   localStorage 안전 접근 (발자취와 같은 결 — 오류 시 게임 안 멈춤). */
+const UNLOCK_CLEARED_KEY = "ps_hasClearedBeginner";
+const UNLOCK_INTRO_SEEN_KEY = "ps_unlockIntroSeen";
+
+function hasClearedBeginner() {
+  try { return localStorage.getItem(UNLOCK_CLEARED_KEY) === "true"; }
+  catch (e) { return false; }
+}
+function setClearedBeginner(v) {
+  try { localStorage.setItem(UNLOCK_CLEARED_KEY, v ? "true" : "false"); }
+  catch (e) { console.warn("[unlock] save 실패:", e); }
+}
+function hasSeenUnlockIntro() {
+  try { return localStorage.getItem(UNLOCK_INTRO_SEEN_KEY) === "true"; }
+  catch (e) { return false; }
+}
+function setUnlockIntroSeen(v) {
+  try { localStorage.setItem(UNLOCK_INTRO_SEEN_KEY, v ? "true" : "false"); }
+  catch (e) { console.warn("[unlock] save 실패:", e); }
+}
+/* 해금 여부 단일 판정 — 배속/테마 잠금이 같이 읽는다.
+   DEV 강제 해금(devForceUnlock)도 여기서 흡수. */
+function isContentUnlocked() {
+  // v0.3.8ak2: 개발 검수 빌드 — 전체 해금 (릴리즈 구조는 보존, 이 플래그가 우회)
+  if (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL) return true;
+  if (typeof DEV_FORCE_UNLOCK !== "undefined" && DEV_FORCE_UNLOCK) return true;
+  return hasClearedBeginner();
+}
 
 /* 저장된 발자취 목록 읽기 — 오류 시 빈 배열 */
 function loadFootprints() {
@@ -11959,7 +12412,9 @@ function buildBalanceExportPayload() {
         count: obs.regenCount || 0,
         total: obs.regenTotal || 0,
         byPhase: obs.regenByPhase || { 1: 0, 2: 0, 3: 0 },
-        note: "P1 1.0 / P2 0.7 / P3 0.4 곡선. 비독 루트 숨구멍 — 좌머리 정체성 유지",
+        suppressedTotal: obs.regenSuppressedTotal || 0,       // v0.3.8aj: 비독 압박으로 깎인 재생 총량
+        pressureConsumed: obs.pressureConsumedTotal || 0,     // v0.3.8aj: 소비된 비독 압박 누적
+        note: "aj: 곡선 P1 1.0/P2 0.9/P3 0.5 + 비독 압박 suppression(최소 0.4). 좌머리 정체성 유지",
       },
       damageMix: (() => {
         // 히드라전 피해 구성 — poison 비중이 "독 유일정답"인지 보는 핵심 지표
@@ -13716,15 +14171,35 @@ function renderTacticSummary() {
 /* ---------- 속도 / 일시정지 ---------- */
 
 function setSpeed(s) {
-  // v0.3.7: 안전 clamp — 게이지 증가 배수만 곱하므로 로직은 안전하지만
-  // 표시 결을 분명히 박음. 내부값: 2 / 6 / 12.
-  const safeMax = 12;
+  // v0.3.7→ak1: 안전 clamp. 릴리즈 내부값: 3(x1) / 6(x2) / 12(x6 DEV).
+  const safeMax = DEV_FAST_SPEED;
   battleState.speed = Math.min(s, safeMax);
-  // 속도값 → UI 버튼 id 매핑 (v0.3.7: x1=2, x3=6, x6=12)
-  const speedToBtn = { 2: "btn-x1", 6: "btn-x3", 12: "btn-x6" };
+  // 속도값 → UI 버튼 id 매핑
+  const speedToBtn = { 3: "btn-x1", 6: "btn-x3", 12: "btn-x6" };
   document.querySelectorAll(".battle-btn").forEach(b => b.classList.remove("active"));
   const btn = document.getElementById(speedToBtn[battleState.speed]);
   if (btn) btn.classList.add("active");
+}
+
+/* v0.3.8ak1: 배속 버튼 노출 제어 — 해금/DEV 상태에 따라.
+   릴리즈 해금 전: 전부 숨김 (기본 x1=3 고정). 해금 후: x1 + x2 노출.
+   v0.3.8ak2 DEV 전체해금: x1 / x6 노출 (x1=전장 호흡 관측 / x6=반복 테스트·로그). x2도 함께 노출.
+   매 전투 진입 시 호출 — 진행 중 상태 바뀌면 다음 전투부터 반영. */
+function updateSpeedButtonsVisibility() {
+  const devAll = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL);
+  const unlocked = isContentUnlocked();
+  const devOn = devAll
+             || (typeof DEV_FORCE_UNLOCK !== "undefined" && DEV_FORCE_UNLOCK)
+             || (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST);
+  const x1 = document.getElementById("btn-x1");
+  const x2 = document.getElementById("btn-x3");   // 라벨 x2 (id는 btn-x3 유지)
+  const x6 = document.getElementById("btn-x6");
+  // 검수 빌드(devAll) 또는 릴리즈 해금 후 x1 노출. (해금 전 릴리즈는 선택지 없음 → 숨김)
+  if (x1) x1.style.display = (devAll || unlocked) ? "" : "none";
+  if (x2) x2.style.display = (devAll || unlocked) ? "" : "none";
+  if (x6) x6.style.display = devOn ? "" : "none";   // x6은 DEV 전용 (반복 테스트)
+  // 릴리즈 해금 전엔 항상 기본속도 고정 (검수 빌드는 자유)
+  if (!devAll && !unlocked) battleState.speed = RELEASE_BASE_SPEED;
 }
 
 function togglePause() {
@@ -13978,6 +14453,12 @@ const CODEX_ENTRIES = [
     const devBtn = document.getElementById("dev-mode-btn");
     if (devBtn) devBtn.style.display = "";
     console.log("[DEV] dev mode enabled");
+  }
+  // v0.3.8ak2: 개발 검수 빌드 — 전체 해금 배지 표시
+  if (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL) {
+    const banner = document.getElementById("dev-unlock-banner");
+    if (banner) banner.style.display = "";
+    console.log("[DEV] ALL UNLOCKED (playtest build) — 릴리즈 해금 구조는 보존됨");
   }
 })();
 </script>
