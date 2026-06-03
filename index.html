@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8v2-troll-stalemate-and-regen-tuning</title>
+<title>Project Signal Mk.II v0.3.8al9-theme-faces-naga-and-troll-king</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -137,6 +137,8 @@
   --race-orc-dark: #6a3e18;
   --race-troll: #8a6dc4;
   --race-troll-dark: #4a3a78;
+  --race-naga: #34bfa7;
+  --race-naga-dark: #185a4e;
 
   /* 전투 시각 */
   --hp-bar: #e85c5c;
@@ -206,6 +208,166 @@ body {
   background-size: 24px 24px;
   pointer-events: none;
   z-index: 0;
+}
+
+/* ═══ v0.3.8al STEP1: 테마별 공기/배경 (유키 결 — "이번 길의 공기") ═══
+   원칙: 시인성 최우선. 콘텐츠(.screen, z-index:1)는 항상 위.
+         배경 그라데이션(#app) + 격자색(#app::before) + 부유 공기(#app::after)만 테마화.
+         행동선/피해숫자/HP/게이지를 묻지 않게 — 모든 공기는 낮은 alpha + pointer-events:none + z-index:0.
+   "색만 바꾸는 게 아니라 다른 길에 들어왔다는 감정." 단, 감정 < 시인성. */
+
+/* 공기 레이어 베이스 — 테마가 켜질 때만 보임 (beginner는 ::after 없음 = 기존 그대로) */
+#app::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+/* ── beginner: 기존 검은 작전판 + 시그널 옐로우 (변경 없음 — 첫 신호) ── */
+/* (theme-beginner는 override 없음 — :root 기본값이 곧 beginner 공기) */
+
+/* ── poison: 보라/청록 독안개 — "축축하고 위험한 길" ── */
+#app.theme-poison {
+  background:
+    radial-gradient(ellipse at top, rgba(63,199,168,0.16), transparent 60%),
+    radial-gradient(ellipse at 50% 50%, rgba(40,150,150,0.07), transparent 70%),
+    radial-gradient(ellipse at bottom, rgba(40,170,140,0.14), transparent 58%),
+    #06120f;
+}
+#app.theme-poison::before {
+  background-image:
+    linear-gradient(rgba(63,199,168,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(63,199,168,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+#app.theme-poison::after {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(63,199,168,0.11), transparent 9%),
+    radial-gradient(circle at 70% 60%, rgba(80,200,180,0.08), transparent 10%),
+    radial-gradient(circle at 45% 85%, rgba(50,180,150,0.08), transparent 8%),
+    radial-gradient(circle at 85% 20%, rgba(70,190,200,0.06), transparent 7%),
+    /* 바닥에 낮게 깔린 독청 안개 띠 — 느리게 흐름 */
+    linear-gradient(0deg, rgba(40,160,140,0.14) 0%, transparent 24%);
+  animation: theme-poison-drift 16s ease-in-out infinite alternate;
+}
+@keyframes theme-poison-drift {
+  from { transform: translateY(0) translateX(0); }
+  to   { transform: translateY(-12px) translateX(8px); }
+}
+
+/* ── troll: 보라빛 어두운 동굴/재생 거구 — "묵직하고 단단한 길" (아바타 결 맞춤) ── */
+#app.theme-troll {
+  background:
+    radial-gradient(ellipse at top, rgba(138,109,196,0.12), transparent 58%),
+    radial-gradient(ellipse at 50% 60%, rgba(90,70,140,0.07), transparent 70%),
+    radial-gradient(ellipse at bottom, rgba(70,50,110,0.18), transparent 60%),
+    #0c0916;
+}
+#app.theme-troll::before {
+  background-image:
+    linear-gradient(rgba(138,109,196,0.05) 1.4px, transparent 1.4px),
+    linear-gradient(90deg, rgba(138,109,196,0.05) 1.4px, transparent 1.4px);
+  background-size: 32px 32px;  /* 더 크고 둔한 격자 = 묵직/거대감 */
+}
+#app.theme-troll::after {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse at 30% 70%, rgba(90,65,140,0.16), transparent 32%),
+    radial-gradient(ellipse at 75% 40%, rgba(100,75,150,0.12), transparent 30%),
+    /* 바닥 보라 동굴 무게감 */
+    linear-gradient(0deg, rgba(75,55,120,0.16) 0%, transparent 26%);
+  animation: theme-troll-breathe 11s ease-in-out infinite alternate;
+}
+@keyframes theme-troll-breathe {
+  from { opacity: 0.82; transform: translateY(0); }
+  to   { opacity: 1;    transform: translateY(-4px); }  /* 느리고 무겁게 */
+}
+
+/* ── assassin: 짙은 남색/검정 + 붉은 주황 칼빛 — "빠르고 불안한 길" ── */
+#app.theme-assassin {
+  background:
+    radial-gradient(ellipse at top, rgba(224,138,74,0.08), transparent 56%),
+    radial-gradient(ellipse at 50% 50%, rgba(40,55,95,0.08), transparent 72%),
+    radial-gradient(ellipse at bottom, rgba(22,30,58,0.22), transparent 60%),
+    #06080f;
+}
+#app.theme-assassin::before {
+  background-image:
+    linear-gradient(rgba(120,140,200,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120,140,200,0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+#app.theme-assassin::after {
+  opacity: 1;
+  background:
+    /* 얇고 날카로운 칼빛이 사선으로 스침 (가늘게 — 피로 방지) */
+    linear-gradient(115deg, transparent 44%, rgba(255,150,80,0.09) 49%, transparent 51%, transparent 56%),
+    linear-gradient(115deg, transparent 60%, rgba(224,138,74,0.05) 63%, transparent 66%),
+    radial-gradient(ellipse at 50% 110%, rgba(15,22,45,0.40), transparent 50%);
+  animation: theme-assassin-glint 6s ease-in-out infinite;
+}
+@keyframes theme-assassin-glint {
+  0%, 100% { opacity: 0.55; background-position: -40% 0, -20% 0, 0 0; }
+  50%      { opacity: 1;    background-position: 140% 0, 120% 0, 0 0; }
+}
+
+/* 접근성: 모션 줄이기 — 공기 애니메이션 끔 (정적 공기는 유지) */
+@media (prefers-reduced-motion: reduce) {
+  #app::after { animation: none !important; }
+}
+
+/* ═══ v0.3.8al3 STEP2: 보스/검문소 전투 — 화면 가장자리 일렁임 (threat) ═══
+   "강한 적과 싸우는 중"을 가장자리에서만 상징. 중앙 UI/행동선/피해숫자는 안 가림.
+   구조: #screen-battle에 threat-low/mid/boss class (전투 진입 시 부여, 종료/전환 시 제거).
+         ::after = 가장자리 vignette (inset box-shadow + radial). pointer-events:none / 가장자리만.
+   가벼움: blur/filter 안 씀 (모바일 Safari 부담). box-shadow + radial-gradient + opacity anim만.
+   테마색: theme class와 조합 → 색이 달라짐 (CSS 변수 --threat-rgb). */
+#screen-battle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;             /* battlefield 위, 하지만 가장자리만 칠해 중앙 UI 안 가림 */
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  /* 가장자리만 — 중앙은 transparent */
+  background: radial-gradient(ellipse at center,
+    transparent 62%,
+    rgba(var(--threat-rgb, 255,107,107), 0.10) 88%,
+    rgba(var(--threat-rgb, 255,107,107), 0.18) 100%);
+  box-shadow: inset 0 0 70px 6px rgba(var(--threat-rgb, 255,107,107), 0.12);
+}
+/* threat 레벨 — 강도(opacity)와 맥동 속도 차등 */
+#screen-battle.threat-low::after  { opacity: 0.55; animation: threat-pulse 4.5s ease-in-out infinite; }
+#screen-battle.threat-mid::after  { opacity: 0.80; animation: threat-pulse 3.2s ease-in-out infinite; }
+#screen-battle.threat-boss::after { opacity: 1;    animation: threat-pulse 2.4s ease-in-out infinite; }
+@keyframes threat-pulse {
+  0%, 100% { opacity: var(--threat-base, 0.7); }
+  50%      { opacity: calc(var(--threat-base, 0.7) * 0.55); }
+}
+#screen-battle.threat-low  { --threat-base: 0.55; }
+#screen-battle.threat-mid  { --threat-base: 0.80; }
+#screen-battle.threat-boss { --threat-base: 1.0; }
+
+/* 테마별 threat 색 (--threat-rgb 덮어쓰기) */
+#app.theme-poison   #screen-battle.threat-low::after,
+#app.theme-poison   #screen-battle.threat-mid::after,
+#app.theme-poison   #screen-battle.threat-boss::after   { --threat-rgb: 50,190,160; }   /* 청녹 독기 */
+#app.theme-troll    #screen-battle.threat-low::after,
+#app.theme-troll    #screen-battle.threat-mid::after,
+#app.theme-troll    #screen-battle.threat-boss::after    { --threat-rgb: 138,109,196; }  /* 보라 동굴 */
+#app.theme-assassin #screen-battle.threat-low::after,
+#app.theme-assassin #screen-battle.threat-mid::after,
+#app.theme-assassin #screen-battle.threat-boss::after { --threat-rgb: 220,90,50; }   /* 붉은 칼빛 */
+
+/* 모션 줄이기 — threat 맥동 끔 (정적 vignette는 유지: 위협 정보는 남김) */
+@media (prefers-reduced-motion: reduce) {
+  #screen-battle::after { animation: none !important; }
 }
 
 .screen {
@@ -2016,6 +2178,33 @@ body {
   overflow: hidden;
 }
 
+/* v0.3.8al STEP1: 전장 바닥 테마 공기 — 유닛(z-index↑) 뒤에서만, 매우 옅게.
+   "전투가 다른 길에서 벌어진다." beginner는 ::before 없음(기존 그대로). */
+.theme-poison .battlefield::before,
+.theme-troll .battlefield::before,
+.theme-assassin .battlefield::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.theme-poison .battlefield::before {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(50,180,150,0.12), transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(70,200,180,0.05), transparent 50%);
+}
+.theme-troll .battlefield::before {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(80,58,130,0.18), transparent 55%),
+    radial-gradient(ellipse at 50% 10%, rgba(138,109,196,0.06), transparent 45%);
+}
+.theme-assassin .battlefield::before {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(20,28,55,0.30), transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(224,138,74,0.05), transparent 40%);
+}
+
 /* SVG 오버레이 — 유닛 위에 떠야 함 */
 /* v0.3.6.2: width/height 100% 박음. setAttribute 의존 줄임 (CSS 우선) */
 .battle-svg {
@@ -2426,6 +2615,21 @@ body {
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
 }
 
+/* v0.3.8al9: 산먹는 트롤왕 — 등/어깨 바위 accent (가볍게, 애니메이션 없음). "산을 짊어진 거구". */
+.rock-accent {
+  position: absolute;
+  bottom: 6%;
+  right: 8%;
+  font-size: 0.5em;
+  line-height: 1;
+  opacity: 0.85;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)) saturate(0.7) brightness(0.85);
+  transform: rotate(-12deg);
+  pointer-events: none;
+  z-index: 2;
+}
+.unit.large-enemy .rock-accent { font-size: 26px; }
+
 /* ─── v0.3.8r: 대형 몬스터 / 광폭화 시각 강조 (seed) ───
    완전한 칸 점유 렌더는 후속. 지금은 "얘 크다 / 분노했다"를 느끼게 하는 CSS 표현. */
 .unit.large-enemy .unit-portrait {
@@ -2749,7 +2953,35 @@ body {
 .pb-cell.pb-kind-recruit.pb-major:not(.pb-past) .pb-cell-icon { color: #6fc18f; }
 .pb-cell.pb-kind-proof.pb-major:not(.pb-past)   .pb-cell-icon { color: #d99a4e; }
 .pb-cell.pb-kind-boss.pb-major:not(.pb-past)    .pb-cell-icon { color: #d96f6f; }
+/* 준보스(ending) 칸 — 검문과 보스 사이 위계 */
+.pb-cell.pb-kind-ending.pb-major:not(.pb-past)  { border-color: #d98a5e; box-shadow: 0 0 5px rgba(217,138,94,0.25); }
+.pb-cell.pb-kind-ending.pb-major:not(.pb-past)  .pb-cell-icon { color: #d98a5e; }
 /* 현재 칸이 주요 사건이면 — current 강조가 정체성 색을 이긴다 (위에서 이미 signal로 덮음) */
+
+/* v0.3.8al3 STEP3: 위협 칸(S10/S20/S25) 테마색 — 전투 가장자리 일렁임과 같은 색결로 이어짐.
+   진행판↔전투 감정 연결: "방금 그 위험한 칸"의 색이 전투 가장자리에서 다시 보인다.
+   모험의 서 구조 보존 — 테두리 색 + 약한 글로우만 (구조/레이아웃 안 바꿈). */
+#app.theme-poison .pb-cell.pb-threat-low:not(.pb-past),
+#app.theme-poison .pb-cell.pb-threat-mid:not(.pb-past),
+#app.theme-poison .pb-cell.pb-threat-boss:not(.pb-past)   { border-color: #3fc7a8; }
+#app.theme-poison .pb-cell.pb-threat-boss:not(.pb-past)   { box-shadow: 0 0 8px rgba(63,199,168,0.40); }
+#app.theme-troll .pb-cell.pb-threat-low:not(.pb-past),
+#app.theme-troll .pb-cell.pb-threat-mid:not(.pb-past),
+#app.theme-troll .pb-cell.pb-threat-boss:not(.pb-past)    { border-color: #9a7cd8; }
+#app.theme-troll .pb-cell.pb-threat-boss:not(.pb-past)    { box-shadow: 0 0 8px rgba(138,109,196,0.40); }
+#app.theme-assassin .pb-cell.pb-threat-low:not(.pb-past),
+#app.theme-assassin .pb-cell.pb-threat-mid:not(.pb-past),
+#app.theme-assassin .pb-cell.pb-threat-boss:not(.pb-past) { border-color: #dc6f44; }
+#app.theme-assassin .pb-cell.pb-threat-boss:not(.pb-past) { box-shadow: 0 0 8px rgba(220,111,68,0.40); }
+/* 보스 위협 칸은 약한 맥동 (current가 아니어도 "저기 강한 게 있다") */
+.pb-cell.pb-threat-boss:not(.pb-past):not(.pb-current) { animation: pb-threat-throb 2.8s ease-in-out infinite; }
+@keyframes pb-threat-throb {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pb-cell.pb-threat-boss { animation: none !important; }
+}
 
 /* ═══ 현재 칸 상세 (보조) — "지금 들어갈 칸의 확대" ═══ */
 .pb-detail {
@@ -2880,6 +3112,18 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(90,219,168,0.0); }
 }
 
+/* v0.3.8al4 STEP2(C): 정화 성공 펄스 — 청록↔백색 (regen 초록과 구분). "독을 씻어낸 순간".
+   "정화 성공!"이 전투에서 눈에 보이게 — 정화사가 빛나는 자리. */
+.unit-portrait.cleanse-pulse {
+  animation: cleanse-pulse-anim 0.8s ease-out;
+}
+@keyframes cleanse-pulse-anim {
+  0%   { box-shadow: 0 0 0 0 rgba(168,224,200,0.0); }
+  35%  { box-shadow: 0 0 20px 7px rgba(200,255,240,0.85); filter: brightness(1.4) saturate(0.7); }
+  70%  { box-shadow: 0 0 14px 4px rgba(120,220,200,0.6); }
+  100% { box-shadow: 0 0 0 0 rgba(168,224,200,0.0); }
+}
+
 /* ─── v0.3.8s: 전쟁 북지기 고양 리듬 FX ─── */
 .mk-drum-beat-circle {
   transform-box: fill-box;
@@ -2919,6 +3163,12 @@ body {
               radial-gradient(circle, var(--race-troll-dark), #100a1a 90%);
   border-color: var(--race-troll);
   box-shadow: 0 0 0 1px rgba(138,109,196,0.4), inset 0 0 12px rgba(138,109,196,0.25), 0 0 14px rgba(138,109,196,0.3);
+}
+.unit.enemy.race-naga .unit-portrait {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.12), transparent 60%),
+              radial-gradient(circle, var(--race-naga-dark), #06140f 90%);
+  border-color: var(--race-naga);
+  box-shadow: 0 0 0 1px rgba(52,191,167,0.4), inset 0 0 12px rgba(52,191,167,0.25), 0 0 14px rgba(52,191,167,0.3);
 }
 
 /* 아군 baseJob 기반 fallback */
@@ -3313,6 +3563,50 @@ body {
   font-weight: 900;
   letter-spacing: -0.04em;
   text-shadow: 0 0 6px rgba(255,150,40,0.95), 0 0 12px rgba(200,90,20,0.7), 0 2px 3px rgba(0,0,0,0.95);
+}
+
+/* v0.3.8al8: 전장 균열 — 트롤 장기전 압박 (보라 트롤 결, crush 주황과 구분).
+   짧은 crack pulse (전장 바닥/하단) + 전열 유닛 균열 배지. filter 없음(모바일 부담 X). */
+.battlefield.fissure-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(138,109,196,0.22), transparent 45%),
+    linear-gradient(95deg, transparent 30%, rgba(120,90,180,0.14) 50%, transparent 70%);
+  animation: fissure-crack 0.7s ease-out;
+}
+@keyframes fissure-crack {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .battlefield.fissure-pulse::after { animation: none !important; }
+}
+.fissure-badge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  background: linear-gradient(180deg, #9a7cd8, #5a3f8a);
+  border: 2px solid #1a0820;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 3px rgba(0,0,0,0.8);
+  box-shadow: 0 0 8px rgba(138,109,196,0.8), inset 0 0 4px rgba(255,255,255,0.2);
+  z-index: 5;
+  letter-spacing: -0.02em;
 }
 .float-number.snipe {
   color: #ff7a7a;
@@ -4480,7 +4774,7 @@ body {
     <div class="title-logo">
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
-      <div class="title-version">MK.II — v0.3.8ak2 (dev playtest · all unlocked)</div>
+      <div class="title-version" id="title-version">MK.II</div>
       <div class="dev-unlock-banner" id="dev-unlock-banner" style="display:none;">⚙ DEV · ALL UNLOCKED</div>
     </div>
 
@@ -5322,6 +5616,7 @@ const RACES = {
   goblin: { id: "goblin", name: "고블린", emoji: "👺", color: "var(--race-goblin)", colorDark: "var(--race-goblin-dark)" },
   orc:    { id: "orc",    name: "오크",   emoji: "👹", color: "var(--race-orc)",    colorDark: "var(--race-orc-dark)" },
   troll:  { id: "troll",  name: "트롤",   emoji: "🗿", color: "var(--race-troll)",  colorDark: "var(--race-troll-dark)" },
+  naga:   { id: "naga",   name: "나가",   emoji: "🐍", color: "var(--race-naga)",   colorDark: "var(--race-naga-dark)" },
 };
 
 const ENEMY_ROLES = {
@@ -5356,7 +5651,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ad-hydra-v2-three-phase";
+const BUILD_VERSION = "v0.3.8al9-theme-faces-naga-and-troll-king";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -5403,6 +5698,22 @@ const DEV_MODE_MENU = [
     { presetKey: "s25_hydra_B",       desc: "현자형 (현자/성직자/성벽/정화사)" },
     { presetKey: "s25_hydra_C",       desc: "독·처형형 (덫꾼/도적/성직자/금제)" },
     { presetKey: "s25_hydra_real_heal8", desc: "★실제도달 재현 (도적/성직자/금제/사제, heal8) — 진짜 보스 테스트" },
+  ]},
+  // v0.3.8al STEP5: 테마 검수 진입 (themeId 자동 세팅 → 테마 적/배경/진행판)
+  { section: "🟣 중독 테마 검수", items: [
+    { presetKey: "poison_s10", desc: "독창 문지기 / 정화·회복 가치" },
+    { presetKey: "poison_s20", desc: "독무 제사장 준보스 / 다중 독" },
+    { presetKey: "poison_s25", desc: "나가 여왕 보스 / 해독법 종합" },
+  ]},
+  { section: "🪨 트롤 테마 검수", items: [
+    { presetKey: "troll_s10", desc: "재생 트롤 문지기 / 재생 체감" },
+    { presetKey: "troll_s20", desc: "쌍둥이 트롤 / 동시 재생" },
+    { presetKey: "troll_s25", desc: "산먹는 트롤왕 / 장기전 분쇄" },
+  ]},
+  { section: "🗡️ 암살자 테마 검수", items: [
+    { presetKey: "assassin_s10", desc: "그림자 척후대장 / 후열 위협" },
+    { presetKey: "assassin_s20", desc: "밤칼 지휘관 / 급사 방지" },
+    { presetKey: "assassin_s25", desc: "무영단장 보스 / 보호·제어로 끊기" },
   ]},
 ];
 
@@ -5520,6 +5831,79 @@ const DEV_STAGE_PRESETS = {
       { kind: "trait",  id: "guard" },
     ],
   },
+
+  /* ═══ v0.3.8al STEP5: 테마 검수 진입 (Poison/Troll/Assassin × S10/S20/S25) ═══
+     themeId 세팅 → loadStage가 getStageForTheme로 테마 적/이름/진행판/공기 자동 로드.
+     파티는 각 테마 "해답"을 대표하는 조합 (검수용 — 정밀 밸런스 X). */
+
+  // ── Poison: 정화/회복/속도전이 해답 ──
+  poison_s10: {
+    label: "Poison S10 — 독창 문지기", startStage: 10, themeId: "poison",
+    purpose: "독창 문지기 / 정화·회복 가치 / 독 누적 압박", type: "theme_check",
+    traitLevels: { heal: 3, blessing: 2 },
+    party: [ { kind: "fusion", id: "purifier", lvl: 3 }, { kind: "trait", id: "bravery" },
+             { kind: "trait", id: "heal" }, { kind: "trait", id: "guard" } ],
+  },
+  poison_s20: {
+    label: "Poison S20 — 독무 제사장", startStage: 20, themeId: "poison",
+    purpose: "독무 제사장 준보스 / 다중 독 압박 / 정화 회전", type: "theme_check",
+    traitLevels: { heal: 5, snipe: 3, blessing: 3 },
+    party: [ { kind: "fusion", id: "purifier", lvl: 4 }, { kind: "fusion", id: "cleric", lvl: 4 },
+             { kind: "trait", id: "snipe" }, { kind: "trait", id: "guard" } ],
+  },
+  poison_s25: {
+    label: "Poison S25 — 나가 여왕", startStage: 25, themeId: "poison",
+    purpose: "나가 여왕 보스 / 독·정화·회복·속도전 종합 시험", type: "theme_check",
+    traitLevels: { heal: 6, snipe: 4, blessing: 3, guard: 2 },
+    party: [ { kind: "fusion", id: "purifier", lvl: 5 }, { kind: "fusion", id: "cleric", lvl: 4 },
+             { kind: "fusion", id: "hunter", lvl: 4 }, { kind: "trait", id: "guard" } ],
+  },
+
+  // ── Troll: 단단한 거구를 어떻게 뚫나 (재생 존재 — 심장은 손맛 뒤) ──
+  troll_s10: {
+    label: "Troll S10 — 재생 트롤 문지기", startStage: 10, themeId: "troll",
+    purpose: "재생 트롤 문지기 / 재생 존재 체감 / 딜로 뚫기", type: "theme_check",
+    traitLevels: { snipe: 3, bravery: 2 },
+    party: [ { kind: "fusion", id: "rogue", lvl: 3 }, { kind: "trait", id: "bravery" },
+             { kind: "trait", id: "snipe" }, { kind: "trait", id: "heal" } ],
+  },
+  troll_s20: {
+    label: "Troll S20 — 쌍둥이 트롤", startStage: 20, themeId: "troll",
+    purpose: "쌍둥이 트롤 준보스 / 동시 재생 / 표적 분산 판단", type: "theme_check",
+    traitLevels: { snipe: 4, bravery: 3, heal: 3 },
+    party: [ { kind: "fusion", id: "rogue", lvl: 4 }, { kind: "fusion", id: "bard", lvl: 3 },
+             { kind: "trait", id: "snipe" }, { kind: "trait", id: "guard" } ],
+  },
+  troll_s25: {
+    label: "Troll S25 — 산먹는 트롤왕", startStage: 25, themeId: "troll",
+    purpose: "산먹는 트롤왕 보스 / 장기전 분쇄 / 처형·지속딜 시험", type: "theme_check",
+    traitLevels: { snipe: 5, bravery: 4, heal: 4, disrupt: 2 },
+    party: [ { kind: "fusion", id: "rogue", lvl: 5 }, { kind: "fusion", id: "trapper", lvl: 4 },
+             { kind: "fusion", id: "bard", lvl: 4 }, { kind: "trait", id: "guard" } ],
+  },
+
+  // ── Assassin: 후열 보호/제어가 해답 ──
+  assassin_s10: {
+    label: "Assassin S10 — 그림자 척후대장", startStage: 10, themeId: "assassin",
+    purpose: "그림자 척후대장 / 후열 위협 체감 / 보호 가치", type: "theme_check",
+    traitLevels: { guard: 3, heal: 2 },
+    party: [ { kind: "fusion", id: "wall", lvl: 3 }, { kind: "trait", id: "guard" },
+             { kind: "trait", id: "heal" }, { kind: "trait", id: "snipe" } ],
+  },
+  assassin_s20: {
+    label: "Assassin S20 — 밤칼 지휘관", startStage: 20, themeId: "assassin",
+    purpose: "밤칼 지휘관 준보스 / 후열 급사 방지 / 제어·보호 회전", type: "theme_check",
+    traitLevels: { guard: 4, heal: 3, disrupt: 3 },
+    party: [ { kind: "fusion", id: "wall", lvl: 4 }, { kind: "fusion", id: "binder", lvl: 3 },
+             { kind: "trait", id: "heal" }, { kind: "trait", id: "snipe" } ],
+  },
+  assassin_s25: {
+    label: "Assassin S25 — 무영단장", startStage: 25, themeId: "assassin",
+    purpose: "무영단장 보스 / 후열 폭딜 / 보호·제어로 끊기", type: "theme_check",
+    traitLevels: { guard: 5, heal: 4, disrupt: 4, blessing: 2 },
+    party: [ { kind: "fusion", id: "wall", lvl: 5 }, { kind: "fusion", id: "binder", lvl: 4 },
+             { kind: "fusion", id: "hunter", lvl: 4 }, { kind: "trait", id: "heal" } ],
+  },
 };
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -5571,29 +5955,30 @@ const ENEMY_TEMPLATES = {
      기존 독 인프라 활용 (poisonOnHit / poisoned 상태 / 중독 배지·FX / 정화사 정화) — 새 시스템 안 만듦.
      독이 걸리는 순간은 명확하게: 이름/아이콘/행동라벨/FX/로그가 같은 말을 하게 (거짓 표시 방지). */
   poison_goblin: {   // A. 독침 고블린 — 초반 일반몹, 확률 독으로 테마 예고
-    race: "goblin", role: "ranged", hp: 50, atk: 11, def: 1, spd: 98,
-    poisonOnHit: 0.45,   // 공격 시 45% 중독 ("이 길은 독이 있구나")
-    displayName: "독침 고블린", themeTag: "poison",
+    race: "naga", role: "melee", hp: 50, atk: 11, def: 1, spd: 98,
+    poisonOnHit: 0.45,   // 공격 시 45% 중독 ("이 길은 독이 있구나"). v0.3.8al4: 전열화 (후열 저격 X)
+    displayName: "독니 나가", themeTag: "poison",
   },
   plague_caster: {   // B. 맹독술사 — 핵심 일반/준정예, 확정 독 ("정화사 필요성")
-    race: "orc", role: "caster", hp: 80, atk: 12, def: 2, spd: 88,
-    poisonOnHit: 1.0,    // 확정 중독 (1단계: 가장 낮은 HP 타겟팅은 후속 — 일단 확정 독으로 명확히)
-    displayName: "맹독술사", themeTag: "poison",
+    race: "naga", role: "melee", hp: 80, atk: 12, def: 2, spd: 88,
+    poisonOnHit: 1.0,    // 확정 중독. v0.3.8al4: caster→melee 전열화 (독은 앞을 썩게 — 후열 저격 X)
+    displayName: "독무술사", themeTag: "poison",
   },
-  poison_gatekeeper: {   // C. S10 독늪 문지기 — 테마 문지기 (트롤 참조: 큰 몹이나 재생 없음 / HP 낮음 / 확정 독)
-    race: "troll", role: "guard", hp: 620, atk: 16, def: 3, spd: 48,
+  poison_gatekeeper: {   // C. S10 독창 문지기 — 테마 문지기 (나가 전열 압박: 큰 몹이나 재생 없음 / HP 낮음 / 확정 독)
+    race: "naga", role: "guard", hp: 620, atk: 16, def: 3, spd: 48,
     isMiniboss: true, isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
     // 트롤(HP800/재생0.07)보다 낮은 HP·재생 없음 — "이 길은 독을 대비해야 한다"의 첫 문지기.
     poisonOnHit: 1.0,           // 확정 독 패턴 (매 공격 중독 — 방치하면 누적)
-    poisonBonusVsPoisoned: 0.5, // v0.3.8ak: 이미 중독된 대상에게 추가 피해 50% (독 방치 위험)
+    multiPoisonFront: 2,        // v0.3.8al5: 전사형 전열 압박 — 행동 시 전열 우선 2명에게 중독 1스택 (다중 중독)
+    poisonBonusVsPoisoned: 0.5, // [B단계 씨앗·미작동] 작동 코드 없음 (유키 결: 독 추가피해는 중독 2단계 심장). 데이터만 보존.
     enrageAfter: 10, enrageAtkBoost: 1.25,   // 장기전 압박 (트롤보다 약하게)
     phases: {
       enrage: { introText: "맹독 분출!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "맹독" },
     },
-    baseTraitLabel: "독늪",
-    threatIntro: { title: "독늪 문지기 등장", line: "\"이 늪을 건너려면… 독을 견뎌라.\"" },
+    baseTraitLabel: "독창",
+    displayName: "독창 문지기", themeTag: "poison",
+    threatIntro: { title: "독창 문지기 등장", line: "\"이 늪을 건너려면… 독을 견뎌라.\"" },
     heavyHitter: true,
-    displayName: "독늪 문지기", themeTag: "poison",
   },
 
   /* ─── v0.3.8v: 다중 객체형 히드라 (field boss) ───
@@ -5679,6 +6064,163 @@ const ENEMY_TEMPLATES = {
     enrageAfter: 6,           // 6번째 행동 이후 광폭화
     drumEnrageGaugePct: 0.25, // 광폭화 후 gauge 증가량 +25%
     displayName: "전쟁 북지기",
+  },
+
+  /* ═══════════════════════════════════════════════════════════════
+     v0.3.8al STEP3: 3테마 신규 적 골격 (유키 결)
+     원칙: "완성된 적이 아니라 테마의 언어를 말하는 말뚝."
+       · 단순 행동만 (role 타겟팅 / poisonOnHit / selfHealPct / enrage). 새 AI·새 상태이상 X.
+       · 첫 플레이 가능 스탯 (정밀 밸런스는 손맛 뒤).
+       · 기존 race 스프라이트 재사용 (goblin/orc/troll) — 새 렌더 안 만듦.
+       · 심장 보류 / 예고만: 트롤 재생은 "존재"까지만(독→재생말림 rule·문구 X / 거짓 표시 금지).
+         암살자는 후열위협 감정만(은신/표식/interrupt X / 억울한 급사 X).
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ─── poison 테마 — 부족 구간 메우는 적 (기존 3종 + 아래 2종) ─── */
+  poison_sentinel: {   // 독늪 수호수 — 전열 독 + 느림 (중반 압박)
+    race: "naga", role: "guard", hp: 130, atk: 13, def: 4, spd: 52,
+    poisonOnHit: 0.7,
+    displayName: "비늘 수호자", themeTag: "poison",
+  },
+  rot_spirit: {        // 부패 정령 — 부패의 독을 흩뿌리는 정령 (확률 독)
+    // 주: "죽을 때 독 남김"은 심장 단계(손맛 뒤). 오늘은 거짓 표시 방지 위해 poisonOnHit만 — 정직하게.
+    race: "naga", role: "melee", hp: 55, atk: 10, def: 1, spd: 92,
+    poisonOnHit: 0.5,    // v0.3.8al4: caster→melee 전열화 (후열 저격 X)
+    displayName: "쌍독 나가", themeTag: "poison",
+  },
+  // S20 — 독무 제사장 (자리·정체성. 자가정화 광폭화 심장은 보류 — 유키 결)
+  plague_priest: {
+    race: "naga", role: "melee", hp: 480, atk: 18, def: 4, spd: 72,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 3, occupiedPattern: "back3",
+    poisonOnHit: 1.0,   // v0.3.8al4: caster→melee 전열화 (전열 독 압박 — 후열 저격 X)
+    enrageAfter: 7, enrageAtkBoost: 1.25,
+    phases: { enrage: { introText: "독무 폭발!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "독무" } },
+    baseTraitLabel: "독무",
+    displayName: "독무 제사장", themeTag: "poison",
+  },
+  // S25 — 나가 여왕 (poison 전용 보스 골격. 히드라 객체 안 빌림 — 단일 대형 독 보스. 독늪을 지배하는 최종 얼굴)
+  poison_lord: {
+    race: "naga", role: "guard", hp: 1500, atk: 20, def: 3, spd: 56,
+    isBoss: true,
+    isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    poisonOnHit: 1.0, poisonBonusVsPoisoned: 0.4,   // [B단계 씨앗·미작동] poisonBonusVsPoisoned 작동코드 없음 — 중독 2단계 심장 자리
+    enrageAfter: 9, enrageAtkBoost: 1.20,
+    phases: { enrage: { introText: "독무 분출!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "나가 여왕" } },
+    baseTraitLabel: "맹독",
+    displayName: "나가 여왕", themeTag: "poison",
+  },
+
+  /* ─── troll 테마 — 느리고 단단하고 약하게 재생하는 거구 (심장 예고: 재생 존재) ─── */
+  troll_small: {       // 작은 트롤 — 잡몹 (재생 없음, 빠른 편)
+    race: "troll", role: "melee", hp: 90, atk: 14, def: 3, spd: 70,
+    displayName: "작은 트롤", themeTag: "troll",
+  },
+  troll_regen: {       // 재생 트롤 — 약한 재생(존재까지만 정직하게). "이 재생 어떻게 끊지?"
+    race: "troll", role: "guard", hp: 200, atk: 13, def: 5, spd: 48,
+    selfHealPct: 0.05,
+    baseTraitLabel: "재생",
+    displayName: "재생 트롤", themeTag: "troll",
+  },
+  troll_rock: {        // 바위 트롤 — 높은 HP/DEF, 매우 느림 (전열 강타)
+    race: "troll", role: "melee", hp: 240, atk: 19, def: 8, spd: 44,
+    displayName: "바위 트롤", themeTag: "troll",
+  },
+  troll_shaman: {      // 트롤 주술사 — 후열 캐스터 (약간의 변화)
+    race: "troll", role: "caster", hp: 120, atk: 16, def: 3, spd: 66,
+    displayName: "트롤 주술사", themeTag: "troll",
+  },
+  // S10 — 재생 트롤 문지기 (테마 검문소. 기존 troll_gatekeeper와 별개 — 재생 약하게 + 테마 태그)
+  troll_gate_regen: {
+    race: "troll", role: "guard", hp: 700, atk: 17, def: 4, spd: 46,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    selfHealPct: 0.06,
+    enrageAfter: 9, enrageAtkBoost: 1.25,
+    phases: { enrage: { introText: "광폭화!", fxClass: "phase-aura-rage", avatarPhase: "angry", traitLabel: "광폭화" } },
+    baseTraitLabel: "재생",
+    heavyHitter: true,
+    displayName: "재생 트롤 문지기", themeTag: "troll",
+  },
+  // S20 — 쌍둥이 트롤 준보스 (2기로 배치 — override에서 둘 박음)
+  troll_twin: {
+    race: "troll", role: "melee", hp: 360, atk: 18, def: 5, spd: 54,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 2, occupiedPattern: "single",
+    selfHealPct: 0.04,
+    enrageAfter: 8, enrageAtkBoost: 1.20,
+    phases: { enrage: { introText: "광폭화!", fxClass: "phase-aura-rage", avatarPhase: "angry", traitLabel: "광폭화" } },
+    baseTraitLabel: "재생",
+    displayName: "쌍둥이 트롤", themeTag: "troll",
+  },
+  // S25 — 산먹는 트롤왕 (troll 전용 보스. 큰 HP + 약한 재생 + 분쇄 종료장치)
+  troll_king: {
+    race: "troll", role: "guard", hp: 1700, atk: 22, def: 7, spd: 50,
+    isBoss: true,
+    displayEmoji: "⛰️", rockAccent: true,   // v0.3.8al9: 산먹는 트롤왕 유니크 얼굴 (테마 마지막 얼굴)
+    isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    selfHealPct: 0.05,
+    enrageAfter: 8, enrageAtkBoost: 1.25,
+    frenzyAfter: 13, frenzyAtkBoost: 1.60, frenzyMultiTarget: true,
+    crushAfter: 22, crushBaseMult: 1.50, crushRampPerHit: 0.30,
+    crushIgnoreDefPct: 0.5, crushBreakShield: true,
+    phases: {
+      enrage: { introText: "광폭화!", fxClass: "phase-aura-rage",    avatarPhase: "angry",   traitLabel: "광폭화" },
+      frenzy: { introText: "난폭화!", fxClass: "phase-aura-berserk", avatarPhase: "berserk", traitLabel: "분쇄"   },
+    },
+    baseTraitLabel: "재생",
+    heavyHitter: true,
+    displayName: "산먹는 트롤왕", themeTag: "troll",
+  },
+
+  /* ─── assassin 테마 — 빠름 / 후열 우선 / 낮은HP 압박 (심장 예고: 후열 위협) ───
+     후열 우선 = role:"ranged"/"caster" (기존 타겟 로직이 back lane 우선). 새 AI 안 만듦.
+     낮은HP 압박 = role:"guard"가 pickAllyLowestHp 사용 → 약한 아군 노림.
+     은신/표식/interrupt는 보류. 빠른 spd + 후열 타겟으로 "후열이 위험하다"만 정직하게. */
+  shadow_dagger: {     // 그림자 단검병 — 빠른 후열 공격
+    race: "goblin", role: "ranged", hp: 55, atk: 15, def: 1, spd: 118,
+    displayName: "그림자 단검병", themeTag: "assassin",
+  },
+  night_archer: {      // 밤눈 궁수 — 후열 저격
+    race: "goblin", role: "ranged", hp: 50, atk: 17, def: 1, spd: 110,
+    displayName: "밤눈 궁수", themeTag: "assassin",
+  },
+  silent_killer: {     // 침묵 암살자 — 낮은HP 아군 압박 (약한 아군 노림)
+    race: "orc", role: "guard", hp: 70, atk: 19, def: 2, spd: 112,
+    displayName: "침묵 암살자", themeTag: "assassin",
+  },
+  smoke_caster: {      // 연막 술사 — 후열 캐스터 (교란 느낌)
+    race: "orc", role: "caster", hp: 65, atk: 14, def: 2, spd: 100,
+    displayName: "연막 술사", themeTag: "assassin",
+  },
+  // S10 — 그림자 척후대장 (검문소. 빠른 후열 압박형 미니보스)
+  shadow_captain: {
+    race: "orc", role: "ranged", hp: 520, atk: 20, def: 3, spd: 104,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 3, occupiedPattern: "back3",
+    enrageAfter: 7, enrageAtkBoost: 1.25,
+    phases: { enrage: { introText: "그림자 가속!", fxClass: "phase-aura-berserk", avatarPhase: "angry", traitLabel: "질주" } },
+    baseTraitLabel: "척후",
+    displayName: "그림자 척후대장", themeTag: "assassin",
+  },
+  // S20 — 밤칼 지휘관 (준보스. 후열 압박 + 빠름)
+  nightblade_commander: {
+    race: "orc", role: "ranged", hp: 620, atk: 22, def: 4, spd: 108,
+    isMiniboss: true, isLargeEnemy: true, sizeSlots: 3, occupiedPattern: "back3",
+    enrageAfter: 7, enrageAtkBoost: 1.25,
+    phases: { enrage: { introText: "밤칼 발현!", fxClass: "phase-aura-berserk", avatarPhase: "angry", traitLabel: "밤칼" } },
+    baseTraitLabel: "지휘",
+    displayName: "밤칼 지휘관", themeTag: "assassin",
+  },
+  // S25 — 무영단장 (assassin 보스. 빠른 후열 폭딜 — 보호/제어로 끊는 구조)
+  shadow_master: {
+    race: "orc", role: "ranged", hp: 1400, atk: 24, def: 4, spd: 100,
+    isBoss: true,
+    isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    enrageAfter: 8, enrageAtkBoost: 1.25,
+    frenzyAfter: 14, frenzyAtkBoost: 1.55, frenzyMultiTarget: true,
+    phases: {
+      enrage: { introText: "무영 가속!", fxClass: "phase-aura-berserk", avatarPhase: "angry",   traitLabel: "무영" },
+      frenzy: { introText: "그림자 폭발!", fxClass: "phase-aura-berserk", avatarPhase: "berserk", traitLabel: "암습" },
+    },
+    baseTraitLabel: "무영",
+    displayName: "무영단장", themeTag: "assassin",
   },
 };
 
@@ -5862,37 +6404,168 @@ const STAGES = [
    }
    beginner는 override 없음 → 기존 STAGES 그대로 (히드라 aj 관측 격리). */
 const THEME_STAGE_OVERRIDES = {
+  /* ═══ poison — "중독이 깔린 길" (독을 견디고 정화하는 테마) ═══
+     정체성: 독이 자주 쌓이고, 길어질수록 위험. 정화/회복/속도전이 빛난다.
+     v0.3.8al: 듬성 골격 → 25칸 전구간 보강 (유키 결: 비지 않은 길). */
   poison: {
-    // 일반 구간 — 독 몹으로 테마를 깐다 (1단계: 독침고블린/맹독술사 중심. 나머지 칸은 점진 침투)
-    3:  { enemies: ["poison_goblin", "poison_goblin", "goblin_melee"] },
-    6:  { enemies: ["poison_goblin", "plague_caster", "goblin_ranged"] },
-    8:  { enemies: ["plague_caster", "poison_goblin", "poison_goblin", "orc_melee"] },
-    // S10 — 독늪 문지기 (테마 문지기. 확정 독 / 재생 없음 / 트롤보다 낮은 HP)
+    // S1~5 맛보기 — 독이 "있구나"
+    1:  { enemies: ["poison_goblin", "poison_goblin"] },
+    2:  { enemies: ["poison_goblin", "poison_goblin", "rot_spirit"] },
+    3:  { enemies: ["poison_goblin", "poison_goblin", "poison_goblin"] },
+    4:  { enemies: ["poison_goblin", "rot_spirit", "rot_spirit"] },
+    5:  { enemies: ["plague_caster", "poison_goblin", "poison_goblin"] },
+    // S6~9 압력 증가 — 확정 독이 섞인다
+    6:  { enemies: ["poison_goblin", "plague_caster", "rot_spirit"] },
+    7:  { enemies: ["plague_caster", "rot_spirit", "poison_goblin", "poison_sentinel"] },
+    8:  { enemies: ["plague_caster", "poison_goblin", "poison_goblin", "poison_sentinel"] },
+    9:  { enemies: ["poison_sentinel", "plague_caster", "poison_goblin"] },
+    // S10 검문소 — 독창 문지기
     10: {
-      name: "독늪의 문지기",
+      name: "독창 문지기",
       enemies: ["poison_gatekeeper"],
-      threatIntro: { title: "독늪 문지기 등장", line: "\"이 늪을 건너려면… 독을 견뎌라.\"" },
-      kindOverride: { label: "검문", icon: "🟣", line: "독늪의 문지기가 길을 막습니다." },
+      threatIntro: { title: "독창 문지기 등장", line: "\"이 늪을 건너려면… 독을 견뎌라.\"" },
+      kindOverride: { label: "검문", icon: "🟢", line: "독창 문지기가 길을 막습니다." },
     },
-    13: { enemies: ["plague_caster", "poison_goblin", "orc_caster", "poison_goblin"] },
-    18: { enemies: ["plague_caster", "plague_caster", "poison_goblin", "orc_melee"] },
-    // S20 — 역병술사 (자리·이름·진행판만. 실제 보스 구현은 후속 — 유키 결)
+    // S11~15 응용
+    11: { enemies: ["plague_caster", "poison_goblin", "rot_spirit", "poison_goblin"] },
+    12: { enemies: ["poison_sentinel", "plague_caster", "poison_goblin", "plague_caster"] },
+    13: { enemies: ["plague_caster", "poison_goblin", "plague_caster", "poison_goblin"] },
+    14: { enemies: ["poison_sentinel", "plague_caster", "rot_spirit", "poison_goblin"] },
+    15: { enemies: ["plague_caster", "plague_caster", "poison_sentinel", "poison_goblin", "poison_sentinel"] },
+    // S16~19 압력 상승
+    16: { enemies: ["plague_caster", "poison_sentinel", "poison_goblin", "rot_spirit", "poison_goblin"] },
+    17: { enemies: ["poison_sentinel", "plague_caster", "plague_caster", "plague_caster"] },
+    18: { enemies: ["plague_caster", "plague_caster", "poison_goblin", "poison_sentinel"] },
+    19: { enemies: ["poison_sentinel", "poison_sentinel", "plague_caster", "rot_spirit"] },
+    // S20 준보스 — 독무 제사장
     20: {
-      name: "역병술사",
-      enemies: ["plague_caster", "plague_caster", "orc_guard", "orc_caster"],   // 골격: 맹독술사 다수로 자리 표시
-      threatIntro: { title: "역병술사 등장", line: "\"독은… 퍼지는 것이다.\"" },
-      kindOverride: { label: "보스", icon: "🧪", line: "역병술사가 길을 막습니다." },
+      name: "독무 제사장",
+      enemies: ["plague_priest", "plague_caster", "poison_goblin", "poison_goblin"],
+      threatIntro: { title: "독무 제사장 등장", line: "\"독은… 퍼지는 것이다.\"" },
+      kindOverride: { label: "준보스", icon: "🧪", line: "독무 제사장이 길을 막습니다." },
     },
-    // S25 — 독의 왕 / 역병 히드라 (자리·이름·진행판만. 실제 보스 후속)
+    // S21~24 압축
+    21: { enemies: ["plague_caster", "poison_sentinel", "plague_caster", "poison_goblin"] },
+    22: { enemies: ["poison_sentinel", "plague_caster", "rot_spirit", "poison_goblin", "plague_caster"] },
+    23: { enemies: ["plague_caster", "plague_caster", "poison_sentinel", "poison_sentinel"] },
+    24: { enemies: ["poison_sentinel", "plague_caster", "plague_caster", "rot_spirit", "poison_goblin"] },
+    // S25 보스 — 나가 여왕
     25: {
-      name: "독의 왕 — 역병 히드라",
-      // 골격: beginner 히드라 객체 재사용 (실제 테마 보스 hydra는 후속). aj 수치 안 건드림.
-      enemies: ["hydra_left", "hydra_right"],
-      threatIntro: { title: "독의 왕 등장", line: "\"독의 길 끝에서, 네 해독법을 증명하라.\"" },
-      kindOverride: { label: "보스", icon: "🐍", line: "독의 왕이 길 끝에서 기다립니다." },
+      name: "나가 여왕",
+      enemies: ["poison_lord", "plague_caster", "plague_caster"],
+      threatIntro: { title: "나가 여왕 등장", line: "\"독의 길 끝에서, 네 해독법을 증명하라.\"" },
+      kindOverride: { label: "보스", icon: "☠", line: "나가 여왕이 길 끝에서 기다립니다." },
     },
   },
-  // assassin / troll 은 1단계에선 override 없음 (자리만 — 후속). beginner는 항상 override 없음.
+
+  /* ═══ troll — "트롤의 길" (느리고 단단하고 오래 버티는 거구) ═══
+     정체성: 높은 HP, 느림, 약한 재생, 전열 강타. "이 재생을 어떻게 끊지?"
+     v0.3.8al: 25칸 신규. 심장(독→재생말림)은 보류 — 재생 "존재"까지만 정직하게 (거짓 문구 금지). */
+  troll: {
+    // S1~5 맛보기 — 단단한 적이 느리게 온다
+    1:  { enemies: ["troll_small", "troll_small"] },
+    2:  { enemies: ["troll_small", "troll_small", "troll_shaman"] },
+    3:  { enemies: ["troll_regen", "troll_small"] },
+    4:  { enemies: ["troll_small", "troll_rock", "troll_shaman"] },
+    5:  { enemies: ["troll_rock", "troll_small", "troll_small"] },
+    // S6~9 압력 증가 — 재생이 보인다
+    6:  { enemies: ["troll_regen", "troll_small", "troll_shaman"] },
+    7:  { enemies: ["troll_rock", "troll_regen", "troll_small"] },
+    8:  { enemies: ["troll_regen", "troll_rock", "troll_shaman"] },
+    9:  { enemies: ["troll_rock", "troll_regen", "troll_small", "troll_small"] },
+    // S10 검문소 — 재생 트롤 문지기
+    10: {
+      name: "재생 트롤 문지기",
+      enemies: ["troll_gate_regen"],
+      threatIntro: { title: "재생 트롤 문지기 등장", line: "\"베어도… 다시 차오른다. 이 재생을 어떻게 끊겠나?\"" },
+      kindOverride: { label: "검문", icon: "🪨", line: "재생 트롤 문지기가 길을 막습니다." },
+    },
+    // S11~15 응용
+    11: { enemies: ["troll_regen", "troll_rock", "troll_small", "troll_shaman"] },
+    12: { enemies: ["troll_rock", "troll_rock", "troll_regen"] },
+    13: { enemies: ["troll_regen", "troll_regen", "troll_shaman", "troll_small"] },
+    14: { enemies: ["troll_rock", "troll_regen", "troll_rock"] },
+    15: { enemies: ["troll_rock", "troll_regen", "troll_shaman", "troll_small", "troll_small"] },
+    // S16~19 압력 상승
+    16: { enemies: ["troll_regen", "troll_rock", "troll_regen", "troll_shaman"] },
+    17: { enemies: ["troll_rock", "troll_rock", "troll_regen", "troll_small"] },
+    18: { enemies: ["troll_regen", "troll_regen", "troll_rock"] },
+    19: { enemies: ["troll_rock", "troll_rock", "troll_regen", "troll_shaman"] },
+    // S20 준보스 — 쌍둥이 트롤
+    20: {
+      name: "쌍둥이 트롤",
+      enemies: ["troll_twin", "troll_twin", "troll_shaman"],
+      threatIntro: { title: "쌍둥이 트롤 등장", line: "\"둘이 함께 차오른다 — 하나씩 끊을 텐가, 동시에 무너뜨릴 텐가.\"" },
+      kindOverride: { label: "준보스", icon: "🪨", line: "쌍둥이 트롤이 길을 막습니다." },
+    },
+    // S21~24 압축
+    21: { enemies: ["troll_regen", "troll_rock", "troll_rock", "troll_regen"] },
+    22: { enemies: ["troll_rock", "troll_regen", "troll_regen", "troll_shaman"] },
+    23: { enemies: ["troll_rock", "troll_rock", "troll_regen", "troll_small"] },
+    24: { enemies: ["troll_regen", "troll_regen", "troll_rock", "troll_rock"] },
+    // S25 보스 — 산먹는 트롤왕
+    25: {
+      name: "산먹는 트롤왕",
+      enemies: ["troll_king", "troll_rock", "troll_regen"],
+      threatIntro: { title: "산먹는 트롤왕 등장", line: "\"이 거구를 어떻게 말려 죽이겠나. 끝을 보여라.\"" },
+      kindOverride: { label: "보스", icon: "☠", line: "산먹는 트롤왕이 길 끝에서 기다립니다." },
+    },
+  },
+
+  /* ═══ assassin — "암살자의 길" (후열이 위협받는다) ═══
+     정체성: 빠름, 후열 우선, 낮은HP 압박. "보호/제어가 필요하겠다."
+     v0.3.8al: 25칸 신규. 심장(은신/표식/interrupt)은 보류 — 후열 위협 감정만 / 억울한 급사 X. */
+  assassin: {
+    // S1~5 맛보기 — 빠른 적이 뒤를 노린다
+    1:  { enemies: ["shadow_dagger", "shadow_dagger"] },
+    2:  { enemies: ["shadow_dagger", "night_archer", "shadow_dagger"] },
+    3:  { enemies: ["shadow_dagger", "smoke_caster"] },
+    4:  { enemies: ["night_archer", "shadow_dagger", "shadow_dagger"] },
+    5:  { enemies: ["silent_killer", "shadow_dagger", "night_archer"] },
+    // S6~9 압력 증가
+    6:  { enemies: ["night_archer", "shadow_dagger", "smoke_caster"] },
+    7:  { enemies: ["silent_killer", "night_archer", "shadow_dagger"] },
+    8:  { enemies: ["shadow_dagger", "night_archer", "silent_killer", "smoke_caster"] },
+    9:  { enemies: ["silent_killer", "night_archer", "shadow_dagger", "shadow_dagger"] },
+    // S10 검문소 — 그림자 척후대장
+    10: {
+      name: "그림자 척후대장",
+      enemies: ["shadow_captain", "shadow_dagger", "night_archer"],
+      threatIntro: { title: "그림자 척후대장 등장", line: "\"네 뒷줄이… 비어 있군.\"" },
+      kindOverride: { label: "검문", icon: "🗡️", line: "그림자 척후대장이 길을 막습니다." },
+    },
+    // S11~15 응용
+    11: { enemies: ["night_archer", "silent_killer", "shadow_dagger", "smoke_caster"] },
+    12: { enemies: ["silent_killer", "night_archer", "night_archer"] },
+    13: { enemies: ["shadow_dagger", "silent_killer", "smoke_caster", "night_archer"] },
+    14: { enemies: ["night_archer", "night_archer", "silent_killer"] },
+    15: { enemies: ["silent_killer", "night_archer", "shadow_dagger", "smoke_caster", "shadow_dagger"] },
+    // S16~19 압력 상승
+    16: { enemies: ["night_archer", "silent_killer", "silent_killer", "smoke_caster"] },
+    17: { enemies: ["silent_killer", "night_archer", "night_archer", "shadow_dagger"] },
+    18: { enemies: ["night_archer", "silent_killer", "smoke_caster"] },
+    19: { enemies: ["silent_killer", "silent_killer", "night_archer", "shadow_dagger"] },
+    // S20 준보스 — 밤칼 지휘관
+    20: {
+      name: "밤칼 지휘관",
+      enemies: ["nightblade_commander", "silent_killer", "night_archer", "shadow_dagger"],
+      threatIntro: { title: "밤칼 지휘관 등장", line: "\"빠르게 끝낸다. 네 뒷줄부터.\"" },
+      kindOverride: { label: "준보스", icon: "🗡️", line: "밤칼 지휘관이 길을 막습니다." },
+    },
+    // S21~24 압축
+    21: { enemies: ["night_archer", "silent_killer", "night_archer", "smoke_caster"] },
+    22: { enemies: ["silent_killer", "night_archer", "silent_killer", "shadow_dagger"] },
+    23: { enemies: ["night_archer", "night_archer", "silent_killer", "smoke_caster"] },
+    24: { enemies: ["silent_killer", "silent_killer", "night_archer", "night_archer"] },
+    // S25 보스 — 무영단장
+    25: {
+      name: "무영단장",
+      enemies: ["shadow_master", "silent_killer", "night_archer"],
+      threatIntro: { title: "무영단장 등장", line: "\"그림자 끝에서 — 누구를 살리고 누구를 버릴 텐가.\"" },
+      kindOverride: { label: "보스", icon: "☠", line: "무영단장이 길 끝에서 기다립니다." },
+    },
+  },
+  // beginner는 항상 override 없음 (히드라 aj 관측 격리 — 절대 안 건드림).
 };
 
 /* 테마가 적용된 스테이지를 푼다 (단일 진입점).
@@ -5965,6 +6638,10 @@ const partyState = {
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  // v0.3.8al3: 전투 화면을 떠나면 위협 일렁임 class 제거 (잔류 방지 — 성능/정직성)
+  if (id !== "screen-battle") {
+    if (typeof clearThreatClass === "function") clearThreatClass();
+  }
   // v0.3.6.2: 전투 화면 진입 시 paint 후 SVG viewBox 잡기
   // RAF 두 번 박아서 iOS Safari layout 안정화 보장
   if (id === "screen-battle") {
@@ -6039,6 +6716,33 @@ function applyThemeVisualClass(themeId) {
   app.classList.add(`theme-${themeId || "beginner"}`);
 }
 
+/* v0.3.8al3 STEP2/3: 전투 위협 강도 → 화면 가장자리 일렁임 class.
+   진행판에서 본 S10/S20/S25의 위협이 전투 가장자리로 이어지게 (감정 연결).
+   강도 판단: stage 정보 단일 진입점에서 — kindOverride.label / phase 기준.
+     boss  = phase "boss"(S25) 또는 보스 라벨
+     mid   = 준보스(S20) 또는 phase "ending"
+     low   = 검문(S10/proof) 또는 threatIntro 보유 일반 검문소
+   일반 스테이지는 class 없음 → vignette 안 뜸 (전투마다 켜지면 피로). */
+function getThreatLevel(stage) {
+  if (!stage) return null;
+  const label = (stage.kindOverride && stage.kindOverride.label) || "";
+  if (stage.phase === "boss" || label === "보스") return "boss";
+  if (label === "준보스" || stage.phase === "ending") return "mid";
+  if (label === "검문" || stage.phase === "proof" || stage.threatIntro) return "low";
+  return null;
+}
+function applyThreatClass(stage) {
+  const sb = document.getElementById("screen-battle");
+  if (!sb) return;
+  sb.classList.remove("threat-low", "threat-mid", "threat-boss");
+  const level = getThreatLevel(stage);
+  if (level) sb.classList.add(`threat-${level}`);
+}
+function clearThreatClass() {
+  const sb = document.getElementById("screen-battle");
+  if (sb) sb.classList.remove("threat-low", "threat-mid", "threat-boss");
+}
+
 /* ─── v0.3.8r2: 개발용 스테이지 점프 ───
    preset 파티를 즉석 조립 → 목표 스테이지로 바로 진입.
    runState.devTest에 표식을 박아 일반 런 데이터와 섞이지 않게 한다. */
@@ -6091,6 +6795,13 @@ function devJumpToStage(presetKey) {
   partyState.slots = ["", "", ""];
   initRunFromParty();
 
+  // v0.3.8al STEP5: DEV 진입도 테마를 올바르게 세팅 (유키 결).
+  //   loadStage가 getStageForTheme(stage, runState.themeId)를 읽으므로,
+  //   themeId만 세팅하면 테마 적/이름/진행판/공기가 자동으로 뜬다 (enemiesOverride 없을 때).
+  //   preset.themeId 없으면 beginner (기존 히드라/트롤 seed preset은 beginner 그대로).
+  runState.themeId = (preset.themeId && THEMES[preset.themeId]) ? preset.themeId : "beginner";
+  applyThemeVisualClass(runState.themeId);
+
   // v0.3.8ab: 누적 성장 주입 — 유닛 생성 *전*에 traitLevels를 박아야 makeAllyUnit/makeFusionUnit이
   //   그 누적을 읽어 강화/계승을 재현한다 (유키 결: Dev는 치트가 아니라 실험실).
   //   initRunFromParty가 traitLevels를 비운 직후 주입 → 그 다음 유닛 생성이 누적 반영.
@@ -6119,6 +6830,7 @@ function devJumpToStage(presetKey) {
     testId: preset.testId || presetKey,
     startStage: preset.startStage,
     preset: presetKey,
+    themeId: runState.themeId,   // v0.3.8al STEP5: 로그에 themeId (유키 요구 — themeId/stage/presetName)
     // v0.3.8ab: devPresetMeta — 로그 해석을 위한 프리셋 정보 (시작 누적/스탯/재현형 여부)
     devPresetMeta: {
       presetName: presetKey,
@@ -6147,6 +6859,8 @@ function backToTitle() {
   // v0.3.7.28: 이전 런의 stale timeout 즉시 정리
   //   타이틀로 돌아간 뒤에 과거 callback이 발동해 다음 런을 오염시키는 결 차단.
   clearPendingBattleEndTimer();
+  // v0.3.8al: 타이틀은 항상 beginner 공기로 (이전 런 테마가 타이틀에 남지 않게 — 거짓 공기 방지)
+  applyThemeVisualClass("beginner");
   showScreen("screen-title");
 }
 
@@ -7205,10 +7919,10 @@ const THEMES = {
   poison: {
     id: "poison",
     name: "중독",
-    icon: "🟣",
-    desc: "지속 피해와 시간 압박. 정화/회복/빠른 처치가 중요해진다.",
-    flavor: "시간이 길어질수록 파티가 위험해진다.",
-    color: "#a87de0",
+    icon: "🟢",
+    desc: "전열이 독으로 녹아내린다. 정화/회복/빠른 처치가 그 붕괴를 되돌린다.",
+    flavor: "독은 앞을 썩게 만든다. 방치하면 전열이 무너진다.",
+    color: "#3fc7a8",
   },
   assassin: {
     id: "assassin",
@@ -7224,7 +7938,7 @@ const THEMES = {
     icon: "🪨",
     desc: "장기전. 적은 수가 적지만 체력이 높고 오래 버틴다.",
     flavor: "단기 폭딜 vs 장기 유지력. 어떤 빌드가 먹히는가?",
-    color: "#6fc080",
+    color: "#9a7cd8",
   },
 };
 
@@ -7521,11 +8235,29 @@ function pushStageHistory(outcome, extra = {}) {
   const survivorsAlive = runState.units.filter(u => u.alive).length;
   const survivorsTotal = runState.units.length;
   const stage = runState.stage;
-  const stageDef = STAGES[stage - 1];
+  // v0.3.8al6: 테마 반영 — STAGES 직접 읽기(테마 무시)에서 getStageForTheme(테마 진실)로 교정.
+  //   "기록은 어느 길의 어느 장면인지 정직하게 말해야 한다." (나라님 결)
+  const stageDef = (typeof getStageForTheme === "function")
+    ? getStageForTheme(stage, runState.themeId)
+    : STAGES[stage - 1];
   const phase = stageDef ? stageDef.phase : null;
+  // 테마 적 구성 — enemyIds → displayName (ENEMY_TEMPLATES 단일 진실)
+  const enemyIds = (stageDef && stageDef.enemies) ? stageDef.enemies.slice() : [];
+  const enemyNames = enemyIds.map(id => {
+    const t = ENEMY_TEMPLATES[id];
+    return (t && t.displayName) ? t.displayName : id;
+  });
+  const stageKind = _stageKindTag(stageDef);
 
   const entry = {
     stage,
+    // v0.3.8al6: 테마/장면 컨텍스트 (관측 장치)
+    stageName: stageDef ? (stageDef.name || null) : null,
+    themeId: runState.themeId || "beginner",
+    stageKind,                              // normal/checkpoint/midBoss/boss/recruit
+    enemyNames,
+    enemyCount: enemyIds.length,
+    threatIntro: !!(stageDef && stageDef.threatIntro),
     phase,
     outcome,
     survivorsAlive,
@@ -7575,6 +8307,14 @@ const battleState = {
   paused: false,
   speed: RELEASE_BASE_SPEED,   // v0.3.8ak1: 기본 3 (구 2 → 약간 빠르게)
   tickInterval: null,
+  fxTimers: [],   // v0.3.8al2: 추적 가능한 FX 지연 타이머 레지스트리 (전투 종료 시 일괄 clear)
+  // v0.3.8al8: 트롤 테마 전장 균열 — 장기전 압박 환경 효과 (분쇄와 분리).
+  //   "오래 싸우면 전장이 버티지 못한다." crush(개별 적 강타)와 다른 테마 시간 압박.
+  trollFissure: {
+    active: false,      // 이 전투에서 균열 활성(트롤 테마 + 위협 스테이지)인지
+    battleActions: 0,   // 이 전투의 전체 행동 수 (전역 카운트 — 적 개별 _enemyActionCount와 별개)
+    stacks: 0,          // 현재 균열 스택 (전열 받는 피해 증폭)
+  },
   stats: {
     damageDealt: {},   // unitId → total
     healDone: {},
@@ -7796,6 +8536,9 @@ function makeEnemyUnit(templateId) {
     crushRampPerHit: tpl.crushRampPerHit || 0,
     crushIgnoreDefPct: tpl.crushIgnoreDefPct || 0,
     crushBreakShield: tpl.crushBreakShield || false,
+    // v0.3.8al9: 테마 얼굴 — 유니크 이모지/실루엣 (보스 개성. 없으면 race.emoji)
+    displayEmoji: tpl.displayEmoji || null,
+    rockAccent: tpl.rockAccent || false,
     // v0.3.8z: 페이즈 전환 공통 훅
     phases: tpl.phases || null,        // 페이즈 전환 데이터 (없으면 전환 연출 없음)
     _phaseKey: null,                   // 현재 활성 페이즈 키 (아바타 교체/오라 추적)
@@ -7849,6 +8592,8 @@ function _enterBattleScreenActual() {
   // v0.3.8r1: 정예/문지기/보스 인트로 — threatIntro 태그가 있는 스테이지만.
   //   인트로 동안 전투 루프 시작을 잠깐 늦춤. 탭하면 즉시 스킵.
   const stage = getStageForTheme((runState.stage || 0), runState.themeId);   // v0.3.8ak: 테마 반영 (독늪 문지기 인트로 등)
+  // v0.3.8al3 STEP2/3: 위협 강도 → 화면 가장자리 일렁임 (진행판 위협이 전투로 이어짐)
+  applyThreatClass(stage);
   if (stage && stage.threatIntro) {
     showThreatIntro(stage, () => startBattleLoop());
   } else {
@@ -7887,6 +8632,7 @@ function showProgressBoard(stageNum, onDone) {
       // phase별 정체성 class — CSS가 색/테두리로 위계를 준다 (성장/정비/전투 < 결속/합류/검문/보스)
       const kindKey = (st.recruitsAfter ? "recruit"
                       : (st.kindOverride && st.kindOverride.label === "검문") ? "proof"
+                      : (st.kindOverride && st.kindOverride.label === "준보스") ? "ending"
                       : (st.kindOverride && st.kindOverride.label === "보스") ? "boss"
                       : st.phase) || "growth";
       const cls = ["pb-cell", `pb-kind-${kindKey}`];
@@ -7894,8 +8640,12 @@ function showProgressBoard(stageNum, onDone) {
       else if (i === stage.num) cls.push("pb-current"); // 현재 칸 — 가장 강하게 (pulse)
       else if (i === stage.num + 1) cls.push("pb-next");// 다음 칸 — 살짝 밝게 "곧 간다"
       else                      cls.push("pb-future");  // 앞으로 갈 칸
-      // 중요 칸(결속/합류/검문/보스)은 일반 성장보다 눈에 띄게 (CSS pb-major)
-      if (["fusion","recruit","proof","boss"].includes(kindKey)) cls.push("pb-major");
+      // 중요 칸(결속/합류/검문/준보스/보스)은 일반 성장보다 눈에 띄게 (CSS pb-major)
+      if (["fusion","recruit","proof","ending","boss"].includes(kindKey)) cls.push("pb-major");
+      // v0.3.8al3 STEP3: 위협 칸(S10/S20/S25)은 테마 위협색으로 — 전투 가장자리 일렁임과 같은 결.
+      //   getThreatLevel 단일 진실 (전투 vignette와 같은 판단). 진행판↔전투 감정 연결.
+      const threat = (typeof getThreatLevel === "function") ? getThreatLevel(st) : null;
+      if (threat && i >= stage.num) cls.push(`pb-threat-${threat}`);   // 지나온 칸은 강조 안 함
       html += `<div class="${cls.join(" ")}">`
             +   `<span class="pb-cell-num">${i}</span>`
             +   `<span class="pb-cell-icon">${k.icon}</span>`
@@ -8031,6 +8781,7 @@ function ensureRunStatsForUnit(u) {
     // 받은 상태 피해 (damageDealt 아님 — "적/상태이상의 위협")
     poisonDamageTaken: 0,   // 아군이 적 독으로 받은 피해
     statusDamageTaken: 0,   // 기타 상태 피해
+    fissureDamageTaken: 0,  // v0.3.8al8: 전장 균열로 추가로 받은 피해 (최종피해엔 포함, 별도 집계)
   };
 }
 
@@ -8057,9 +8808,39 @@ function loadStage(stageNum, enemiesOverride) {
   // 적 인스턴스 생성 (v0.3.8v: DEV override 있으면 그걸로 — seed 관측용)
   const enemyList = (enemiesOverride && enemiesOverride.length) ? enemiesOverride : stage.enemies;
   runState.enemies = enemyList.map(tplId => makeEnemyUnit(tplId));
+  // v0.3.8al7 검수 장치 (나라님 결): "내가 보는 화면 = 렌 코드"를 즉시 확인.
+  //   콘솔 + 전투 로그에 [버전 / 테마 / S## / 스테이지명 / theme-class / 적 ids] 출력.
+  (function _stageInspectLog() {
+    const themeId = runState.themeId || "beginner";
+    const appCls = (document.getElementById("app") || {}).className || "";
+    const themeCls = (appCls.match(/theme-\w+/) || ["(없음)"])[0];
+    const sName = stage.name || "(이름없음)";
+    const enemyDisp = enemyList.map(id => {
+      const t = ENEMY_TEMPLATES[id];
+      return t && t.displayName ? `${t.displayName}(${id}/${t.role})` : id;
+    });
+    const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?";
+    console.log(`[검수] ${ver} | 테마=${themeId} | S${stageNum} ${sName} | class=${themeCls}`);
+    console.log(`[검수] 적 구성:`, enemyDisp);
+    if (typeof pushEvent === "function") {
+      pushEvent(`▣ [${themeId} / S${stageNum} / ${sName} / ${themeCls}]`, "system");
+    }
+  })();
   // v0.3.8ac: 히드라 관측 시작 HP 캡처 (object별 받은 피해 검증 기준점)
   //   v0.3.8aj: 비독 압박 누적도 전투 시작 시 0 (makeEnemyUnit 새 객체라 자동이나 명시 — 함정 방지)
   runState.enemies.forEach(e => { if (e.isHydra) { e._obsStartHp = e.hp; e._recentNonDotPressure = 0; } });
+
+  // v0.3.8al8: 전장 균열 활성화 — 트롤 테마 + 위협 스테이지(S10/S20/S25)에서만 (유키 결).
+  //   "오래 끌면 전장이 무너진다." 매 전투 스택/카운트 리셋 (이전 전투 안 새게).
+  (function _initTrollFissure() {
+    const isTroll = (runState.themeId === "troll");
+    const threat = (typeof getThreatLevel === "function") ? getThreatLevel(stage) : null;
+    battleState.trollFissure = {
+      active: isTroll && !!threat,   // 트롤 + 검문/준보스/보스 스테이지
+      battleActions: 0,
+      stacks: 0,
+    };
+  })();
 
   // 아군 HP/게이지/보호막 리셋 (새 스테이지 시작)
   runState.units.forEach(u => {
@@ -8105,6 +8886,8 @@ function loadStage(stageNum, enemiesOverride) {
   document.querySelectorAll(".tombstone-marker, .kill-icon, .kill-label").forEach(el => el.remove());
   // v0.3.7.13: 지난 스테이지의 행동선 잔상 정리
   if (typeof clearAllActionLines === "function") clearAllActionLines();
+  // v0.3.8al2: 새 전투 진입 전 잔여 FX/floating 일괄 sweep (이중 안전 — 짧은 전환 누적 방지)
+  if (typeof sweepBattleFx === "function") sweepBattleFx();
 
   // 전투 상태 리셋
   battleState.stats = { damageDealt: {}, healDone: {}, kills: {}, actionsTaken: {}, eventLog: [] };
@@ -8171,6 +8954,8 @@ function stopBattleLoop() {
     clearInterval(battleState.tickInterval);
     battleState.tickInterval = null;
   }
+  // v0.3.8al2: 전투 루프 정지 시 예약된 FX 지연 타이머도 일괄 취소 (다음 전투로 안 넘어가게)
+  if (typeof clearTrackedFxTimers === "function") clearTrackedFxTimers();
 }
 
 function tickBattle() {
@@ -8212,6 +8997,27 @@ function tickBattle() {
 
 function executeAction(actor) {
   if (!actor.alive) return;
+
+  // v0.3.8al8: 전장 균열 — 전투 전체 행동 수 누적 → 임계마다 전열 균열 스택 증가 (유키 결).
+  //   tickCount 아닌 "행동 수" 기준 (실제 교착이 행동으로 측정됨). 트롤 위협 스테이지에서만 active.
+  //   첫 균열 80행동 / 이후 40행동마다 +1 / 최대 10스택. "오래 끌면 전장이 무너진다."
+  if (battleState.trollFissure && battleState.trollFissure.active) {
+    const F = battleState.trollFissure;
+    F.battleActions++;
+    const FIRST = 80, INTERVAL = 40, MAX_STACKS = 10;
+    if (F.battleActions >= FIRST && F.stacks < MAX_STACKS) {
+      const due = Math.floor((F.battleActions - FIRST) / INTERVAL) + 1;
+      if (due > F.stacks) {
+        F.stacks = Math.min(MAX_STACKS, due);
+        const firstTime = (F.stacks === 1);
+        if (typeof pushEvent === "function") {
+          pushEvent(firstTime ? `<b>전장이 갈라진다</b> — 트롤의 땅이 전열을 짓누른다 (균열 ${F.stacks})`
+                              : `<b>균열이 깊어진다</b> (균열 ${F.stacks})`, "debuff");
+        }
+        if (typeof _fissureCrackPulse === "function") _fissureCrackPulse();
+      }
+    }
+  }
 
   // mk2 v0.2: 중독 자해 — 행동 시 최대 체력 10% 피해
   // v0.3.7.12: 직접 hp 감소 + 즉흥 alive=false 제거. applyStatusDamage로 통일.
@@ -8911,7 +9717,16 @@ function actFusion(actor) {
         doHeal(actor, target, healAmt);
         if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmt);
         reactReceive(target, "shield");
-        pushEvent(`<b>${actor.name}</b> 정화 — <b>${target.name}</b>의 ${cleansed.join("·")} 거두고 회복 +◇${shieldAmt}`, "heal");
+        // v0.3.8al4 STEP2(C): 정화 성공 가시화 — "독을 씻어낸 순간"을 눈에 보이게 (유키 결).
+        //   ① 대상에 청록 cleanse-pulse (독 status DOM은 poisoned=0이 되며 다음 렌더에서 사라짐)
+        //   ② 보호막 floating (회복 숫자는 doHeal이 이미 띄움)
+        //   ③ "독을 씻어냈다" 정직한 로그 (실제 cleansed 내용과 일치)
+        const cel = document.querySelector(`[data-uid="${target.uid}"] .unit-portrait`);
+        if (cel) { cel.classList.add("cleanse-pulse"); fxTimeout(() => cel.classList.remove("cleanse-pulse"), 800); }
+        // 대상에 붙은 중독 status 배지를 즉시 제거 (독 아이콘이 사라지는 순간이 보이게)
+        document.querySelectorAll(`[data-uid="${target.uid}"] .float-status.poisoned`).forEach(s => s.remove());
+        if (shieldAmt > 0 && typeof showStatusText === "function") showStatusText(target, `◇${shieldAmt}`, { kind: "shield" });
+        pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>의 ${cleansed.join("·")}을 씻어냈다 — 회복 +${healAmt} · 보호막 ◇${shieldAmt}`, "heal");
       } else {
         // v0.3.8: 상태이상 없음 — 약공격이 아니라 사제처럼 HP 최저 아군 단일 치유
         const woundedAllies = runState.units.filter(u =>
@@ -10098,6 +10913,59 @@ function actEnemyAttack(actor) {
     target._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자 (poisonOnHit)
     showActionLabel(actor, "독침!", "debuff");
     pushEvent(`<b>${target.name}</b> 중독됨 (2턴)`, "debuff");
+
+    // v0.3.8al5 STEP2: 전사형 전열 압박 문지기 — 다중 중독 (전열 우선 N명에게 독 쌓음).
+    //   유키 결: "뒷줄을 죽이는 게 아니라, 앞줄에 독을 쌓는다." S10은 전열 2명까지만(과독 방지).
+    //   새 상태이상 X — 기존 poisoned 재사용. 추가피해(poisonBonus)는 B단계 심장(오늘 금지).
+    if (actor.multiPoisonFront && actor.multiPoisonFront > 1) {
+      const need = actor.multiPoisonFront - 1;   // 공격 대상 1명은 위에서 이미 중독
+      // 전열 우선, 이미 중독 안 된 아군부터 (전열 없으면 후열로 — 단 후열 "저격"이 아니라 독 확산)
+      const pool = runState.units.filter(u =>
+        u.alive && u.uid !== target.uid && u.uid !== actor.uid
+      ).sort((a, b) => {
+        // 전열 우선 (role front 성격) → 미중독 우선
+        const aFront = (a.role === "front" || a.lane === "front") ? 0 : 1;
+        const bFront = (b.role === "front" || b.lane === "front") ? 0 : 1;
+        if (aFront !== bFront) return aFront - bFront;
+        return (a.poisoned > 0 ? 1 : 0) - (b.poisoned > 0 ? 1 : 0);
+      });
+      let spread = 0;
+      for (const u of pool) {
+        if (spread >= need) break;
+        u.poisoned = Math.max(u.poisoned || 0, 2);
+        u._poisonSourceUid = actor.uid;
+        // 청녹 pulse + "중독" floating (거의 동시에 — 독기가 번지는 느낌)
+        const pel = document.querySelector(`[data-uid="${u.uid}"] .unit-portrait`);
+        if (pel) { pel.classList.add("cleanse-pulse"); fxTimeout(() => pel.classList.remove("cleanse-pulse"), 600); }
+        if (typeof showStatusText === "function") showStatusText(u, "중독", { kind: "poisoned" });
+        spread++;
+      }
+      if (spread > 0) {
+        showActionLabel(actor, "독기 확산", "debuff");
+        pushEvent(`<b>${actor.name}</b>의 독기가 전열을 감쌉니다 — 전열 ${spread + 1}명 중독`, "debuff");
+      }
+    }
+  }
+
+  // v0.3.8al2 STEP2: 트롤 종족 공통 재생 (유키 결 — "모든 트롤은 질기다").
+  //   race==="troll"이면 4행동마다 maxHp 소량(1.8%) 재생. 자체 카운터(_trollRegenTick).
+  //   방패/재생 담당(selfHealPct 보유)은 기존 재생이 더 자주·크게 → 공통은 스킵(중복 방지, 역할 선명).
+  //   목적은 강해짐이 아니라 "트롤이라 질기다". 표시도 약하게 (작은 "재생" 라벨 + 약한 펄스).
+  //   계기판: 적 자가회복은 damageDealt 집계 밖 → 정합성 무관.
+  //   주: 이 공통 재생은 다음 단계에서 applyRegenWithSuppression 공용틀에 태울 자리 (독→재생말림 심장).
+  const TROLL_COMMON_REGEN_EVERY = 4;
+  const TROLL_COMMON_REGEN_PCT = 0.018;
+  if (actor.race === "troll" && !(actor.selfHealPct > 0) && actor.alive && actor.hp < actor.maxHp) {
+    actor._trollRegenTick = (actor._trollRegenTick || 0) + 1;
+    if (actor._trollRegenTick >= TROLL_COMMON_REGEN_EVERY) {
+      actor._trollRegenTick = 0;
+      const healAmt = Math.max(1, Math.floor(actor.maxHp * TROLL_COMMON_REGEN_PCT));
+      showActionLabel(actor, "재생", "heal");
+      doHeal(actor, actor, healAmt);
+      const tel = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
+      if (tel) { tel.classList.add("regen-pulse"); fxTimeout(() => tel.classList.remove("regen-pulse"), 700); }
+      pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
+    }
   }
 
   // v0.3.8s: 트롤 문지기 등 — 자기 행동 후 maxHp N% "재생". 회복이 또렷이 읽히게.
@@ -10207,6 +11075,25 @@ function dealDamage(actor, target, amount, opts = {}) {
   }
 
   let dmg = Math.max(1, amount - target.def);
+
+  // v0.3.8al8: 전장 균열 증폭 — 적→전열 아군 피해에 스택당 +3% (최대 +30%). (유키 결)
+  //   강제사망 X / 힐·보호막 직접 안 깎음 / 전열(role front)만 / def 적용 후 amp.
+  //   계기판 정합성: 최종 피해는 damageDealt에 그대로, "균열로 추가된 양"만 fissureDamageTaken 별도 집계.
+  if (battleState.trollFissure && battleState.trollFissure.active
+      && battleState.trollFissure.stacks > 0
+      && actor && actor.side === "enemy"
+      && target && target.side === "ally" && target.role === "front") {
+    const ampPct = Math.min(0.30, battleState.trollFissure.stacks * 0.03);
+    if (ampPct > 0) {
+      const base = dmg;
+      dmg = Math.round(dmg * (1 + ampPct));
+      const added = dmg - base;
+      if (added > 0 && target.uid) {
+        target._fissureDamageTaken = (target._fissureDamageTaken || 0) + added;
+        if (typeof statsBump === "function") statsBump(target.uid, "fissureDamageTaken", added);
+      }
+    }
+  }
 
   // 보호막 흡수
   if (target.shield > 0) {
@@ -10471,6 +11358,84 @@ function clearAllActionLines() {
   lines.forEach(l => l.remove());
 }
 
+/* ─── v0.3.8al2 STEP1: 전투 잔여 FX/DOM 일괄 sweep (유키 결 — 작고 안전한 핫픽스) ───
+   진단(렌): floating/label/status/centerPulse/wave는 각자 setTimeout(900~1600ms)에만 의존.
+     x6(~1.4초 전투)에서 직전 전투 FX가 다음 전투로 넘어와 fire → stale로 효과는 무시되나
+     타이머·DOM 작업 자체는 실행 → 반복 시 잔여 DOM/콜백 누적 가능 (B+x6).
+   처치: 전투 종료/loadStage 시점에 잔여를 즉시 쓸어낸다. (애니 시스템·전투 루프는 안 건드림)
+   안전성: battle-svg엔 영구 자식 없음(syncBattleSvg는 viewBox 속성만) → 자식 비워도 viewBox 유지.
+           portrait FX는 클래스로 쿼리 제거 (innerHTML 교체와 중복돼도 무해). */
+function sweepBattleFx() {
+  // 1) portrait 자식 floating 류 (data-uid 유닛 안에 붙음) — 클래스로 일괄 제거
+  document.querySelectorAll(".float-number, .action-label, .float-status, .kill-icon, .kill-label")
+    .forEach(el => el.remove());
+  // 2) portrait 펄스/플래시 클래스 잔상 (자기 타이머 못 따라온 것 정리)
+  document.querySelectorAll(".regen-pulse, .gauge-surge, .drum-buff-flash")
+    .forEach(el => el.classList.remove("regen-pulse", "gauge-surge", "drum-buff-flash"));
+  // 3) battle-svg 내부 잔여 FX (라인/파동/북소리/조준 가이드 — 영구 자식 없음)
+  const svg = document.getElementById("battle-svg");
+  if (svg) {
+    // 모든 SVG 자식 group/그래픽 제거 (line은 clearAllActionLines와 중복돼도 무해)
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+  // 4) 추적 중인 FX 지연 타이머 일괄 clear (예약된 콜백 실행 자체 차단)
+  clearTrackedFxTimers();
+}
+
+/* v0.3.8al3 STEP4: FX 잔여 카운트 디버그 (콘솔에서 debugFxCount() — 나라님 검수 보조).
+   DOM을 추가하지 않음(호출 시에만 셈). 반복 플레이 중 잔여가 쌓이는지 확인용.
+   기대: 전투 사이/타이틀 복귀 후 floating·svgChildren·fxTimers가 0 근처. */
+window.debugFxCount = function() {
+  const q = sel => document.querySelectorAll(sel).length;
+  const svg = document.getElementById("battle-svg");
+  const c = {
+    floatNumber: q(".float-number"),
+    actionLabel: q(".action-label"),
+    floatStatus: q(".float-status"),
+    killMarks: q(".kill-icon, .kill-label, .tombstone-marker"),
+    pulseClasses: q(".regen-pulse, .gauge-surge, .drum-buff-flash"),
+    svgChildren: svg ? svg.childNodes.length : -1,
+    fxTimers: (battleState.fxTimers || []).length,
+    tickInterval: battleState.tickInterval ? "live" : "null",
+    themeId: runState.themeId,
+    threatClass: (document.getElementById("screen-battle")?.className.match(/threat-\w+/) || ["none"])[0],
+  };
+  console.log("[debugFxCount]", c);
+  return c;
+};
+
+/* v0.3.8al2: 추적 가능한 FX 지연 타이머 (전투 종료/전환 시 일괄 취소).
+   FX의 cleanup용 setTimeout을 이 헬퍼로 감싸면 battleState.fxTimers에 등록 →
+   전투가 짧게 끝나도(x6) 예약 콜백이 다음 전투로 넘어가 실행되지 않는다.
+   기존 setTimeout을 전부 바꾸지 않고, 무거운 FX(파동/펄스)부터 점진 전환 (욕심 안 내기). */
+function fxTimeout(fn, ms) {
+  if (!battleState.fxTimers) battleState.fxTimers = [];
+  const id = setTimeout(() => {
+    // 실행 시 레지스트리에서 자기 제거 (배열 무한 증가 방지)
+    const i = battleState.fxTimers.indexOf(id);
+    if (i >= 0) battleState.fxTimers.splice(i, 1);
+    fn();
+  }, ms);
+  battleState.fxTimers.push(id);
+  return id;
+}
+function clearTrackedFxTimers() {
+  if (!battleState.fxTimers || !battleState.fxTimers.length) return;
+  battleState.fxTimers.forEach(id => clearTimeout(id));
+  battleState.fxTimers = [];
+}
+
+/* v0.3.8al8: 전장 균열 발동 시 짧은 crack pulse (battlefield). class toggle + fxTimeout (잔류 없음). */
+function _fissureCrackPulse() {
+  const bf = document.querySelector(".battlefield");
+  if (!bf) return;
+  bf.classList.remove("fissure-pulse");
+  // reflow로 애니메이션 재시작 보장
+  void bf.offsetWidth;
+  bf.classList.add("fissure-pulse");
+  fxTimeout(() => bf.classList.remove("fissure-pulse"), 750);
+}
+
 /* v0.3.7.12: 상태 피해 (독/지속 피해) 전용 게이트
    - dealDamage를 거치지 않음 (성벽/금제/보호막 흡수 결과 충돌 방지)
    - 모든 죽음은 markIfDead로 통일
@@ -10626,6 +11591,8 @@ function checkBattleEnd() {
   stopBattleLoop();
   // v0.3.7.13: 전투 종료 시 모든 행동선 즉시 clear (잔상 X)
   clearAllActionLines();
+  // v0.3.8al2: 전투 종료 시 잔여 FX/floating/DOM 일괄 sweep (x6 반복 누적 방지 — 유키 결)
+  sweepBattleFx();
 
   // 토큰 + stage 스냅샷 (예약된 timeout이 fire될 때 검증용)
   const token = runState.battleToken;
@@ -11516,9 +12483,14 @@ function showResult() {
     ? "25스테이지 완주 — 관측장의 끝"
     : `STAGE ${effectiveStage}에서 패배`;
   document.getElementById("result-title").className = `result-title ${isWin ? "win" : "lose"}`;
+  // v0.3.8al6 STEP3: 결과 화면에 테마/장면 컨텍스트 — "어느 길의 어느 장면" (나라님 결)
+  const _tc = (typeof _themeContext === "function") ? _themeContext() : { themeName: "" };
+  const _finalStage = (typeof getStageForTheme === "function") ? getStageForTheme(effectiveStage, runState.themeId) : null;
+  const _stageNameTxt = (_finalStage && _finalStage.name) ? ` ${_finalStage.name}` : "";
+  const _themeTag = _tc.themeName ? `[${_tc.themeName}] ` : "";
   document.getElementById("result-subtitle").textContent = isWin
-    ? "내 선택의 누적이 끝까지 박혔어."
-    : `${effectiveStage}층까지 도달. 다음엔 다른 선택으로.`;
+    ? `${_themeTag}내 선택의 누적이 끝까지 박혔어.`
+    : `${_themeTag}S${effectiveStage}${_stageNameTxt} 도달 — 다음엔 다른 선택으로.`;
 
   // 요약
   const summary = document.getElementById("result-summary");
@@ -11861,6 +12833,37 @@ function _footprintTimeSummary() {
   };
 }
 
+/* v0.3.8al6: 로그 = 테마 손맛 관측 장치 (나라님 결).
+   "어느 길의 어느 장면에서 무너졌는가"를 정직하게 — 단일 진실(THEMES/getStageForTheme/getStageKind)에서만.
+   finalStageKind 매핑: kindOverride.label(보스/준보스/검문) → boss/midBoss/checkpoint, 그 외 normal. */
+function _stageKindTag(stage) {
+  if (!stage) return "normal";
+  const label = (stage.kindOverride && stage.kindOverride.label) || "";
+  if (stage.phase === "boss" || label === "보스") return "boss";
+  if (label === "준보스" || stage.phase === "ending") return "midBoss";
+  if (label === "검문" || stage.phase === "proof") return "checkpoint";
+  if (stage.recruitsAfter) return "recruit";
+  return "normal";
+}
+function _themeContext() {
+  const themeId = runState.themeId || "beginner";
+  const theme = (typeof THEMES !== "undefined" && THEMES[themeId]) ? THEMES[themeId] : null;
+  // 런 출처: devTest 있으면 dev_jump, 아니면 일반런
+  const dev = runState.devTest;
+  const runSource = dev ? (dev.source === "dev_mode" ? "dev_jump" : (dev.source || "dev_jump")) : "normal_run";
+  const startStage = dev && dev.startStage ? dev.startStage : 1;
+  const isThemeRun = themeId !== "beginner";
+  const themeRouteLabel = `${theme ? theme.name : themeId} 테마 ${runSource === "normal_run" ? "일반런" : "DEV런"}`;
+  return {
+    themeId,
+    themeName: theme ? theme.name : themeId,
+    runSource,
+    startStage,
+    isThemeRun,
+    themeRouteLabel: isThemeRun ? themeRouteLabel : `${theme ? theme.name : themeId} ${runSource === "normal_run" ? "일반런" : "DEV런"}`,
+  };
+}
+
 function createFootprintFromRun() {
   if (!runState.runStats || !runState.runStats.perUnit) return null;
 
@@ -11997,6 +13000,7 @@ function createFootprintFromRun() {
       reflectDamage: u.reflectDamage || 0,
       poisonDamage: u.poisonDamage || 0,
       actionsTaken: u.actionsTaken || 0,
+      fissureDamageTaken: u.fissureDamageTaken || 0,   // v0.3.8al8: 전장 균열로 받은 추가 피해
       // v0.3.7.29: 성장 누적 결 — "왜 강해졌는가?" 분석용
       //   런 종료 시점의 unit 최종 스탯 (live unit이 있을 때만)
       finalCombat: liveUnit ? {
@@ -12012,11 +13016,13 @@ function createFootprintFromRun() {
 
   // 총합 결 (분석 보조)
   let totalDmg = 0, totalHeal = 0, totalShieldGiven = 0, totalShieldBlocked = 0;
+  let totalFissureDamageTaken = 0;
   unitStats.forEach(u => {
     totalDmg += u.damageDealt;
     totalHeal += u.healDone;
     totalShieldGiven += u.shieldGiven;
     totalShieldBlocked += u.shieldBlocked;
+    totalFissureDamageTaken += u.fissureDamageTaken || 0;
   });
 
   // 한 줄 요약 — 규칙 기반
@@ -12029,9 +13035,24 @@ function createFootprintFromRun() {
     id: "fp_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
     runId: runState.runId || null,        // v0.3.7.29: 런 식별자 (관측 장치)
     ts: Date.now(),
+    // v0.3.8al6: 테마/스테이지 컨텍스트 — "어느 길의 어느 장면에서 무너졌는가" (나라님 결)
+    version: (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : null,
+    ..._themeContext(),   // themeId / themeName / runSource / startStage / isThemeRun / themeRouteLabel
     result,
     stageReached,
     stageFinal: stageReached,
+    finalStageName: (function() {
+      const s = (typeof getStageForTheme === "function") ? getStageForTheme(stageReached, runState.themeId) : null;
+      return s ? (s.name || null) : null;
+    })(),
+    finalStageKind: (function() {
+      const s = (typeof getStageForTheme === "function") ? getStageForTheme(stageReached, runState.themeId) : null;
+      return _stageKindTag(s);
+    })(),
+    finalStagePhase: (function() {
+      const s = (typeof getStageForTheme === "function") ? getStageForTheme(stageReached, runState.themeId) : null;
+      return s ? (s.phase || null) : null;
+    })(),
     survivors: `${allyAliveCount}/${allyTotalCount}`,
     survivorsAlive: allyAliveCount,
     survivorsTotal: allyTotalCount,
@@ -12062,8 +13083,29 @@ function createFootprintFromRun() {
       criticals: totalCriticals,
       executes: totalExecutes,
       actions: totalActions,
+      fissureDamageTaken: totalFissureDamageTaken,   // v0.3.8al8: 전장 균열로 받은 추가 피해 총량
     },
   };
+
+  // v0.3.8al6 STEP3: 사람이 읽는 테마 요약 헤더 — "어느 길의 어느 장면" 한눈에 (나라님 결).
+  //   fp의 이미 정직한 필드만 재사용 (새 계산 X — 같은 진실).
+  fp.readableSummary = (function() {
+    const lines = [];
+    lines.push(`[${fp.themeName} / ${fp.runSource === "normal_run" ? "일반런" : "DEV런"}]`);
+    lines.push(`결과: ${fp.result}`);
+    const reachName = fp.finalStageName ? ` ${fp.finalStageName}` : "";
+    lines.push(`도달: S${fp.stageReached}${reachName}`);
+    const partyNames = (fp.finalParty || []).map(p => p.name).join(" / ");
+    if (partyNames) lines.push(`최종 파티: ${partyNames}`);
+    // 핵심 기여 — highlights에서 (있는 것만, 정직하게)
+    const contrib = [];
+    const h = fp.highlights || {};
+    if (h.topDmg)    contrib.push(`${h.topDmg.name} 피해 ${h.topDmg.num}`);
+    if (h.topHeal)   contrib.push(`${h.topHeal.name} 힐 ${h.topHeal.num}`);
+    if (h.topShield) contrib.push(`${h.topShield.name} 보호막 ${h.topShield.num}`);
+    if (contrib.length) lines.push(`핵심 기여: ${contrib.join(" / ")}`);
+    return lines.join("\n");
+  })();
 
   // v0.3.7.27: 정합성 검증 (게임 안 멈춤, console.warn만)
   validateFootprintIntegrity(fp);
@@ -12442,9 +13484,14 @@ function buildBalanceExportPayload() {
 
   return {
     exportType: "project_signal_balance_footprints",
-    exportVersion: 2,  // v0.3.7.29: runId / stageHistory / 성장 결 추가
+    exportVersion: 3,  // v0.3.8al6: 테마/스테이지 컨텍스트 + readableSummary 추가
     exportedAt: new Date().toISOString(),
     build,
+    // v0.3.8al6 STEP3: 런별 사람 읽는 테마 요약 (맨 위에서 "어느 길의 어느 장면" 한눈에 — 나라님 결)
+    //   각 footprint의 readableSummary 재사용 (같은 진실). 최신 런이 위로.
+    runSummaries: list.slice().reverse().map(fp =>
+      fp.readableSummary || `[${fp.themeName || fp.themeId || "?"}] ${fp.result} S${fp.stageReached}`
+    ),
     currentRun,   // v0.3.8ab: 현재 DEV 런 프리셋 메타 + 히드라 관측
     footprintCount: list.length,
     footprints: list,
@@ -12812,6 +13859,25 @@ function updateBattlefield() {
       } else if (existingPoison) {
         existingPoison.remove();
       }
+
+      // v0.3.8al8: 전장 균열 배지 (전열 아군 좌상단) — 트롤 장기전 압박 가시화 (유키 결)
+      const existingFissure = portrait.querySelector(".fissure-badge");
+      const fissureOn = battleState.trollFissure && battleState.trollFissure.active
+                     && battleState.trollFissure.stacks > 0
+                     && u.side === "ally" && u.role === "front" && u.alive;
+      if (fissureOn) {
+        const label = `▲${battleState.trollFissure.stacks}`;
+        if (existingFissure) {
+          existingFissure.textContent = label;
+        } else {
+          const fb = document.createElement("div");
+          fb.className = "fissure-badge";
+          fb.textContent = label;
+          portrait.appendChild(fb);
+        }
+      } else if (existingFissure) {
+        existingFissure.remove();
+      }
     }
 
     // v0.3.7.21: 상태 아이콘 줄 갱신
@@ -13048,7 +14114,8 @@ function renderUnitHTML(u) {
     } else {
       // 이모지를 portrait 가득 채우는 결 — 큰 사이즈
       portraitInner = `
-        <span class="enemy-emoji">${race.emoji}</span>
+        <span class="enemy-emoji">${u.displayEmoji || race.emoji}</span>
+        ${u.rockAccent ? `<span class="rock-accent">🪨</span>` : ""}
         <div class="role-badge" style="border-color: ${roleColor};">${roleSymbol}</div>
         ${u._enraged ? `<div class="enrage-badge">⚡</div>` : ""}
       `;
@@ -14103,7 +15170,7 @@ function drawCenterPulse(actor, targets, kind = "magic") {
     pulseGroup.appendChild(circle);
   }
   svg.appendChild(pulseGroup);
-  setTimeout(() => pulseGroup.remove(), 1500);
+  fxTimeout(() => pulseGroup.remove(), 1500);
 }
 
 /* v0.3.6.3: 중복 선언 제거됨.
@@ -14454,13 +15521,18 @@ const CODEX_ENTRIES = [
     if (devBtn) devBtn.style.display = "";
     console.log("[DEV] dev mode enabled");
   }
-  // v0.3.8ak2: 개발 검수 빌드 — 전체 해금 배지 표시
-  if (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL) {
-    const banner = document.getElementById("dev-unlock-banner");
-    if (banner) banner.style.display = "";
-    console.log("[DEV] ALL UNLOCKED (playtest build) — 릴리즈 해금 구조는 보존됨");
-  }
+  // v0.3.8al7 검수 장치: 타이틀 버전 표시를 BUILD_VERSION으로 자동 채움 (하드코딩 거짓 제거).
+  //   나라님이 타이틀에서 "지금 보는 게 최신 빌드인지" 즉시 확인 (캐시 문제 진단).
+  (function _fillTitleVersion() {
+    const el = document.getElementById("title-version");
+    if (!el) return;
+    const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?";
+    const unlocked = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL)
+      ? " · all unlocked" : "";
+    el.textContent = `MK.II — ${ver}${unlocked}`;
+  })();
 })();
 </script>
+
 </body>
 </html>
