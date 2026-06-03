@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8al11-poison-battlefield-layout</title>
+<title>Project Signal Mk.II v0.3.8al13-assassin-theme-mark</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -2245,11 +2245,15 @@ body {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 4px;
+  /* v0.3.8al12 핫픽스: 후열 사망 시 lane 수축 → 전열 이동(시야 흔들림) 방지.
+     "죽은 자리는 비워두고, 살아있는 몬스터는 움직이지 않는다."
+     min-height로 하한 고정 + 아래 enemy lane은 고정 height (단독 후열 사망에도 불변). */
   min-height: 90px;
   align-items: center;
   position: relative;
   z-index: 1;
   padding: 0 4px;
+  box-sizing: border-box;
 }
 
 .lane.enemy {
@@ -3044,7 +3048,10 @@ body {
   min-width: 56px;
 }
 /* 후열 lane 위쪽 여백 확보 — 대형 몬스터 상단이 안 잘리게 */
-#lane-enemy-back { padding-top: 28px; overflow: visible; }
+#lane-enemy-back { padding-top: 28px; overflow: visible; height: 118px; min-height: 118px; box-sizing: border-box; }
+/* v0.3.8al12 핫픽스: enemy front lane도 고정 높이 — 후열 사망으로 back lane이 비어도(또는 단독 후열 사망)
+   front lane이 위로 당겨지지 않게. 전투 중 적 진형 세로 위치 완전 고정. overflow visible로 대형 보스 보존. */
+#lane-enemy-front { overflow: visible; height: 96px; min-height: 96px; box-sizing: border-box; }
 .lane, #battle-svg { overflow: visible; }
 
 /* v0.3.8r1: 북지기 게이지 가속 강조 — 파란 게이지가 훅 차오르는 펄스 */
@@ -3851,6 +3858,31 @@ body {
   color: #1a1408;
   box-shadow: 0 0 10px rgba(255,201,74,0.9);
   z-index: 5;
+}
+
+/* v0.3.8al13: 암살자 표식 배지 — "이 유닛이 노려지고 있다" (유닛 상단 중앙, 붉은 표식).
+   예고의 핵심: 플레이어가 누가 노려지는지 읽고 보호/제어/처치로 대응. */
+.mark-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 15px;
+  line-height: 1;
+  z-index: 6;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(255,60,60,0.9));
+  animation: mark-pulse 1.1s ease-in-out infinite;
+}
+@keyframes mark-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1);    opacity: 0.95; }
+  50%      { transform: translateX(-50%) scale(1.25); opacity: 1; }
+}
+.unit-portrait.marked-glow {
+  box-shadow: 0 0 0 2px rgba(255,60,60,0.6), 0 0 14px rgba(255,60,60,0.5) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mark-badge { animation: none; }
 }
 
 /* 중독 배지 (유닛 우상단) — mk2 v0.2 박힘 */
@@ -5651,7 +5683,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8al11-poison-battlefield-layout";
+const BUILD_VERSION = "v0.3.8al13-assassin-theme-mark";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6181,12 +6213,15 @@ const ENEMY_TEMPLATES = {
     race: "goblin", role: "ranged", hp: 55, atk: 15, def: 1, spd: 118,
     displayName: "그림자 단검병", themeTag: "assassin",
   },
-  night_archer: {      // 밤눈 궁수 — 후열 저격
+  night_archer: {      // 밤눈 궁수 — 후열 저격 + 낮은 확률 표식. v0.3.8al13
     race: "goblin", role: "ranged", hp: 50, atk: 17, def: 1, spd: 110,
+    markOnTurn: 0.25,    // 25% 표식 — 원거리에서 사냥감 지정
     displayName: "밤눈 궁수", themeTag: "assassin",
   },
-  silent_killer: {     // 침묵 암살자 — 낮은HP 아군 압박 (약한 아군 노림)
+  silent_killer: {     // 침묵 암살자 — 표식 부여 + 표식 대상 추가피해 (위험한 딜러). v0.3.8al13
     race: "orc", role: "guard", hp: 70, atk: 19, def: 2, spd: 112,
+    markOnTurn: 0.6,        // 행동 시 60% 표식 부여 (예고 — 다음 기습의 우선 대상)
+    markStrikeBonus: 0.7,   // 표식 대상 공격 시 +70% 추가피해 ("사냥감을 찌른다")
     displayName: "침묵 암살자", themeTag: "assassin",
   },
   smoke_caster: {      // 연막 술사 — 후열 캐스터 (교란 느낌)
@@ -6197,6 +6232,7 @@ const ENEMY_TEMPLATES = {
   shadow_captain: {
     race: "orc", role: "ranged", hp: 520, atk: 20, def: 3, spd: 104,
     isMiniboss: true, isLargeEnemy: true, sizeSlots: 3, occupiedPattern: "back3",
+    markOnTurn: 0.7, markStrikeBonus: 0.5,   // v0.3.8al13: S10 표식 튜토리얼 — 표식 자주, 기습은 중간(즉사 X, 읽기 학습)
     enrageAfter: 7, enrageAtkBoost: 1.25,
     phases: { enrage: { introText: "그림자 가속!", fxClass: "phase-aura-berserk", avatarPhase: "angry", traitLabel: "질주" } },
     baseTraitLabel: "척후",
@@ -6206,6 +6242,7 @@ const ENEMY_TEMPLATES = {
   nightblade_commander: {
     race: "orc", role: "ranged", hp: 620, atk: 22, def: 4, spd: 108,
     isMiniboss: true, isLargeEnemy: true, sizeSlots: 3, occupiedPattern: "back3",
+    markOnTurn: 0.8, markStrikeBonus: 0.65,   // v0.3.8al13: S20 다중 표식 압박 (보호/속도제어 가치↑)
     enrageAfter: 7, enrageAtkBoost: 1.25,
     phases: { enrage: { introText: "밤칼 발현!", fxClass: "phase-aura-berserk", avatarPhase: "angry", traitLabel: "밤칼" } },
     baseTraitLabel: "지휘",
@@ -6216,6 +6253,7 @@ const ENEMY_TEMPLATES = {
     race: "orc", role: "ranged", hp: 1400, atk: 24, def: 4, spd: 100,
     isBoss: true,
     isLargeEnemy: true, sizeSlots: 4, occupiedPattern: "front2_back2",
+    markOnTurn: 0.85, markStrikeBonus: 0.8,   // v0.3.8al13: S25 표식-기습 완성형 (읽고 막는 최종 시험)
     enrageAfter: 8, enrageAtkBoost: 1.25,
     frenzyAfter: 14, frenzyAtkBoost: 1.55, frenzyMultiTarget: true,
     phases: {
@@ -6522,16 +6560,16 @@ const THEME_STAGE_OVERRIDES = {
      v0.3.8al: 25칸 신규. 심장(은신/표식/interrupt)은 보류 — 후열 위협 감정만 / 억울한 급사 X. */
   assassin: {
     // S1~5 맛보기 — 빠른 적이 뒤를 노린다
-    1:  { enemies: ["shadow_dagger", "shadow_dagger"] },
-    2:  { enemies: ["shadow_dagger", "night_archer", "shadow_dagger"] },
-    3:  { enemies: ["shadow_dagger", "smoke_caster"] },
-    4:  { enemies: ["night_archer", "shadow_dagger", "shadow_dagger"] },
-    5:  { enemies: ["silent_killer", "shadow_dagger", "night_archer"] },
+    1:  { name: "어둠의 입구", enemies: ["shadow_dagger", "shadow_dagger"] },
+    2:  { name: "그림자 골목", enemies: ["shadow_dagger", "night_archer", "shadow_dagger"] },
+    3:  { name: "첫 표식", enemies: ["shadow_dagger", "smoke_caster"] },
+    4:  { name: "연막 정찰", enemies: ["night_archer", "shadow_dagger", "shadow_dagger"] },
+    5:  { name: "기습 입증", enemies: ["silent_killer", "shadow_dagger", "night_archer"] },
     // S6~9 압력 증가
-    6:  { enemies: ["night_archer", "shadow_dagger", "smoke_caster"] },
-    7:  { enemies: ["silent_killer", "night_archer", "shadow_dagger"] },
-    8:  { enemies: ["shadow_dagger", "night_archer", "silent_killer", "smoke_caster"] },
-    9:  { enemies: ["silent_killer", "night_archer", "shadow_dagger", "shadow_dagger"] },
+    6:  { name: "밤의 추격", enemies: ["night_archer", "shadow_dagger", "smoke_caster"] },
+    7:  { name: "단검의 길", enemies: ["silent_killer", "night_archer", "shadow_dagger"] },
+    8:  { name: "그림자 결속", enemies: ["shadow_dagger", "night_archer", "silent_killer", "smoke_caster"] },
+    9:  { name: "은신 정찰", enemies: ["silent_killer", "night_archer", "shadow_dagger", "shadow_dagger"] },
     // S10 검문소 — 그림자 척후대장
     10: {
       name: "그림자 척후대장",
@@ -6540,16 +6578,16 @@ const THEME_STAGE_OVERRIDES = {
       kindOverride: { label: "검문", icon: "🗡️", line: "그림자 척후대장이 길을 막습니다." },
     },
     // S11~15 응용
-    11: { enemies: ["night_archer", "silent_killer", "shadow_dagger", "smoke_caster"] },
-    12: { enemies: ["silent_killer", "night_archer", "night_archer"] },
-    13: { enemies: ["shadow_dagger", "silent_killer", "smoke_caster", "night_archer"] },
-    14: { enemies: ["night_archer", "night_archer", "silent_killer"] },
-    15: { enemies: ["silent_killer", "night_archer", "shadow_dagger", "smoke_caster", "shadow_dagger"] },
+    11: { name: "사냥감 지정", enemies: ["night_archer", "silent_killer", "shadow_dagger", "smoke_caster"] },
+    12: { name: "연막의 벽", enemies: ["silent_killer", "night_archer", "night_archer"] },
+    13: { name: "밤칼날 훈련", enemies: ["shadow_dagger", "silent_killer", "smoke_caster", "night_archer"] },
+    14: { name: "기습 예고", enemies: ["night_archer", "night_archer", "silent_killer"] },
+    15: { name: "두 번째 표식", enemies: ["silent_killer", "night_archer", "shadow_dagger", "smoke_caster", "shadow_dagger"] },
     // S16~19 압력 상승
-    16: { enemies: ["night_archer", "silent_killer", "silent_killer", "smoke_caster"] },
-    17: { enemies: ["silent_killer", "night_archer", "night_archer", "shadow_dagger"] },
-    18: { enemies: ["night_archer", "silent_killer", "smoke_caster"] },
-    19: { enemies: ["silent_killer", "silent_killer", "night_archer", "shadow_dagger"] },
+    16: { name: "검은 쇄도", enemies: ["night_archer", "silent_killer", "silent_killer", "smoke_caster"] },
+    17: { name: "은신과 단검", enemies: ["silent_killer", "night_archer", "night_archer", "shadow_dagger"] },
+    18: { name: "그림자 군세", enemies: ["night_archer", "silent_killer", "smoke_caster"] },
+    19: { name: "마지막 정찰", enemies: ["silent_killer", "silent_killer", "night_archer", "shadow_dagger"] },
     // S20 준보스 — 밤칼 지휘관
     20: {
       name: "밤칼 지휘관",
@@ -6558,10 +6596,10 @@ const THEME_STAGE_OVERRIDES = {
       kindOverride: { label: "준보스", icon: "🗡️", line: "밤칼 지휘관이 길을 막습니다." },
     },
     // S21~24 압축
-    21: { enemies: ["night_archer", "silent_killer", "night_archer", "smoke_caster"] },
-    22: { enemies: ["silent_killer", "night_archer", "silent_killer", "shadow_dagger"] },
-    23: { enemies: ["night_archer", "night_archer", "silent_killer", "smoke_caster"] },
-    24: { enemies: ["silent_killer", "silent_killer", "night_archer", "night_archer"] },
+    21: { name: "무영의 길", enemies: ["night_archer", "silent_killer", "night_archer", "smoke_caster"] },
+    22: { name: "암살자의 능선", enemies: ["silent_killer", "night_archer", "silent_killer", "shadow_dagger"] },
+    23: { name: "마지막 표식", enemies: ["night_archer", "night_archer", "silent_killer", "smoke_caster"] },
+    24: { name: "왕의 그림자", enemies: ["silent_killer", "silent_killer", "night_archer", "night_archer"] },
     // S25 보스 — 무영단장
     25: {
       name: "무영단장",
@@ -8547,6 +8585,9 @@ function makeEnemyUnit(templateId) {
     // v0.3.8al10: 중독 의미화 — 독창 치명(중독 대상 추가피해) + 나가 독 흡수(보스 3종)
     poisonStrikeBonus: tpl.poisonStrikeBonus || 0,   // [6] 중독 대상 공격 추가피해 배수
     poisonAbsorbMode: tpl.poisonAbsorbMode || null,  // [7] "empower" | "heal" | "shield_or_enrage"
+    // v0.3.8al13: 암살자 표식 — 예고 → 기습 (후열 즉사 X, 읽고 막는 게임)
+    markOnTurn: tpl.markOnTurn || 0,          // 행동 시 표식 부여 확률
+    markStrikeBonus: tpl.markStrikeBonus || 0,  // 표식 대상 공격 시 추가피해 배수
     // v0.3.8z: 페이즈 전환 공통 훅
     phases: tpl.phases || null,        // 페이즈 전환 데이터 (없으면 전환 연출 없음)
     _phaseKey: null,                   // 현재 활성 페이즈 키 (아바타 교체/오라 추적)
@@ -8875,6 +8916,8 @@ function loadStage(stageNum, enemiesOverride) {
     u.alive = true;
     // v0.3.4: 전투 간 상태 정리 (성벽/중독/리듬)
     u.poisoned = 0;
+    u._marked = 0;   // v0.3.8al13: 암살자 표식 리셋 (전투 시작 시 깨끗하게)
+    u._markSourceUid = null;
     u._wallActiveUid = null;
     u._wallActiveTurns = 0;
     u._wallProtectorUid = null;
@@ -9024,6 +9067,26 @@ function tickBattle() {
    도적/덫꾼이 나가에 독을 걸면 오히려 이득 → 독 루트가 리스크. 단 보스 3종 한정(나가 전체 X).
    모드: empower(다음 공격 강화) / heal(흡수 회복) / shield_or_enrage(보호막+게이지).
    계기판 정직성: 흡수 스택/회복/버프를 actor에 누적 → footprint 합산. */
+/* v0.3.8al13 암살자 표식 — 적이 아군 1명을 "사냥감"으로 지정 (예고).
+   유키 결: "후열을 죽이는 길이 아니라, 표식과 기습을 읽고 핵심 유닛을 지키는 길."
+   즉사 X — 표식은 예고일 뿐. 플레이어가 보호/제어/처치로 대응할 시간을 준다.
+   대상 우선순위: 이미 표식된 아군 있으면 유지(집중) → 없으면 후열 우선 → 그중 살아있는 무작위. */
+function _assassinApplyMark(actor) {
+  const allies = runState.units.filter(u => u.alive);
+  if (allies.length === 0) return;
+  // 이미 표식 대상이 살아있으면 새로 안 검 (1명 집중 — 분산되면 읽기 어려움)
+  if (allies.some(u => u._marked > 0)) return;
+  // 후열(caster/ranged 성격 = role 아님; 아군은 role front/back) 우선, 없으면 전체
+  const back = allies.filter(u => u.role === "back");
+  const pool = back.length ? back : allies;
+  const target = pool[Math.floor(Math.random() * pool.length)];
+  target._marked = 2;   // 2턴 유지 (예고 → 기습 시간)
+  target._markSourceUid = actor.uid;
+  showActionLabel(actor, "표식!", "debuff");
+  if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(target, "사냥감 지정", "debuff"), 120);
+  pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>을(를) 노립니다 — 그림자 표식`, "debuff");
+}
+
 function _nagaAbsorbPoison(actor) {
   if (!actor.alive || !actor.poisonAbsorbMode) return;
   const stacks = actor.poisoned || 0;
@@ -9128,6 +9191,11 @@ function executeAction(actor) {
     actionType = "enemy_attack";
     // v0.3.8al10 [7] 나가 독 흡수 — 보스 3종이 행동 시 아군에 쌓인 중독을 역이용 (empower/heal/shield_or_enrage)
     if (actor.poisonAbsorbMode) _nagaAbsorbPoison(actor);
+    // v0.3.8al13 암살자 표식 — 기존 표식 자연 감소(예고 유지시간) 후, markOnTurn이면 새 표식 부여.
+    if (runState.themeId === "assassin") {
+      runState.units.forEach(u => { if (u.alive && u._marked > 0) u._marked -= 1; if (u._marked <= 0) u._markSourceUid = null; });
+    }
+    if (actor.markOnTurn && Math.random() < actor.markOnTurn) _assassinApplyMark(actor);
   } else if (actor.kind === "fusion") {
     actionType = "fusion";
   } else {
@@ -10908,6 +10976,13 @@ function actEnemyAttack(actor) {
 
   // 일반: role 기반 대상 선택
   let target;
+  // v0.3.8al13 암살자 표식 — 표식 대상 우선 (markStrikeBonus 보유 적은 사냥감을 노린다).
+  //   표식된 살아있는 아군이 있으면 role 무관 우선 타겟. 없으면 기존 role 분기.
+  if (actor.markStrikeBonus > 0) {
+    const marked = runState.units.find(u => u.alive && u._marked > 0);
+    if (marked) target = marked;
+  }
+  if (!target)
   switch (actor.role) {
     case "ranged":
     case "caster":
@@ -10987,6 +11062,17 @@ function actEnemyAttack(actor) {
       showActionLabel(actor, "독창 치명!", "attack");
       pushEvent(`<b>${actor.name}</b>가 중독된 <b>${target.name}</b>의 약점을 찌릅니다 — 독창 치명! (+${bonus})`, "death");
     }
+  }
+  // v0.3.8al13 암살자 표식 기습 — 표식 대상 공격 시 추가피해 + 표식 소비 (예고가 현실이 되는 순간).
+  if (actor.markStrikeBonus && actor.markStrikeBonus > 0 && target._marked > 0) {
+    const mbonus = Math.floor(dmg * actor.markStrikeBonus);
+    if (mbonus > 0) {
+      dmg += mbonus;
+      showActionLabel(actor, "표식 기습!", "attack");
+      pushEvent(`<b>${actor.name}</b>가 표식된 <b>${target.name}</b>을(를) 기습합니다! (+${mbonus})`, "death");
+    }
+    target._marked = 0;   // 기습 후 표식 소비 (다시 노리려면 새 표식)
+    target._markSourceUid = null;
   }
   dealDamage(actor, target, dmg, _poisonBonusThisHit > 0 ? { reason: "poison_strike" } : {});
   drawLine(actor, target, "attack");
@@ -13989,6 +14075,22 @@ function updateBattlefield() {
         }
       } else if (existingFissure) {
         existingFissure.remove();
+      }
+
+      // v0.3.8al13: 암살자 표식 배지 (아군 상단 🎯) — "이 유닛이 노려진다" 가시화
+      const existingMark = portrait.querySelector(".mark-badge");
+      const markedOn = u.side === "ally" && u.alive && u._marked > 0;
+      if (markedOn) {
+        if (!existingMark) {
+          const mb = document.createElement("div");
+          mb.className = "mark-badge";
+          mb.textContent = "🎯";
+          portrait.appendChild(mb);
+        }
+        portrait.classList.add("marked-glow");
+      } else {
+        if (existingMark) existingMark.remove();
+        portrait.classList.remove("marked-glow");
       }
     }
 
