@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Project Signal Mk.II v0.3.8al9-theme-faces-naga-and-troll-king</title>
+<title>Project Signal Mk.II v0.3.8al11-poison-battlefield-layout</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -5651,7 +5651,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8al9-theme-faces-naga-and-troll-king";
+const BUILD_VERSION = "v0.3.8al11-poison-battlefield-layout";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -5970,7 +5970,8 @@ const ENEMY_TEMPLATES = {
     // 트롤(HP800/재생0.07)보다 낮은 HP·재생 없음 — "이 길은 독을 대비해야 한다"의 첫 문지기.
     poisonOnHit: 1.0,           // 확정 독 패턴 (매 공격 중독 — 방치하면 누적)
     multiPoisonFront: 2,        // v0.3.8al5: 전사형 전열 압박 — 행동 시 전열 우선 2명에게 중독 1스택 (다중 중독)
-    poisonBonusVsPoisoned: 0.5, // [B단계 씨앗·미작동] 작동 코드 없음 (유키 결: 독 추가피해는 중독 2단계 심장). 데이터만 보존.
+    poisonStrikeBonus: 0.5,     // v0.3.8al10 [6]: 독창 치명 — 중독 대상 공격 시 +50% 추가피해 (작동 + 계기판 집계)
+    poisonAbsorbMode: "empower", // v0.3.8al10 [7]: 독 흡수 → 다음 독창 강화 (도적/덫꾼 독을 역이용)
     enrageAfter: 10, enrageAtkBoost: 1.25,   // 장기전 압박 (트롤보다 약하게)
     phases: {
       enrage: { introText: "맹독 분출!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "맹독" },
@@ -6096,6 +6097,7 @@ const ENEMY_TEMPLATES = {
     enrageAfter: 7, enrageAtkBoost: 1.25,
     phases: { enrage: { introText: "독무 폭발!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "독무" } },
     baseTraitLabel: "독무",
+    poisonAbsorbMode: "heal",   // v0.3.8al10 [7]: 독을 제물로 삼아 회복 (중간보스 유지력 — 도적/덫꾼 독이 손해)
     displayName: "독무 제사장", themeTag: "poison",
   },
   // S25 — 나가 여왕 (poison 전용 보스 골격. 히드라 객체 안 빌림 — 단일 대형 독 보스. 독늪을 지배하는 최종 얼굴)
@@ -6107,6 +6109,7 @@ const ENEMY_TEMPLATES = {
     enrageAfter: 9, enrageAtkBoost: 1.20,
     phases: { enrage: { introText: "독무 분출!", fxClass: "phase-aura-poison", avatarPhase: "angry", traitLabel: "나가 여왕" } },
     baseTraitLabel: "맹독",
+    poisonAbsorbMode: "shield_or_enrage",   // v0.3.8al10 [7]: 독기를 왕관에 모아 보호막+강화 (최종보스 — 독을 왕의 힘으로)
     displayName: "나가 여왕", themeTag: "poison",
   },
 
@@ -6409,16 +6412,16 @@ const THEME_STAGE_OVERRIDES = {
      v0.3.8al: 듬성 골격 → 25칸 전구간 보강 (유키 결: 비지 않은 길). */
   poison: {
     // S1~5 맛보기 — 독이 "있구나"
-    1:  { enemies: ["poison_goblin", "poison_goblin"] },
-    2:  { enemies: ["poison_goblin", "poison_goblin", "rot_spirit"] },
-    3:  { enemies: ["poison_goblin", "poison_goblin", "poison_goblin"] },
-    4:  { enemies: ["poison_goblin", "rot_spirit", "rot_spirit"] },
-    5:  { enemies: ["plague_caster", "poison_goblin", "poison_goblin"] },
+    1:  { name: "독늪 입구", enemies: ["poison_goblin", "poison_goblin"] },
+    2:  { name: "독니 군락", enemies: ["poison_goblin", "poison_goblin", "rot_spirit"] },
+    3:  { name: "비늘 둥지", enemies: ["poison_goblin", "poison_goblin", "poison_goblin"] },
+    4:  { name: "독늪 정찰", enemies: ["poison_goblin", "rot_spirit", "rot_spirit"] },
+    5:  { name: "첫 독무", enemies: ["plague_caster", "poison_goblin", "poison_goblin"] },
     // S6~9 압력 증가 — 확정 독이 섞인다
-    6:  { enemies: ["poison_goblin", "plague_caster", "rot_spirit"] },
-    7:  { enemies: ["plague_caster", "rot_spirit", "poison_goblin", "poison_sentinel"] },
-    8:  { enemies: ["plague_caster", "poison_goblin", "poison_goblin", "poison_sentinel"] },
-    9:  { enemies: ["poison_sentinel", "plague_caster", "poison_goblin"] },
+    6:  { name: "나가 무리", enemies: ["poison_goblin", "plague_caster", "rot_spirit"] },
+    7:  { name: "독창 방어진", enemies: ["plague_caster", "rot_spirit", "poison_goblin", "poison_sentinel"] },
+    8:  { name: "비늘 수호진", enemies: ["plague_caster", "poison_goblin", "poison_goblin", "poison_sentinel"] },
+    9:  { name: "독늪 정찰", enemies: ["poison_sentinel", "plague_caster", "poison_goblin"] },
     // S10 검문소 — 독창 문지기
     10: {
       name: "독창 문지기",
@@ -6427,31 +6430,33 @@ const THEME_STAGE_OVERRIDES = {
       kindOverride: { label: "검문", icon: "🟢", line: "독창 문지기가 길을 막습니다." },
     },
     // S11~15 응용
-    11: { enemies: ["plague_caster", "poison_goblin", "rot_spirit", "poison_goblin"] },
-    12: { enemies: ["poison_sentinel", "plague_caster", "poison_goblin", "plague_caster"] },
-    13: { enemies: ["plague_caster", "poison_goblin", "plague_caster", "poison_goblin"] },
-    14: { enemies: ["poison_sentinel", "plague_caster", "rot_spirit", "poison_goblin"] },
-    15: { enemies: ["plague_caster", "plague_caster", "poison_sentinel", "poison_goblin", "poison_sentinel"] },
+    11:  { name: "독니 쇄도", enemies: ["plague_caster", "poison_goblin", "rot_spirit", "poison_goblin"] },
+    12:  { name: "독늪 전열", enemies: ["poison_sentinel", "plague_caster", "poison_goblin", "plague_caster"] },
+    13:  { name: "독기의 격류", visualBack: 1, enemies: ["plague_caster", "poison_goblin", "plague_caster", "poison_goblin"] },
+    14:  { name: "독늪 정찰", visualBack: 1, enemies: ["poison_sentinel", "plague_caster", "rot_spirit", "poison_goblin"] },
+    15:  { name: "독무 입증", visualBack: 1, enemies: ["plague_caster", "plague_caster", "poison_sentinel", "poison_goblin", "poison_sentinel"] },
     // S16~19 압력 상승
-    16: { enemies: ["plague_caster", "poison_sentinel", "poison_goblin", "rot_spirit", "poison_goblin"] },
-    17: { enemies: ["poison_sentinel", "plague_caster", "plague_caster", "plague_caster"] },
-    18: { enemies: ["plague_caster", "plague_caster", "poison_goblin", "poison_sentinel"] },
-    19: { enemies: ["poison_sentinel", "poison_sentinel", "plague_caster", "rot_spirit"] },
+    16:  { name: "비늘 쇄도", visualBack: 1, enemies: ["plague_caster", "poison_sentinel", "poison_goblin", "rot_spirit", "poison_goblin"] },
+    17:  { name: "비늘과 독무", visualBack: 1, enemies: ["poison_sentinel", "plague_caster", "plague_caster", "plague_caster"] },
+    18:  { name: "나가 군세", visualBack: 1, enemies: ["plague_caster", "plague_caster", "poison_goblin", "poison_sentinel"] },
+    19:  { name: "독늪 정찰", enemies: ["poison_sentinel", "poison_sentinel", "plague_caster", "rot_spirit"] },
     // S20 준보스 — 독무 제사장
     20: {
       name: "독무 제사장",
+      visualBack: 3,
       enemies: ["plague_priest", "plague_caster", "poison_goblin", "poison_goblin"],
       threatIntro: { title: "독무 제사장 등장", line: "\"독은… 퍼지는 것이다.\"" },
       kindOverride: { label: "준보스", icon: "🧪", line: "독무 제사장이 길을 막습니다." },
     },
     // S21~24 압축
-    21: { enemies: ["plague_caster", "poison_sentinel", "plague_caster", "poison_goblin"] },
-    22: { enemies: ["poison_sentinel", "plague_caster", "rot_spirit", "poison_goblin", "plague_caster"] },
-    23: { enemies: ["plague_caster", "plague_caster", "poison_sentinel", "poison_sentinel"] },
-    24: { enemies: ["poison_sentinel", "plague_caster", "plague_caster", "rot_spirit", "poison_goblin"] },
+    21:  { name: "여왕의 늪길", visualBack: 1, enemies: ["plague_caster", "poison_sentinel", "plague_caster", "poison_goblin"] },
+    22:  { name: "독기 능선", visualBack: 1, enemies: ["poison_sentinel", "plague_caster", "rot_spirit", "poison_goblin", "plague_caster"] },
+    23:  { name: "마지막 독무", visualBack: 1, enemies: ["plague_caster", "plague_caster", "poison_sentinel", "poison_sentinel"] },
+    24:  { name: "여왕의 늪문", visualBack: 1, enemies: ["poison_sentinel", "plague_caster", "plague_caster", "rot_spirit", "poison_goblin"] },
     // S25 보스 — 나가 여왕
     25: {
       name: "나가 여왕",
+      visualBack: 2,
       enemies: ["poison_lord", "plague_caster", "plague_caster"],
       threatIntro: { title: "나가 여왕 등장", line: "\"독의 길 끝에서, 네 해독법을 증명하라.\"" },
       kindOverride: { label: "보스", icon: "☠", line: "나가 여왕이 길 끝에서 기다립니다." },
@@ -8539,6 +8544,9 @@ function makeEnemyUnit(templateId) {
     // v0.3.8al9: 테마 얼굴 — 유니크 이모지/실루엣 (보스 개성. 없으면 race.emoji)
     displayEmoji: tpl.displayEmoji || null,
     rockAccent: tpl.rockAccent || false,
+    // v0.3.8al10: 중독 의미화 — 독창 치명(중독 대상 추가피해) + 나가 독 흡수(보스 3종)
+    poisonStrikeBonus: tpl.poisonStrikeBonus || 0,   // [6] 중독 대상 공격 추가피해 배수
+    poisonAbsorbMode: tpl.poisonAbsorbMode || null,  // [7] "empower" | "heal" | "shield_or_enrage"
     // v0.3.8z: 페이즈 전환 공통 훅
     phases: tpl.phases || null,        // 페이즈 전환 데이터 (없으면 전환 연출 없음)
     _phaseKey: null,                   // 현재 활성 페이즈 키 (아바타 교체/오라 추적)
@@ -8730,6 +8738,14 @@ function initRunFromParty() {
   runState.runId = "run_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
   runState.stageHistory = [];
   runState._stageActionsBaseline = 0;
+  // v0.3.8al10 [8]: 중독 의미화 계기판 — 런 전체 누적 (적은 전투마다 새 객체라 런 자리에 모음).
+  runState._themePoisonStats = {
+    poisonBonusDamageDealt: 0,   // 독창 치명으로 적이 추가로 가한 피해
+    poisonAbsorbStacks: 0,       // 나가가 흡수한 중독 스택 총량
+    poisonAbsorbHeal: 0,         // 흡수 회복 총량
+    poisonAbsorbShield: 0,       // 흡수 보호막 총량
+    poisonAbsorbBuffCount: 0,    // 흡수 강화 발동 횟수
+  };
   // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
   //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
   runState.timeStats = createInitialTimeStats();
@@ -8808,6 +8824,15 @@ function loadStage(stageNum, enemiesOverride) {
   // 적 인스턴스 생성 (v0.3.8v: DEV override 있으면 그걸로 — seed 관측용)
   const enemyList = (enemiesOverride && enemiesOverride.length) ? enemiesOverride : stage.enemies;
   runState.enemies = enemyList.map(tplId => makeEnemyUnit(tplId));
+  // v0.3.8al10: front4+back1 무대 — stage.visualBack 수만큼 뒤 마리를 시각적 후열로 (행동은 전열 유지).
+  //   "나가가 우글우글"의 압박 유지 + 후열 단독 나가를 견제하는 직업(용창/궁수/유격수) 무대.
+  if (stage && stage.visualBack && stage.visualBack > 0) {
+    const n = Math.min(stage.visualBack, runState.enemies.length - 1);  // 최소 1마리는 전열에 남김
+    for (let k = 0; k < n; k++) {
+      const idx = runState.enemies.length - 1 - k;
+      if (idx >= 0) runState.enemies[idx]._visualBack = true;
+    }
+  }
   // v0.3.8al7 검수 장치 (나라님 결): "내가 보는 화면 = 렌 코드"를 즉시 확인.
   //   콘솔 + 전투 로그에 [버전 / 테마 / S## / 스테이지명 / theme-class / 적 ids] 출력.
   (function _stageInspectLog() {
@@ -8995,6 +9020,54 @@ function tickBattle() {
 
 /* ---------- 행동 실행 (behavior 기반 분기) ---------- */
 
+/* v0.3.8al10 [7] 나가 독 흡수 — 보스 나가가 자신에게 걸린 중독을 역이용 (유키 결: "독으로 잡는 적이 아니다").
+   도적/덫꾼이 나가에 독을 걸면 오히려 이득 → 독 루트가 리스크. 단 보스 3종 한정(나가 전체 X).
+   모드: empower(다음 공격 강화) / heal(흡수 회복) / shield_or_enrage(보호막+게이지).
+   계기판 정직성: 흡수 스택/회복/버프를 actor에 누적 → footprint 합산. */
+function _nagaAbsorbPoison(actor) {
+  if (!actor.alive || !actor.poisonAbsorbMode) return;
+  const stacks = actor.poisoned || 0;
+  if (stacks <= 0) return;
+  // 흡수: 자신의 중독 스택 소비
+  actor.poisoned = 0;
+  actor._poisonAbsorbStacks = (actor._poisonAbsorbStacks || 0) + stacks;
+  const PS = runState._themePoisonStats;
+  if (PS) PS.poisonAbsorbStacks += stacks;
+  const mode = actor.poisonAbsorbMode;
+  if (mode === "heal") {
+    // 독무 제사장 — 흡수 회복 (중간보스 유지력)
+    const healAmt = Math.floor(actor.maxHp * 0.04 * stacks);
+    if (healAmt > 0 && actor.hp < actor.maxHp) {
+      doHeal(actor, actor, healAmt);
+      actor._poisonAbsorbHeal = (actor._poisonAbsorbHeal || 0) + healAmt;
+      if (PS) PS.poisonAbsorbHeal += healAmt;
+    }
+    showActionLabel(actor, "독기 흡수", "heal");
+    pushEvent(`<b>${actor.name}</b>가 독을 제물로 삼습니다 — 회복 +${healAmt}`, "heal");
+  } else if (mode === "empower") {
+    // 독창문지기 — 다음 공격 강화
+    actor._poisonEmpowerNext = (actor._poisonEmpowerNext || 0) + 0.20 * stacks;
+    actor._poisonAbsorbBuffCount = (actor._poisonAbsorbBuffCount || 0) + 1;
+    if (PS) PS.poisonAbsorbBuffCount += 1;
+    showActionLabel(actor, "독기 흡수", "debuff");
+    pushEvent(`<b>${actor.name}</b>가 독기를 삼켰습니다 — 다음 독창 강화`, "debuff");
+  } else if (mode === "shield_or_enrage") {
+    // 나가 여왕 — 보호막 + 흡수 누적마다 강화
+    const shieldAmt = Math.floor(actor.maxHp * 0.05 * stacks);
+    actor.shield = (actor.shield || 0) + shieldAmt;
+    actor._poisonAbsorbShield = (actor._poisonAbsorbShield || 0) + shieldAmt;
+    actor._poisonAbsorbBuffCount = (actor._poisonAbsorbBuffCount || 0) + 1;
+    if (PS) { PS.poisonAbsorbShield += shieldAmt; PS.poisonAbsorbBuffCount += 1; }
+    // 3회 흡수마다 공격 강화 1스택
+    if (actor._poisonAbsorbBuffCount % 3 === 0) {
+      actor.atk = Math.floor(actor.atk * 1.10);
+      pushEvent(`<b>${actor.name}</b>가 독기를 왕관에 모읍니다 — 왕의 분노 +`, "death");
+    }
+    showActionLabel(actor, "독기 흡수", "shield");
+    pushEvent(`<b>${actor.name}</b>가 독기를 왕관에 모읍니다 — 보호막 ◇${shieldAmt}`, "debuff");
+  }
+}
+
 function executeAction(actor) {
   if (!actor.alive) return;
 
@@ -9053,6 +9126,8 @@ function executeAction(actor) {
   let actionType;
   if (actor.side === "enemy") {
     actionType = "enemy_attack";
+    // v0.3.8al10 [7] 나가 독 흡수 — 보스 3종이 행동 시 아군에 쌓인 중독을 역이용 (empower/heal/shield_or_enrage)
+    if (actor.poisonAbsorbMode) _nagaAbsorbPoison(actor);
   } else if (actor.kind === "fusion") {
     actionType = "fusion";
   } else {
@@ -9280,7 +9355,7 @@ function actAttack(actor) {
   //   - 백로우 적 잡으면 데미지 +50% (그대로)
   const target = pickEnemyTarget(actor, "priority");
   if (!target) return;
-  const isBackRow = (target.role === "caster" || target.role === "ranged");
+  const isBackRow = (target.role === "caster" || target.role === "ranged" || target._visualBack);
   const backRowMult = isBackRow ? 1.5 : 1.0;  // mk2 v0.2: 후열 +50%
   const dmg = Math.floor(actor.atk * (1.0 + actor.level * 0.12) * backRowMult);
   showActionText(actor, "저격!", { kind: "crit" });
@@ -9368,7 +9443,7 @@ function actBasicBack(actor) {
   // 후열 공격 — 저격/교란의 기본 행동 (특수 효과 없는 평타)
   const target = pickEnemyTarget(actor, "any");
   if (!target) return;
-  const isBackRow = (target.role === "caster" || target.role === "ranged");
+  const isBackRow = (target.role === "caster" || target.role === "ranged" || target._visualBack);
   // v0.3.8f: 리듬 강화권 소비
   const r = consumeRhythmIfCompatibleAttack(actor);
   // 후열 대상이 있으면 우선, 후열 +20% (저격만큼 강하지 않게)
@@ -9582,8 +9657,9 @@ function actFusion(actor) {
       if (aliveEnemies2.length > 0) {
         // 뒤에 있는 적 우선 (lane 차이로 판단 — 후열을 우선)
         const piercedTarget = aliveEnemies2.sort((a, b) => {
-          // role === "back" / "ranged" / "caster" 우선 (후방 결)
-          const backScore = (e) => (e.role === "ranged" || e.role === "caster") ? 1 : 0;
+          // role === "back" / "ranged" / "caster" / _visualBack 우선 (후방 결)
+          //   v0.3.8al11: _visualBack 나가도 후열로 — 용창이 전열 뚫고 독 근원(후열 나가)을 찌른다.
+          const backScore = (e) => (e.role === "ranged" || e.role === "caster" || e._visualBack) ? 1 : 0;
           return backScore(b) - backScore(a);
         })[0];
         dealDamage(actor, piercedTarget, dmg);
@@ -9712,9 +9788,10 @@ function actFusion(actor) {
         const shieldAmt = Math.floor(actor.atk * 0.4);
         target.shield = Math.max(target.shield || 0, shieldAmt);
 
-        showActionLabel(actor, "정화!", "heal");
+        showActionLabel(actor, "✦ 정화! ✦", "heal");
         drawLine(actor, target, "heal");
         doHeal(actor, target, healAmt);
+        if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(target, "독기 해제!", "heal"), 120);  // v0.3.8al10: 대상에도 정화 메시지
         if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmt);
         reactReceive(target, "shield");
         // v0.3.8al4 STEP2(C): 정화 성공 가시화 — "독을 씻어낸 순간"을 눈에 보이게 (유키 결).
@@ -10837,7 +10914,16 @@ function actEnemyAttack(actor) {
       target = pickAllyTargetByRole("back") || pickAllyTargetByRole("front");
       break;
     case "guard":
-      target = pickAllyLowestHp(null);
+      // v0.3.8al10: 중독 테마 guard는 전열 우선 (유키 결: 후열 암살 X, 전열 독 붕괴 O).
+      //   전열 생존자 있으면 그 중 최저HP, 없으면 전체 최저HP. 다른 테마는 기존(전체 최저HP) 유지.
+      if (runState.themeId === "poison") {
+        const front = runState.units.filter(u => u.alive && u.role === "front");
+        target = front.length
+          ? front.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0]
+          : pickAllyLowestHp(null);
+      } else {
+        target = pickAllyLowestHp(null);
+      }
       break;
     case "melee":
     default:
@@ -10882,8 +10968,27 @@ function actEnemyAttack(actor) {
     return;
   }
 
-  const dmg = Math.floor(actor.atk * (0.9 + Math.random() * 0.3));
-  dealDamage(actor, target, dmg);
+  let dmg = Math.floor(actor.atk * (0.9 + Math.random() * 0.3));
+  // v0.3.8al10 [7] empower — 독 흡수로 강화된 다음 공격 (독창문지기). 1회 소비.
+  if (actor._poisonEmpowerNext && actor._poisonEmpowerNext > 0) {
+    dmg = Math.floor(dmg * (1 + actor._poisonEmpowerNext));
+    actor._poisonEmpowerNext = 0;
+  }
+  // v0.3.8al10 [6] 독창 치명 — 중독 대상에 추가피해 (독창문지기 등 poisonStrikeBonus 보유 적).
+  //   "독창문지기는 중독 약점을 찌른다." 계기판 정직성: 추가분만 _poisonBonusDamage 별도 누적.
+  let _poisonBonusThisHit = 0;
+  if (actor.poisonStrikeBonus && actor.poisonStrikeBonus > 0 && target.poisoned > 0) {
+    const bonus = Math.floor(dmg * actor.poisonStrikeBonus);
+    if (bonus > 0) {
+      _poisonBonusThisHit = bonus;
+      dmg += bonus;
+      actor._poisonBonusDamage = (actor._poisonBonusDamage || 0) + bonus;
+      if (runState._themePoisonStats) runState._themePoisonStats.poisonBonusDamageDealt += bonus;
+      showActionLabel(actor, "독창 치명!", "attack");
+      pushEvent(`<b>${actor.name}</b>가 중독된 <b>${target.name}</b>의 약점을 찌릅니다 — 독창 치명! (+${bonus})`, "death");
+    }
+  }
+  dealDamage(actor, target, dmg, _poisonBonusThisHit > 0 ? { reason: "poison_strike" } : {});
   drawLine(actor, target, "attack");
   pushEvent(`${actor.name} → <b>${target.name}</b> (${dmg})`, "attack");
 
@@ -10999,14 +11104,17 @@ function pickEnemyTarget(actor, mode) {
   const alive = runState.enemies.filter(e => e.alive);
   if (alive.length === 0) return null;
   if (mode === "priority") {
-    // caster > ranged > 일반
+    // caster > ranged > 시각 후열(나가 독 근원) > 일반
+    //   v0.3.8al11: _visualBack도 후열로 인정 — 용창/궁수가 후열 나가를 실제로 찌름 ("독의 근원").
     const caster = alive.find(e => e.role === "caster");
     if (caster) return caster;
     const ranged = alive.find(e => e.role === "ranged");
     if (ranged) return ranged;
+    const vBack = alive.find(e => e._visualBack);
+    if (vBack) return vBack;
   }
   if (mode === "caster_or_ranged") {
-    const c = alive.find(e => e.role === "caster" || e.role === "ranged");
+    const c = alive.find(e => e.role === "caster" || e.role === "ranged" || e._visualBack);
     if (c) return c;
   }
   return alive[0];
@@ -13084,6 +13192,8 @@ function createFootprintFromRun() {
       executes: totalExecutes,
       actions: totalActions,
       fissureDamageTaken: totalFissureDamageTaken,   // v0.3.8al8: 전장 균열로 받은 추가 피해 총량
+      // v0.3.8al10 [8]: 중독 의미화 — 독창 치명 + 나가 흡수 (계기판 거짓 없음)
+      themePoison: Object.assign({}, runState._themePoisonStats || {}),
     },
   };
 
@@ -13641,8 +13751,10 @@ function renderBattlefield() {
 function initBattlefield() {
   // 적 라인 분배: caster/ranged/special → back, 나머지 → front
   //   v0.3.8r: 전쟁 북지기(special)는 후열 대형 몬스터 — back lane에 배치.
-  const enemyBack  = runState.enemies.filter(e => e.role === "caster" || e.role === "ranged" || e.role === "special");
-  const enemyFront = runState.enemies.filter(e => !(e.role === "caster" || e.role === "ranged" || e.role === "special"));
+  //   v0.3.8al10: _visualBack — 행동(타겟팅)은 전열 유지하되 시각만 후열 (front4+back1 무대 / 용창 견제).
+  const isVisualBack = e => (e.role === "caster" || e.role === "ranged" || e.role === "special" || e._visualBack);
+  const enemyBack  = runState.enemies.filter(isVisualBack);
+  const enemyFront = runState.enemies.filter(e => !isVisualBack(e));
 
   const setLane = (id, units) => {
     const lane = document.getElementById(id);
