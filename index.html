@@ -3892,6 +3892,14 @@ body {
   0%, 100% { box-shadow: 0 0 0 2px rgba(255,50,50,0.85), 0 0 12px rgba(255,40,40,0.5) !important; }
   50%      { box-shadow: 0 0 0 3px rgba(255,70,70,1),    0 0 22px rgba(255,40,40,0.8) !important; }
 }
+/* v0.3.8ao: 조준 완료(armed) — 예고보다 강한/빠른 펄스. "기습 준비됨"의 긴장. */
+.unit-portrait.marked-armed {
+  animation: marked-armed-pulse 0.7s ease-in-out infinite !important;
+}
+@keyframes marked-armed-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255,40,40,1),   0 0 16px rgba(255,30,30,0.7) !important; }
+  50%      { box-shadow: 0 0 0 4px rgba(255,90,70,1),   0 0 28px rgba(255,40,40,0.95) !important; }
+}
 /* 네 방향 조준선 — 스코프 십자선 느낌 (::before 가로+세로, conic으로 네 틱). */
 .unit.marked-target .unit-portrait::after {
   content: "";
@@ -3914,6 +3922,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .mark-badge { animation: none; }
   .unit-portrait.marked-scope { animation: none; }
+  .unit-portrait.marked-armed { animation: none !important; }
   .unit.marked-target .unit-portrait::after { animation: none; }
 }
 
@@ -5715,7 +5724,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8an-assassin-mark-taunt-link";
+const BUILD_VERSION = "v0.3.8ao-assassin-armed-delay-troll-regen-restore";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -8819,6 +8828,12 @@ function initRunFromParty() {
     poisonAbsorbShield: 0,       // 흡수 보호막 총량
     poisonAbsorbBuffCount: 0,    // 흡수 강화 발동 횟수
   };
+  // v0.3.8am [트롤 심장 1단계]: "독이 재생을 말린다" 관측 계기판 (ao에서 복원 — 색감 사고와 같은 계열 유실 후 복구).
+  //   유키 결: 독은 트롤 재생을 삭제하지 않고 크게 꺾는다(×0.25). 봉쇄량(원래−실제)을 기록.
+  runState._themeTrollStats = {
+    regenSuppressCount: 0,       // 독으로 재생이 꺾인 횟수
+    regenSuppressAmount: 0,      // 독이 말린 재생량 총합 (원래 회복 - 실제 회복)
+  };
   // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
   //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
   runState.timeStats = createInitialTimeStats();
@@ -8950,6 +8965,7 @@ function loadStage(stageNum, enemiesOverride) {
     u.poisoned = 0;
     u._marked = 0;   // v0.3.8al13: 암살자 표식 리셋 (전투 시작 시 깨끗하게)
     u._markSourceUid = null;
+    u._markArmed = false;   // v0.3.8ao: 무장 상태도 리셋
     u._wallActiveUid = null;
     u._wallActiveTurns = 0;
     u._wallProtectorUid = null;
@@ -9126,9 +9142,9 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   dealDamage(actor, tauntor, tauntShare, { fromTaunt: true });
   drawLine(actor, tauntor, "attack_tauntpull");
   // 읽히는 표시 (실제 분산이 일어났을 때만 — 거짓 표시 금지)
-  showActionLabel(tauntor, "기습 분산", "taunt");
-  if (typeof showStatusText === "function") showStatusText(marked, "칼끝 돌림", { kind: "taunt" });
-  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b>의 표식 기습을 가로막았다 — 칼끝이 갈라진다 (${actor.name}: ${marked.name} ${markShare} / ${tauntor.name} ${tauntShare})`, "taunt");
+  showActionLabel(tauntor, "기습 가로막기", "taunt");
+  if (typeof showStatusText === "function") showStatusText(marked, "칼끝 분산", { kind: "taunt" });
+  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞에 서서 기습을 나눠 받았다 — 칼끝이 갈라진다 (${marked.name} ${markShare} / ${tauntor.name} ${tauntShare})`, "taunt");
 }
 
 /* v0.3.8al13 암살자 표식 — 적이 아군 1명을 "사냥감"으로 지정 (예고).
@@ -9146,6 +9162,7 @@ function _assassinApplyMark(actor) {
   const target = pool[Math.floor(Math.random() * pool.length)];
   target._marked = 2;   // 2턴 유지 (예고 → 기습 시간)
   target._markSourceUid = actor.uid;
+  target._markArmed = false;   // v0.3.8ao: 부여 턴엔 "예고"만 — 기습 추가피해 발동 X. 건 적의 다음 자기 턴에 무장.
   showActionLabel(actor, "표식!", "debuff");
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(target, "사냥감 지정", "debuff"), 120);
   pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>을(를) 노립니다 — 그림자 표식`, "debuff");
@@ -9257,7 +9274,19 @@ function executeAction(actor) {
     if (actor.poisonAbsorbMode) _nagaAbsorbPoison(actor);
     // v0.3.8al13 암살자 표식 — 기존 표식 자연 감소(예고 유지시간) 후, markOnTurn이면 새 표식 부여.
     if (runState.themeId === "assassin") {
-      runState.units.forEach(u => { if (u.alive && u._marked > 0) u._marked -= 1; if (u._marked <= 0) u._markSourceUid = null; });
+      // v0.3.8ao: 무장 판정 먼저 — 이 적이 *이전 턴에* 찍어둔 표식이 아직 살아있으면 "조준 완료"(armed).
+      //   이번 턴 막 부여할 표식은 아래 _assassinApplyMark에서 armed=false로 들어가므로 같은 턴 기습 불가.
+      runState.units.forEach(u => {
+        if (u.alive && u._marked > 0 && u._markSourceUid === actor.uid && !u._markArmed) {
+          u._markArmed = true;
+          showActionLabel(u, "조준 완료", "debuff");
+          pushEvent(`<b>${actor.name}</b>의 조준이 <b>${u.name}</b>에게 고정됐다 — 기습 준비`, "debuff");
+        }
+      });
+      runState.units.forEach(u => {
+        if (u.alive && u._marked > 0) u._marked -= 1;
+        if (u._marked <= 0) { u._markSourceUid = null; u._markArmed = false; }
+      });
     }
     if (actor.markOnTurn && Math.random() < actor.markOnTurn) _assassinApplyMark(actor);
   } else if (actor.kind === "fusion") {
@@ -11134,16 +11163,18 @@ function actEnemyAttack(actor) {
     }
   }
   // v0.3.8al13 암살자 표식 기습 — 표식 대상 공격 시 추가피해 + 표식 소비 (예고가 현실이 되는 순간).
+  //   v0.3.8ao: _markArmed===true(조준 완료)일 때만 발동. 예고 상태(armed=false)면 아래 일반 피해 + 표식 유지(미소비).
   let _markStrikeSplit = null;   // v0.3.8an: 분산 발동 시 도발 유닛 담음 (일반 타격 경로 건너뛰기)
-  if (actor.markStrikeBonus && actor.markStrikeBonus > 0 && target._marked > 0) {
+  if (actor.markStrikeBonus && actor.markStrikeBonus > 0 && target._marked > 0 && target._markArmed === true) {
     const mbonus = Math.floor(dmg * actor.markStrikeBonus);
     if (mbonus > 0) {
       dmg += mbonus;
       showActionLabel(actor, "표식 기습!", "attack");
       pushEvent(`<b>${actor.name}</b>가 표식된 <b>${target.name}</b>을(를) 기습합니다! (+${mbonus})`, "death");
     }
-    target._marked = 0;   // 기습 후 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결)
+    target._marked = 0;   // 활성 기습 성립 → 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결)
     target._markSourceUid = null;
+    target._markArmed = false;
     // v0.3.8an [옵션3]: 표식 기습이 성립한 이 공격 — 살아있는 도발 유닛이 있으면 총 dmg를 50:50 분산.
     //   markStrikeBonus 포함 총 dmg 확정 후 분산 ("강화된 기습 한 방을 둘이 나눠 맞았다").
     const _tauntor = getActiveTauntor();
@@ -11230,12 +11261,16 @@ function actEnemyAttack(actor) {
     actor._trollRegenTick = (actor._trollRegenTick || 0) + 1;
     if (actor._trollRegenTick >= TROLL_COMMON_REGEN_EVERY) {
       actor._trollRegenTick = 0;
-      const healAmt = Math.max(1, Math.floor(actor.maxHp * TROLL_COMMON_REGEN_PCT));
-      showActionLabel(actor, "재생", "heal");
-      doHeal(actor, actor, healAmt);
+      const rawHeal = Math.max(1, Math.floor(actor.maxHp * TROLL_COMMON_REGEN_PCT));
+      // v0.3.8am: 독이 트롤 재생을 말린다 (트롤 테마 + 독일 때만 ×0.25)
+      const sup = applyTrollRegenSuppression(actor, rawHeal);
+      const healAmt = sup.heal;
+      if (sup.suppressed > 0) showTrollRegenSuppressed(actor, sup);
+      else showActionLabel(actor, "재생", "heal");
+      if (healAmt > 0) doHeal(actor, actor, healAmt);
       const tel = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
       if (tel) { tel.classList.add("regen-pulse"); fxTimeout(() => tel.classList.remove("regen-pulse"), 700); }
-      pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
+      if (healAmt > 0) pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
     }
   }
 
@@ -11243,17 +11278,46 @@ function actEnemyAttack(actor) {
   //   doHeal 경유 → 초록 회복 숫자 자동 노출. + "재생!" 라벨 + 몸 주변 초록 펄스.
   //   결: "왜 안 죽지?"가 아니라 "아, 지금 재생했구나"를 즉시 이해.
   if (actor._pendingSelfHeal && actor.selfHealPct > 0 && actor.alive && actor.hp < actor.maxHp) {
-    const healAmt = Math.floor(actor.maxHp * actor.selfHealPct);
-    showActionLabel(actor, "재생!", "heal");
-    doHeal(actor, actor, healAmt);   // 초록 회복 숫자 + 리액션
+    const rawHeal = Math.floor(actor.maxHp * actor.selfHealPct);
+    // v0.3.8am: 독이 트롤 재생을 말린다 — 체감 핵심(문지기/트롤왕). 트롤 테마 + 독일 때만 ×0.25.
+    const sup = applyTrollRegenSuppression(actor, rawHeal);
+    const healAmt = sup.heal;
+    if (sup.suppressed > 0) showTrollRegenSuppressed(actor, sup);
+    else showActionLabel(actor, "재생!", "heal");
+    if (healAmt > 0) doHeal(actor, actor, healAmt);   // 초록 회복 숫자 + 리액션
     const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
     if (el) {
       el.classList.add("regen-pulse");
       setTimeout(() => el.classList.remove("regen-pulse"), 700);
     }
-    pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
+    if (healAmt > 0) pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
   }
   actor._pendingSelfHeal = false;
+}
+
+// v0.3.8am [트롤 심장 1단계, ao 복원]: "독이 재생을 말린다" — 공용 억제 게이트.
+//   유키 결: 삭제(0)가 아니라 강한 부분 억제(×0.25). 트롤 테마 + 트롤 + poisoned 일 때만.
+//   조건 불충족이면 원래 healAmt 그대로 통과. 히드라 비독압박 억제(aj)와 별개 경로.
+const TROLL_POISON_REGEN_MULT = 0.25;   // 독 묻은 트롤 재생량 (원래의 25%)
+function applyTrollRegenSuppression(actor, healAmt) {
+  if (!(runState.themeId === "troll" && actor.race === "troll" && actor.poisoned > 0)) {
+    return { heal: healAmt, suppressed: 0, blocked: false };
+  }
+  const finalHeal = Math.floor(healAmt * TROLL_POISON_REGEN_MULT);
+  const suppressed = Math.max(0, healAmt - finalHeal);
+  if (runState._themeTrollStats) {
+    runState._themeTrollStats.regenSuppressCount += 1;
+    runState._themeTrollStats.regenSuppressAmount += suppressed;
+  }
+  return { heal: finalHeal, suppressed, blocked: (finalHeal <= 0) };
+}
+// 재생 억제 표시 — 회복이 조금이라도 들어가면 "재생 봉쇄", 진짜 0이면 "재생 실패" (거짓 표시 금지).
+function showTrollRegenSuppressed(actor, sup) {
+  if (!sup || sup.suppressed <= 0) return;
+  const labelText = sup.blocked ? "재생 실패" : "재생 봉쇄";
+  showActionLabel(actor, labelText, "debuff");
+  if (typeof showStatusText === "function") showStatusText(actor, "재생 봉쇄", { kind: "poisoned" });
+  pushEvent(`<b>${actor.name}</b> — 독이 재생을 말렸다 (−${sup.suppressed})`, "debuff");
 }
 
 /* 유닛 흔들림 (피격 강조) */
@@ -13360,6 +13424,8 @@ function createFootprintFromRun() {
       fissureDamageTaken: totalFissureDamageTaken,   // v0.3.8al8: 전장 균열로 받은 추가 피해 총량
       // v0.3.8al10 [8]: 중독 의미화 — 독창 치명 + 나가 흡수 (계기판 거짓 없음)
       themePoison: Object.assign({}, runState._themePoisonStats || {}),
+      // v0.3.8am [트롤 심장 1단계, ao 복원]: 독이 트롤 재생을 말린 횟수/총량 (관측용)
+      themeTroll: Object.assign({}, runState._themeTrollStats || {}),
     },
   };
 
@@ -13380,6 +13446,11 @@ function createFootprintFromRun() {
     if (h.topHeal)   contrib.push(`${h.topHeal.name} 힐 ${h.topHeal.num}`);
     if (h.topShield) contrib.push(`${h.topShield.name} 보호막 ${h.topShield.num}`);
     if (contrib.length) lines.push(`핵심 기여: ${contrib.join(" / ")}`);
+    // v0.3.8am [트롤 심장 1단계, ao 복원]: 독이 트롤 재생을 말린 흔적 (발생했을 때만 — 거짓 없음)
+    const tr = fp.totals && fp.totals.themeTroll;
+    if (tr && tr.regenSuppressCount > 0) {
+      lines.push(`독이 트롤 재생을 ${tr.regenSuppressCount}회, 총 ${tr.regenSuppressAmount}만큼 봉쇄했다.`);
+    }
     return lines.join("\n");
   })();
 
@@ -14162,6 +14233,7 @@ function updateBattlefield() {
       const existingMark = portrait.querySelector(".mark-badge");
       const markedOn = u.side === "ally" && u.alive && u._marked > 0;
       if (markedOn) {
+        const armed = u._markArmed === true;   // v0.3.8ao: 조준 완료 여부
         if (!existingMark) {
           const mb = document.createElement("div");
           mb.className = "mark-badge";
@@ -14171,10 +14243,12 @@ function updateBattlefield() {
         portrait.classList.add("marked-scope");   // an: 붉은 스코프 테두리+펄스
         el.classList.add("marked-target");         // an: 네 방향 조준선(::after)
         portrait.classList.remove("marked-glow");  // 구 글로우 제거 (스코프로 대체)
+        portrait.classList.toggle("marked-armed", armed);  // ao: 활성 시 강한 펄스
       } else {
         if (existingMark) existingMark.remove();
         portrait.classList.remove("marked-scope");
         portrait.classList.remove("marked-glow");
+        portrait.classList.remove("marked-armed");
         el.classList.remove("marked-target");
       }
     }
