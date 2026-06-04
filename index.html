@@ -5683,7 +5683,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8al13-assassin-theme-mark";
+const BUILD_VERSION = "v0.3.8am-troll-poison-chokes-regen";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -8787,6 +8787,13 @@ function initRunFromParty() {
     poisonAbsorbShield: 0,       // 흡수 보호막 총량
     poisonAbsorbBuffCount: 0,    // 흡수 강화 발동 횟수
   };
+  // v0.3.8am [트롤 심장 1단계]: "독이 재생을 말린다" 관측 계기판 — 런 전체 누적.
+  //   유키 결: 독은 트롤 재생을 삭제하지 않고 크게 꺾는다(×0.25). 봉쇄량(원래−실제)을 기록.
+  //   "독이 트롤 재생을 N회, 총 X만큼 봉쇄했다" (footprint readableSummary).
+  runState._themeTrollStats = {
+    regenSuppressCount: 0,       // 독으로 재생이 꺾인 횟수
+    regenSuppressAmount: 0,      // 독이 말린 재생량 총합 (원래 회복 - 실제 회복)
+  };
   // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
   //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
   runState.timeStats = createInitialTimeStats();
@@ -11150,12 +11157,19 @@ function actEnemyAttack(actor) {
     actor._trollRegenTick = (actor._trollRegenTick || 0) + 1;
     if (actor._trollRegenTick >= TROLL_COMMON_REGEN_EVERY) {
       actor._trollRegenTick = 0;
-      const healAmt = Math.max(1, Math.floor(actor.maxHp * TROLL_COMMON_REGEN_PCT));
-      showActionLabel(actor, "재생", "heal");
-      doHeal(actor, actor, healAmt);
+      const rawHeal = Math.max(1, Math.floor(actor.maxHp * TROLL_COMMON_REGEN_PCT));
+      // v0.3.8am: 독이 트롤 재생을 말린다 (트롤 테마 + 독일 때만 ×0.25)
+      const sup = applyTrollRegenSuppression(actor, rawHeal);
+      const healAmt = sup.heal;
+      if (sup.suppressed > 0) {
+        showTrollRegenSuppressed(actor, sup);
+      } else {
+        showActionLabel(actor, "재생", "heal");
+      }
+      if (healAmt > 0) doHeal(actor, actor, healAmt);
       const tel = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
       if (tel) { tel.classList.add("regen-pulse"); fxTimeout(() => tel.classList.remove("regen-pulse"), 700); }
-      pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
+      if (healAmt > 0) pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
     }
   }
 
@@ -11163,17 +11177,55 @@ function actEnemyAttack(actor) {
   //   doHeal 경유 → 초록 회복 숫자 자동 노출. + "재생!" 라벨 + 몸 주변 초록 펄스.
   //   결: "왜 안 죽지?"가 아니라 "아, 지금 재생했구나"를 즉시 이해.
   if (actor._pendingSelfHeal && actor.selfHealPct > 0 && actor.alive && actor.hp < actor.maxHp) {
-    const healAmt = Math.floor(actor.maxHp * actor.selfHealPct);
-    showActionLabel(actor, "재생!", "heal");
-    doHeal(actor, actor, healAmt);   // 초록 회복 숫자 + 리액션
+    const rawHeal = Math.floor(actor.maxHp * actor.selfHealPct);
+    // v0.3.8am: 독이 트롤 재생을 말린다 — 체감 핵심(문지기/트롤왕). 트롤 테마 + 독일 때만 ×0.25.
+    const sup = applyTrollRegenSuppression(actor, rawHeal);
+    const healAmt = sup.heal;
+    if (sup.suppressed > 0) {
+      showTrollRegenSuppressed(actor, sup);
+    } else {
+      showActionLabel(actor, "재생!", "heal");
+    }
+    if (healAmt > 0) doHeal(actor, actor, healAmt);   // 초록 회복 숫자 + 리액션
     const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
     if (el) {
       el.classList.add("regen-pulse");
       setTimeout(() => el.classList.remove("regen-pulse"), 700);
     }
-    pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
+    if (healAmt > 0) pushEvent(`<b>${actor.name}</b> 재생 +${healAmt}`, "heal");
   }
   actor._pendingSelfHeal = false;
+}
+
+// v0.3.8am [트롤 심장 1단계]: "독이 재생을 말린다" — 공용 억제 게이트.
+//   유키 결: 삭제(0)가 아니라 강한 부분 억제(×0.25). 트롤 테마 + 트롤 + poisoned 일 때만.
+//   조건 불충족이면 원래 healAmt 그대로 통과 (다른 테마/비독/비트롤 재생은 영향 없음).
+//   반환 { heal, suppressed, blocked } — blocked는 finalHeal===0 예외(거짓표시 방지: "봉쇄"vs"실패").
+//   설계 메모: 9.3 applyRegenWithSuppression의 트롤 분기 1차 구현. 히드라 비독압박 억제(aj)와 별개 경로.
+const TROLL_POISON_REGEN_MULT = 0.25;   // 독 묻은 트롤 재생량 (원래의 25%)
+function applyTrollRegenSuppression(actor, healAmt) {
+  // 트롤 테마 + 트롤 종족 + 독 상태가 모두 잡혀야 억제 (그 외엔 그대로)
+  if (!(runState.themeId === "troll" && actor.race === "troll" && actor.poisoned > 0)) {
+    return { heal: healAmt, suppressed: 0, blocked: false };
+  }
+  const finalHeal = Math.floor(healAmt * TROLL_POISON_REGEN_MULT);
+  const suppressed = Math.max(0, healAmt - finalHeal);
+  // 계기판: 봉쇄 횟수/총량 (런 누적 — footprint readableSummary가 읽음)
+  if (runState._themeTrollStats) {
+    runState._themeTrollStats.regenSuppressCount += 1;
+    runState._themeTrollStats.regenSuppressAmount += suppressed;
+  }
+  return { heal: finalHeal, suppressed, blocked: (finalHeal <= 0) };
+}
+
+// v0.3.8am: 재생 억제가 일어났을 때 읽히는 표시 (floating "재생 봉쇄" / 로그 "독이 재생을 말렸다").
+//   회복이 조금이라도 들어가면 "봉쇄/억제", 진짜 0이면 "실패" — 거짓을 표시하지 않는다.
+function showTrollRegenSuppressed(actor, sup) {
+  if (!sup || sup.suppressed <= 0) return;
+  const labelText = sup.blocked ? "재생 실패" : "재생 봉쇄";
+  showActionLabel(actor, labelText, "debuff");
+  if (typeof showStatusText === "function") showStatusText(actor, "재생 봉쇄", { kind: "poisoned" });
+  pushEvent(`<b>${actor.name}</b> — 독이 재생을 말렸다 (−${sup.suppressed})`, "debuff");
 }
 
 /* 유닛 흔들림 (피격 강조) */
@@ -13280,6 +13332,8 @@ function createFootprintFromRun() {
       fissureDamageTaken: totalFissureDamageTaken,   // v0.3.8al8: 전장 균열로 받은 추가 피해 총량
       // v0.3.8al10 [8]: 중독 의미화 — 독창 치명 + 나가 흡수 (계기판 거짓 없음)
       themePoison: Object.assign({}, runState._themePoisonStats || {}),
+      // v0.3.8am [트롤 심장 1단계]: 독이 트롤 재생을 말린 횟수/총량 (관측용 — 거짓 없음)
+      themeTroll: Object.assign({}, runState._themeTrollStats || {}),
     },
   };
 
@@ -13300,6 +13354,11 @@ function createFootprintFromRun() {
     if (h.topHeal)   contrib.push(`${h.topHeal.name} 힐 ${h.topHeal.num}`);
     if (h.topShield) contrib.push(`${h.topShield.name} 보호막 ${h.topShield.num}`);
     if (contrib.length) lines.push(`핵심 기여: ${contrib.join(" / ")}`);
+    // v0.3.8am [트롤 심장 1단계]: 독이 트롤 재생을 말린 흔적 (발생했을 때만 — 거짓 없음)
+    const tr = fp.totals && fp.totals.themeTroll;
+    if (tr && tr.regenSuppressCount > 0) {
+      lines.push(`독이 트롤 재생을 ${tr.regenSuppressCount}회, 총 ${tr.regenSuppressAmount}만큼 봉쇄했다.`);
+    }
     return lines.join("\n");
   })();
 
