@@ -5350,7 +5350,7 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
       <div id="dev-fx-replay" style="display:none; position:absolute; top:4px; right:4px; z-index:40; flex-direction:column; gap:3px;">
         <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevTauntBindReplayForce();">① 도발 결속 재생</button>
         <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevTauntSplitReplayForce(); updateTauntSplitReadout();">② 도발 분산 재생</button>
-        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevCloneReplayForce();">③ 분신 재현</button>
+        <button class="dev-btn small" id="dev-clone-replay-btn" style="font-size:10px; padding:3px 7px;" onclick="runDevCloneReplayForce();">③ 분신 재현</button>
         <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="document.body.classList.toggle('fx-debug-strong'); this.textContent = document.body.classList.contains('fx-debug-strong') ? '강조 ON' : '강조 OFF';">강조 OFF</button>
         <div id="taunt-split-readout" style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#5fd0c0; background:rgba(0,0,0,0.55); padding:2px 5px; border-radius:4px; line-height:1.4; white-space:nowrap;">분산 0회 / 나눔 0</div>
       </div>
@@ -5366,11 +5366,11 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
       <!-- v0.3.8ax: 실전 도발 분산 LIVE 추적 — DEV 모드 한정 (유키 결: A/B 진단 증명). 일반런 UI 노출 금지.
            실전 전투 중 splitMarkedStrikeByTaunt가 실제로 도는지 / 어느 조건에서 막히는지 화면에 찍힌다. -->
       <div id="live-taunt-panel" style="display:none; position:absolute; top:4px; left:4px; z-index:41; font-size:9px; font-family:'JetBrains Mono',monospace; color:#ffd6e8; background:rgba(40,0,20,0.82); border:1px solid rgba(255,120,170,0.55); padding:4px 7px; border-radius:5px; line-height:1.5; white-space:nowrap; box-shadow:0 0 8px rgba(255,120,170,0.3);">
-        <div style="color:#ff86ab; font-weight:900; letter-spacing:0.05em;">LIVE TAUNT SPLIT</div>
-        <div id="ltp-fire">발동: 0</div>
-        <div id="ltp-pair">표식: — / 도발: —</div>
-        <div id="ltp-share">분산: — + —</div>
-        <div id="ltp-link">link: —</div>
+        <div style="color:#ff86ab; font-weight:900; letter-spacing:0.05em;">TAUNT BIND / SPLIT</div>
+        <div id="ltp-bindpair">결속 대상: — / 도발: —</div>
+        <div id="ltp-bindstate">결속 상태: OFF</div>
+        <div id="ltp-fire">분산 발동: 0</div>
+        <div id="ltp-share">최근 분산: — + —</div>
         <div id="ltp-trace" style="color:#ffd27a; margin-top:2px; font-size:8px; line-height:1.35;"></div>
       </div>
       <!-- v0.3.8bc: 분신 관측 패널 — DEV 모드 한정. 분신 생성/생존/간파/붕괴 실시간. 일반런 노출 X. -->
@@ -5380,8 +5380,18 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
         <div id="ctp-alive">분신 생존: 0</div>
         <div id="ctp-reveal">간파: 0</div>
         <div id="ctp-destroyed">허상 붕괴: 0</div>
-        <button class="dev-btn small" style="font-size:9px; padding:2px 6px; margin-top:3px;" onclick="toggleCloneObserveMode();" id="clone-observe-btn">관측무적 OFF</button>
+        <div style="margin-top:4px; padding-top:3px; border-top:1px solid rgba(150,130,210,0.3);">
+          <button class="dev-btn small" style="font-size:9px; padding:2px 6px; display:block; width:100%; margin-bottom:2px;" onclick="runDevCloneSummonOnly();">▶ 분신 생성</button>
+          <button class="dev-btn small" style="font-size:9px; padding:2px 6px; display:block; width:100%; margin-bottom:2px;" onclick="runDevCloneRevealOnly();">▶ 추적자 간파</button>
+          <button class="dev-btn small" style="font-size:9px; padding:2px 6px; display:block; width:100%; margin-bottom:2px;" onclick="runDevCloneReplayForce();">▶ 분신 전체 재현</button>
+          <button class="dev-btn small" style="font-size:9px; padding:2px 6px; display:block; width:100%;" onclick="toggleCloneObserveMode();" id="clone-observe-btn">관측무적 OFF</button>
+        </div>
+        <div style="margin-top:3px; font-size:8px; color:#9a90c8; line-height:1.3; white-space:normal; max-width:130px;">
+          순서: ▶분신 생성 → ▶추적자 간파 → 허상 붕괴 확인. 또는 ▶전체 재현으로 자동.
+        </div>
       </div>
+      <div class="battle-zone enemy">
+        <div class="lane enemy" id="lane-enemy-back"></div>
         <div class="lane enemy" id="lane-enemy-front"></div>
       </div>
       <div class="clash-line"></div>
@@ -5990,7 +6000,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8bd-clone-observe-cleanup";
+const BUILD_VERSION = "v0.3.8bi-split-guard-order-fix";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6021,6 +6031,11 @@ let DEV_FORCE_UNLOCK = false;
      삭제하지 않고 보존한다. 이 플래그는 그 위에 얹는 *우회 스위치*다.
    ※ DEV 클리어가 릴리즈 해금 플래그를 꼬이게 하지 않음 (해금 저장은 여전히 devTest 제외 조건). */
 const DEV_PLAYTEST_UNLOCK_ALL = true;
+
+// v0.3.8bg: 분신 실험 플래그 — 유키 결: "분신은 이번 암살자 테마에서 컷." 구조는 보존, 플래그로 우회.
+//   false = 일반런 분신 비활성화 + DEV 관측실/버튼 숨김. true로 되돌리면 실험 복귀 (회귀 위험 0).
+//   암살자 테마는 2축(은신↔간파 / 사냥감↔도발결속)으로 마감.
+const ENABLE_CLONE_EXPERIMENT = false;
 
 
 // DEV 모드 메뉴 구성 — 목적별 섹션 + 항목 설명 (presetKey는 DEV_STAGE_PRESETS 키)
@@ -6929,7 +6944,7 @@ const THEME_STAGE_OVERRIDES = {
     11: { name: "사냥감 지정", enemies: ["night_archer", "silent_killer", "shadow_dagger", "smoke_caster"] },
     12: { name: "연막의 벽", enemies: ["silent_killer", "night_archer", "night_archer"] },
     13: { name: "밤칼날 훈련", enemies: ["shadow_dagger", "silent_killer", "smoke_caster", "night_archer"] },
-    14: { name: "기습 예고", enemies: ["cloneweaver_killer", "night_archer", "night_archer"] },
+    14: { name: "기습 예고", enemies: ["night_archer", "night_archer", "silent_killer"] },
     15: { name: "두 번째 표식", enemies: ["silent_killer", "night_archer", "shadow_dagger", "smoke_caster", "shadow_dagger"] },
     // S16~19 압력 상승
     16: { name: "검은 쇄도", enemies: ["night_archer", "silent_killer", "silent_killer", "smoke_caster"] },
@@ -7143,6 +7158,8 @@ function openDevMode() {
   if (list) {
     list.innerHTML = DEV_MODE_MENU.map(sec => {
       const items = sec.items.map(it => {
+        // v0.3.8bg: 분신 실험 OFF면 분신 관측실 항목 숨김 (구조 보존, 메뉴에서만 격리)
+        if (!ENABLE_CLONE_EXPERIMENT && it.presetKey === "assassin_clone_observe") return "";
         const preset = DEV_STAGE_PRESETS[it.presetKey];
         const label = preset ? preset.label : it.presetKey;
         return `
@@ -9248,16 +9265,19 @@ function loadStage(stageNum, enemiesOverride) {
   if (!stage) return;
   // v0.3.8at: DEV 연출 재생 버튼 — DEV 모드 + 암살자 테마일 때만 노출 (그 외 숨김)
   const _fxBtn = document.getElementById("dev-fx-replay");
-  if (_fxBtn) _fxBtn.style.display = (DEV_MODE_ENABLED && runState.themeId === "assassin") ? "flex" : "none";
+  if (_fxBtn) _fxBtn.style.display = (_isDevDebugContext() && runState.themeId === "assassin") ? "flex" : "none";
+  // v0.3.8bg: ③ 분신 재현 버튼 — 분신 실험 OFF면 숨김 (분신 컷, 구조 보존).
+  const _cloneBtn = document.getElementById("dev-clone-replay-btn");
+  if (_cloneBtn) _cloneBtn.style.display = ENABLE_CLONE_EXPERIMENT ? "block" : "none";
   // v0.3.8av: 상세 분산 패널 — 새 전투 진입 시 숨김 리셋 (옛 내용 잔류 방지). 첫 분산 발동이 다시 띄움.
   const _tsPanel = document.getElementById("taunt-split-panel");
   if (_tsPanel) _tsPanel.style.display = "none";
   // v0.3.8ax: LIVE 패널도 새 전투 진입 시 숨김 리셋 (실전 분산 발동 시 다시 뜸).
   const _ltPanel = document.getElementById("live-taunt-panel");
   if (_ltPanel) _ltPanel.style.display = "none";
-  // v0.3.8bc: 분신 관측 패널 — 암살자 테마 + DEV일 때만, 관측모드면 노출 유지 (그 외 숨김).
+  // v0.3.8bc→bg: 분신 관측 패널 — 분신 실험 ON + 관측모드일 때만 노출 (실험 OFF면 항상 숨김).
   const _ctPanel = document.getElementById("clone-test-panel");
-  if (_ctPanel) _ctPanel.style.display = (DEV_MODE_ENABLED && runState._cloneObserveMode) ? "block" : "none";
+  if (_ctPanel) _ctPanel.style.display = (ENABLE_CLONE_EXPERIMENT && DEV_MODE_ENABLED && runState._cloneObserveMode) ? "block" : "none";
 
   // v0.3.8ab: 히드라 관측 리셋 — 새 전투마다 새로 누적 (이전 전투 데이터 섞임 방지)
   runState.hydraObs = null;
@@ -9652,15 +9672,26 @@ function bindTauntGuardToMarked(tauntor) {
   marked._markGuardUid = tauntor.uid;
   marked._markGuardName = tauntor.name;
   marked._markGuardLinked = true;
-  // 미리보기 링크 + 결속 텍스트 ("연결됐다" 느낌)
+  // 미리보기 링크 + 결속 텍스트 ("연결됐다" 느낌) — v0.3.8bf: 결속은 *작은 신호*. 중앙 대형 배너 제거.
+  //   링크가 주인공 / 텍스트는 도발 영웅 위 작은 라벨만. DEV 강조 모드에서만 중앙 배너로 크게.
   fxTimeout(() => {
     drawTauntLinkPreview(marked, tauntor);
-    showActionLabel(tauntor, "도발 결속!", "taunt");
-    showInterveneBanner("도발 결속!");
+    showActionLabel(tauntor, "도발 결속", "taunt");   // 유닛 위 작은 플로팅 라벨 (느낌표 빼서 더 잔잔하게)
+    if (document.body.classList.contains("fx-debug-strong")) showInterveneBanner("도발 결속!");
   }, 130);
   pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b>의 표식에 결속했다 — 도발 결속! (기습 시 함께 나눠 받는다)`, "taunt");
   liveTauntTrace(`결속 예약: ${tauntor.name} ⇄ ${marked.name} (_markGuardUid 박힘)`, true);
+  updateLiveTauntBindPanel(marked.name, tauntor.name);   // v0.3.8bf: 결속 상태 ON 표시 (피해 없음 — 예약만)
   return true;
+}
+
+// v0.3.8bh [디버그 UI 격리 — 유키 결: "일반 플레이에선 디버그 숨기고 손맛 연출만 남긴다"]:
+//   DEV_MODE_ENABLED(홈빌드 관측용, 항상 true)만으로는 일반런에서도 디버그가 떴다.
+//   진짜 신호는 runState.devTest — DEV 프리셋 점프면 채워지고, 일반런(타이틀→파티→플레이)은 null.
+//   이 헬퍼가 true일 때만 디버그 패널/trace/재생버튼을 노출한다 (손맛 연출은 이 가드와 무관하게 항상 보임).
+function _isDevDebugContext() {
+  return (typeof DEV_MODE_ENABLED !== "undefined" && DEV_MODE_ENABLED)
+      && !!(runState && runState.devTest);
 }
 
 // v0.3.8au: DEV 실시간 분산 카운터 갱신 — "기능이 실제로 도는가"를 화면으로 (확인 전용).
@@ -9676,8 +9707,8 @@ function updateTauntSplitReadout() {
 // v0.3.8av: 도발 분산 상세 디버그 패널 — DEV 모드/재현실 한정 (유키 결: 일반런 UI 노출 금지).
 //   발동 순간 "표식 / 도발 / 분산 N+N / count"를 화면에 띄운다. DEV_MODE_ENABLED 일 때만 보인다.
 function updateTauntSplitPanel(markedName, tauntorName, markShare, tauntShare) {
-  // 격리: DEV 모드가 아니면 패널 자체를 숨기고 끝 (일반런 노출 금지)
-  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  // 격리: DEV 프리셋 안에서만 (일반런 노출 금지)
+  if (!_isDevDebugContext()) return;
   const panel = document.getElementById("taunt-split-panel");
   if (!panel) return;
   const s = runState && runState._themeAssassinStats;
@@ -9723,7 +9754,7 @@ function showTauntShield(tauntor) {
 // v0.3.8aw [DEV 단계 추적 — 유키 요청]: 버튼 클릭부터 어느 단계까지 갔는지 화면에 순서대로 찍는다.
 //   count 0이면 "어디서 끊겼나"가 이 한 줄로 보인다. DEV 패널의 tsp-trace에 표시.
 function tauntSplitTrace(step, reset) {
-  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  if (!_isDevDebugContext()) return;   // v0.3.8bh: DEV 프리셋 안에서만 (일반런 숨김)
   console.log("[DEV_TAUNT_TRACE]", step);
   const el = document.getElementById("tsp-trace");
   if (!el) return;
@@ -9737,7 +9768,7 @@ function tauntSplitTrace(step, reset) {
 //   실전 splitMarkedStrikeByTaunt가 실제로 도는지 / 어느 조건에서 막히는지 화면(DEV 한정)+콘솔에 찍는다.
 //   A(거의 발동 안 함) vs B(발동하나 연출 미연결)를 이 trace 한 줄로 가른다.
 function liveTauntTrace(step, reset) {
-  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  if (!_isDevDebugContext()) return;   // v0.3.8bh: DEV 프리셋 안에서만 (일반런 숨김)
   if (runState && runState._cloneObserveMode) return;   // v0.3.8bd: 분신 관측실은 도발 trace 격리 (분신만 본다)
   console.log("[LIVE_TAUNT_TRACE]", step);
   const el = document.getElementById("ltp-trace");
@@ -9752,23 +9783,33 @@ function liveTauntTrace(step, reset) {
   el.innerHTML = lines.join("<br>");
 }
 function updateLiveTauntPanel(markedName, tauntorName, markShare, tauntShare, linkState) {
-  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  if (!_isDevDebugContext()) return;   // v0.3.8bh: DEV 프리셋 안에서만
   if (runState && runState._cloneObserveMode) return;   // v0.3.8bd: 분신 관측실은 도발 패널 격리
   const panel = document.getElementById("live-taunt-panel");
   if (!panel) return;
   const s = runState && runState._themeAssassinStats;
   const c = s ? (s.tauntSplitCount || 0) : 0;
   const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-  set("ltp-fire", `발동: ${c}`);
-  set("ltp-pair", `표식: ${markedName} / 도발: ${tauntorName}`);
-  set("ltp-share", `분산: ${markShare} + ${tauntShare}`);
-  set("ltp-link", `link: ${linkState}`);
+  set("ltp-fire", `분산 발동: ${c}`);          // v0.3.8bf: 분산은 기습 시점에만 증가 (결속과 분리)
+  set("ltp-share", `최근 분산: ${markShare} + ${tauntShare}`);
+  panel.style.display = "block";
+}
+
+// v0.3.8bf: 결속 상태 패널 갱신 — 결속(예약)은 분산과 분리해 표시. 결속 시점엔 피해 0(상태만 ON).
+function updateLiveTauntBindPanel(markedName, tauntorName) {
+  if (!_isDevDebugContext()) return;   // v0.3.8bh: DEV 프리셋 안에서만
+  if (runState && runState._cloneObserveMode) return;
+  const panel = document.getElementById("live-taunt-panel");
+  if (!panel) return;
+  const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+  set("ltp-bindpair", `결속 대상: ${markedName} / 도발: ${tauntorName}`);
+  set("ltp-bindstate", "결속 상태: ON (기습 시 분산 예약)");
   panel.style.display = "block";
 }
 
 // v0.3.8bc: 분신 관측 패널 갱신 — 생성/생존/간파/붕괴 실시간 (DEV 한정). "기능이 돌고 있구나"를 화면으로.
 function updateCloneTestPanel() {
-  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  if (!_isDevDebugContext()) return;   // v0.3.8bh: DEV 프리셋 안에서만
   const panel = document.getElementById("clone-test-panel");
   if (!panel) return;
   const s = runState && runState._themeAssassinStats;
@@ -9833,6 +9874,33 @@ function runDevTauntBindReplayForce() {
 
 // v0.3.8bb [DEV 분신 재현 — 유키 14번]: "분신!" → 분신 2기 생성 → 추적자 조준 → 간파! → 즉시 소멸.
 //   현재 전투의 적 1기를 본체로 빌려 분신을 소환하고, 아군 추적자(있으면)가 색적하는 흐름을 보여준다.
+// v0.3.8bf [DEV 분신 단계 재현 — 유키 결: 직관적 버튼]: 분신 생성만 / 추적자 간파만 / 전체.
+//   나라님이 "분신 생성 → 추적자 간파 → 허상 붕괴"를 단계별로 또는 한 번에 본다.
+function runDevCloneSummonOnly() {
+  if (!runState || !runState.units) { alert("전투 중에만 재현 가능 — ★분신 관측실로 입장하세요."); return; }
+  const owner = runState.enemies && runState.enemies.find(e => e.alive && !e.isClone) || (runState.enemies && runState.enemies[0]);
+  if (!owner) { alert("본체로 쓸 적이 없습니다."); return; }
+  summonShadowClones(owner, 2);   // "분신!" + 그림자 분신 2기
+}
+function runDevCloneRevealOnly() {
+  if (!runState || !runState.units) { alert("전투 중에만 재현 가능."); return; }
+  const tracker = runState.units.find(u => u.alive && u.kind === "fusion" && u.fusionId === "tracker");
+  const clone = runState.enemies && runState.enemies.find(e => e.alive && e.isClone);
+  if (!clone) { alert("간파할 분신이 없습니다 — 먼저 ▶ 분신 생성을 누르세요."); return; }
+  if (tracker) drawLine(tracker, clone, "attack");
+  showActionLabel(clone, "간파!", "attack");
+  pushEvent(`[DEV 분신재현] ${tracker ? tracker.name : "추적자"}가 허상을 조준했다 — 간파! 허상 붕괴!`, "death");
+  fxTimeout(() => {
+    const el = document.querySelector(`[data-uid="${clone.uid}"]`);
+    if (el) el.classList.add("clone-dissolve");
+    clone.hp = 0;   // 즉시 소멸 (간파)
+    if (runState._themeAssassinStats) runState._themeAssassinStats.cloneRevealCount += 1;
+    updateCloneTestPanel();
+    if (typeof markIfDead === "function") markIfDead(clone);
+    updateBattlefield();
+  }, 300);
+}
+
 function runDevCloneReplayForce() {
   if (!runState || !runState.units) { alert("전투 중에만 재현 가능 — ★연출 재현 프리셋으로 입장하세요."); return; }
   const owner = runState.enemies && runState.enemies.find(e => e.alive);
@@ -10114,7 +10182,8 @@ function executeAction(actor) {
   if (actor.side === "enemy") {
     actionType = "enemy_attack";
     // v0.3.8bb: 분신 소환 — cloneSummon>0이고 아직 안 썼으면 첫 행동에 "분신!" (그림자 분신 N기). 1회.
-    if (actor.cloneSummon > 0 && !actor._cloneSummoned) {
+    // v0.3.8bg: 분신 소환 — 실험 플래그 ON일 때만. 플래그 OFF면 일반런 분신 비활성화(컷, 구조 보존).
+    if (ENABLE_CLONE_EXPERIMENT && actor.cloneSummon > 0 && !actor._cloneSummoned) {
       summonShadowClones(actor, actor.cloneSummon);
       actor._cloneSummoned = true;
     }
@@ -10133,7 +10202,7 @@ function executeAction(actor) {
       });
       runState.units.forEach(u => {
         if (u.alive && u._marked > 0) u._marked -= 1;
-        if (u._marked <= 0) { u._markSourceUid = null; u._markArmed = false; }
+        if (u._marked <= 0) { u._markSourceUid = null; u._markArmed = false; u._markGuardUid = null; u._markGuardName = null; u._markGuardLinked = false; }
       });
       // v0.3.8ap: 은신 안전캡 — source(이 적) 자기 턴마다 1 감소. 0이면 cap 만료로 자연 노출 (무한 은신 방지).
       if (actor._stealthTurns > 0) {
@@ -12041,10 +12110,29 @@ function actEnemyAttack(actor) {
       showActionLabel(actor, "표식 기습!", "attack");
       pushEvent(`<b>${actor.name}</b>가 표식된 <b>${target.name}</b>을(를) 기습합니다! (+${mbonus})`, "death");
     }
-    target._marked = 0;   // 활성 기습 성립 → 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결)
+    // v0.3.8bi [버그 수정 — 결속이 기습으로 안 이어지던 원인]:
+    //   ay에서 표식 소비(_markGuardUid=null)를 guard 읽기 *전에* 했어서, 분산 결정 시 guard가 항상 null → tauntSplitCount 0.
+    //   해법: 표식 소비보다 *먼저* 예약된 guard를 읽어 변수에 담는다. 그 다음 표식/guard 정리.
+    let _guard = null;
+    const _reservedGuardUid = target._markGuardUid;   // 정리 전에 먼저 읽는다
+    const _reservedGuardName = target._markGuardName;
+    if (_reservedGuardUid) {
+      const g = runState.units.find(u => u.uid === _reservedGuardUid);
+      if (g && g.alive && g.uid !== target.uid) {
+        _guard = g;
+        liveTauntTrace(`표식기습 성립 (${actor.name}→${target.name}) / 결속 guard: ${g.name} (예약됨)`, true);
+      } else {
+        liveTauntTrace(`표식기습 성립 / guard broken (${_reservedGuardName || "?"} 사망/부재) → 전체 피해`, true);
+      }
+    } else {
+      liveTauntTrace(`표식기습 성립 (${actor.name}→${target.name}) / 결속 guard 없음 (도발 미개입) → 전체 피해`, true);
+    }
+    if (_guard) _markStrikeSplit = _guard;
+
+    // 활성 기습 성립 → 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결). guard 읽은 *뒤*에 정리.
+    target._marked = 0;
     target._markSourceUid = null;
     target._markArmed = false;
-    // v0.3.8ay: 표식 소비 시 결속 예약도 정리 (다음 표식에 옛 guard가 남지 않게).
     target._markGuardUid = null;
     target._markGuardName = null;
     target._markGuardLinked = false;
@@ -12057,22 +12145,6 @@ function actEnemyAttack(actor) {
       actor._stealthTurns = 0;
       actor._stealthMarkTargetUid = null;
     }
-    // v0.3.8ay [결속 예약 우선 — 유키 결: "기습 순간 우연이 아니라, 표식 이후 예약된 결속을 쓴다"]:
-    //   매번 살아있는 도발 유닛을 새로 찾지 않는다. 먼저 표식에 예약된 _markGuardUid를 본다.
-    //   guard 살아있으면 분산 / 죽었으면 "guard broken" → 표식 대상이 전체 피해를 받는다.
-    let _guard = null;
-    if (target._markGuardUid) {
-      const g = runState.units.find(u => u.uid === target._markGuardUid);
-      if (g && g.alive && g.uid !== target.uid) {
-        _guard = g;
-        liveTauntTrace(`표식기습 성립 (${actor.name}→${target.name}) / 결속 guard: ${g.name} (예약됨)`, true);
-      } else {
-        liveTauntTrace(`표식기습 성립 / guard broken (${target._markGuardName || "?"} 사망/부재) → 전체 피해`, true);
-      }
-    } else {
-      liveTauntTrace(`표식기습 성립 (${actor.name}→${target.name}) / 결속 guard 없음 (도발 미개입) → 전체 피해`, true);
-    }
-    if (_guard) _markStrikeSplit = _guard;
   }
   if (_markStrikeSplit) {
     // 분산: 표식 대상 50% / 도발 유닛 50% (일반 dealDamage 경로는 건너뜀 — 중복 방지)
