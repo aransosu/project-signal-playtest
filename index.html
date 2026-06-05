@@ -2445,6 +2445,37 @@ body {
   50%      { opacity: 1.0; }
 }
 
+/* v0.3.8ap: 은신 — 그림자 속 암살자. 점선 흐릿 외곽선 + 반투명.
+   ※ transform 미사용 (대형 적 아바타 scale 보존 결). opacity/filter/outline만 — iOS 강건. */
+@keyframes stealth-breathe {
+  0%, 100% { opacity: 0.42; }
+  50%      { opacity: 0.62; }
+}
+.unit.enemy-stealthed .unit-portrait,
+.enemy-stealthed .unit-portrait {
+  opacity: 0.5;
+  filter: grayscale(0.55) blur(0.4px);
+  outline: 2px dashed rgba(150, 130, 200, 0.75);
+  outline-offset: 2px;
+  border-radius: 8px;
+  animation: stealth-breathe 1.6s ease-in-out infinite;
+}
+.enemy-stealthed::after {
+  content: "은신";
+  position: absolute;
+  top: -6px; left: 50%;
+  transform: translateX(-50%);   /* 라벨 자체 중앙정렬용 — 아바타 scale과 무관(별도 요소) */
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #c8b6e8;
+  background: rgba(30, 22, 48, 0.82);
+  border: 1px solid rgba(150, 130, 200, 0.6);
+  border-radius: 6px;
+  padding: 1px 5px;
+  pointer-events: none;
+  z-index: 5;
+}
+
 /* v0.3.7.4: 마도 원형 파동 — CSS animation (iOS Safari SMIL 누락 결 대체)
    SVG circle을 stroke만 박고, transform-origin은 inline 좌표로 박음.
    r 변화 대신 transform: scale로 박음 (iOS Safari GPU 합성 강건).
@@ -5724,7 +5755,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ao-assassin-armed-delay-troll-regen-restore";
+const BUILD_VERSION = "v0.3.8ap-assassin-stealth-tracker-clite";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -8966,6 +8997,8 @@ function loadStage(stageNum, enemiesOverride) {
     u._marked = 0;   // v0.3.8al13: 암살자 표식 리셋 (전투 시작 시 깨끗하게)
     u._markSourceUid = null;
     u._markArmed = false;   // v0.3.8ao: 무장 상태도 리셋
+    u._stealthTurns = 0;    // v0.3.8ap: 암살자 은신 (기습 전까지, 최대 2 source-turn 안전캡)
+    u._stealthMarkTargetUid = null;   // v0.3.8ap: 이 은신이 노리는 표식 대상(아군) uid
     u._wallActiveUid = null;
     u._wallActiveTurns = 0;
     u._wallProtectorUid = null;
@@ -9166,6 +9199,13 @@ function _assassinApplyMark(actor) {
   showActionLabel(actor, "표식!", "debuff");
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(target, "사냥감 지정", "debuff"), 120);
   pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>을(를) 노립니다 — 그림자 표식`, "debuff");
+  // v0.3.8ap: 표식을 남긴 암살자는 그림자 속으로 — 은신 (기습 전까지, 최대 2 source-turn 안전캡).
+  //   _stealthTurns는 source의 자기 턴마다 1 감소(armed 전환 루프에서). 0이 되면 cap 만료로 자연 노출.
+  //   해제 3경로: ① 기습 소비 ② 추적자 직접 피격 ③ 표식 자체 해제 동반. (poison/dot/regen억제로는 안 풀림)
+  actor._stealthTurns = 2;
+  actor._stealthMarkTargetUid = target.uid;
+  if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(actor, "은신", "debuff"), 240);
+  pushEvent(`<b>${actor.name}</b>가 표식을 남기고 그림자 속으로 숨었다 — 은신`, "debuff");
 }
 
 function _nagaAbsorbPoison(actor) {
@@ -9287,6 +9327,14 @@ function executeAction(actor) {
         if (u.alive && u._marked > 0) u._marked -= 1;
         if (u._marked <= 0) { u._markSourceUid = null; u._markArmed = false; }
       });
+      // v0.3.8ap: 은신 안전캡 — source(이 적) 자기 턴마다 1 감소. 0이면 cap 만료로 자연 노출 (무한 은신 방지).
+      if (actor._stealthTurns > 0) {
+        actor._stealthTurns -= 1;
+        if (actor._stealthTurns <= 0) {
+          actor._stealthMarkTargetUid = null;
+          pushEvent(`<b>${actor.name}</b>의 은신이 한계에 다다라 모습을 드러냈다`, "info");
+        }
+      }
     }
     if (actor.markOnTurn && Math.random() < actor.markOnTurn) _assassinApplyMark(actor);
   } else if (actor.kind === "fusion") {
@@ -11175,6 +11223,11 @@ function actEnemyAttack(actor) {
     target._marked = 0;   // 활성 기습 성립 → 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결)
     target._markSourceUid = null;
     target._markArmed = false;
+    // v0.3.8ap: 기습이 성립하면 그 owner 암살자의 은신도 해제 ("기습 전까지" 규칙의 종료점).
+    if (actor._stealthTurns > 0) {
+      actor._stealthTurns = 0;
+      actor._stealthMarkTargetUid = null;
+    }
     // v0.3.8an [옵션3]: 표식 기습이 성립한 이 공격 — 살아있는 도발 유닛이 있으면 총 dmg를 50:50 분산.
     //   markStrikeBonus 포함 총 dmg 확정 후 분산 ("강화된 기습 한 방을 둘이 나눠 맞았다").
     const _tauntor = getActiveTauntor();
@@ -11331,7 +11384,23 @@ function shakeUnit(unit) {
 /* ---------- 타겟 선택 헬퍼 ---------- */
 
 function pickEnemyTarget(actor, mode) {
-  const alive = runState.enemies.filter(e => e.alive);
+  const aliveRaw = runState.enemies.filter(e => e.alive);
+  if (aliveRaw.length === 0) return null;
+  // v0.3.8ap: 은신↔추적자 — 단일 진입점에서 처리 (모든 아군 공격 경로가 같은 진실을 읽음).
+  const stealthed = aliveRaw.filter(e => e._stealthTurns > 0);
+  // v0.3.8ap: 추적자(합체 tier2 = kind:"fusion" + fusionId:"tracker")는 은신한 사냥꾼을 우선 색적한다.
+  //   ※ 전투 유닛은 jobId가 아니라 fusionId로 합체를 식별한다 (파수궁 fusionId==="hunter" 선례). 코드 진실에 맞춤.
+  const _isTracker = (a) => a && a.kind === "fusion" && a.fusionId === "tracker";
+  if (_isTracker(actor) && stealthed.length > 0) {
+    const myMark = stealthed.find(e => {
+      const mk = runState.units.find(u => u.alive && u._marked > 0 && u._markSourceUid === e.uid);
+      return !!mk;
+    });
+    return myMark || stealthed[0];
+  }
+  // 그 외 아군: 은신 적은 일반 후보에서 제외 (전부 은신이면 어쩔 수 없이 포함 — 타겟 없음 방지).
+  const visible = aliveRaw.filter(e => !(e._stealthTurns > 0));
+  const alive = visible.length > 0 ? visible : aliveRaw;
   if (alive.length === 0) return null;
   if (mode === "priority") {
     // caster > ranged > 시각 후열(나가 독 근원) > 일반
@@ -11448,6 +11517,32 @@ function dealDamage(actor, target, amount, opts = {}) {
   if (dmg > 0) {
     const hpBeforeDamage = target.hp;   // v0.3.8ac: overkill 제외용 (실제 깎은 양 = min(dmg, 이 값))
     target.hp = Math.max(0, target.hp - dmg);
+    // v0.3.8ap: 은신 해제 — 직접 피해를 받으면 그림자가 벗겨진다.
+    //   이 dealDamage 경로엔 poison/dot가 안 들어온다(별도 applyStatusDamage) → 독·재생억제는 자동으로 은신 못 풂(만능키 방지).
+    //   reflect(반사)도 "정조준 색적"이 아니므로 제외 — 직접 공격/색적만 그림자를 벗긴다.
+    if (target._stealthTurns > 0 && opts.reason !== "reflect" && opts.reason !== "binder_reflect") {
+      target._stealthTurns = 0;
+      target._stealthMarkTargetUid = null;
+      const _byTracker = actor && actor.kind === "fusion" && actor.fusionId === "tracker";
+      if (_byTracker) {
+        showActionLabel(target, "간파!", "attack");
+        pushEvent(`<b>${actor.name}</b>가 숨어든 <b>${target.name}</b>을(를) 색적해 간파했다 — 은신 해제`, "death");
+        // v0.3.8ap: 색적된 owner가 건 표식도 함께 흐트러진다 (사냥꾼을 자르면 조준선이 풀린다).
+        let _markCleared = false;
+        runState.units.forEach(u => {
+          if (u.alive && u._marked > 0 && u._markSourceUid === target.uid) {
+            u._marked = 0;
+            u._markSourceUid = null;
+            u._markArmed = false;
+            _markCleared = true;
+          }
+        });
+        if (_markCleared) pushEvent(`사냥꾼을 잃은 표식이 흐트러졌다`, "info");
+      } else {
+        showActionLabel(target, "은신 해제", "info");
+        pushEvent(`<b>${target.name}</b>의 은신이 벗겨졌다`, "info");
+      }
+    }
     // v0.3.8aj: 비독 압박 누적 (A-lite — pressure-based regen suppression). 유키 결.
     //   "좌 머리는 여전히 재생하지만, 최근 비독 직접/광역 피해로 압박받았다면 다음 재생이 줄어든다."
     //   이 dealDamage 경로엔 독(dot)이 안 들어온다(독은 applyStatusDamage 별도 경로) → 독은 자동 제외.
@@ -14150,6 +14245,9 @@ function updateBattlefield() {
     el.classList.toggle("dead", !u.alive);
     // mk2 v0.2: 중독 클래스 토글 (지속 글로우)
     el.classList.toggle("poisoned", !!(u.poisoned && u.poisoned > 0 && u.alive));
+    // v0.3.8ap: 은신 클래스 토글 — 은신은 플레이어에게 "완전히 숨기는 정보"가 아니다.
+    //   대응(추적자 색적/직접 공격)할 수 있도록 흐릿한 점선 외곽선으로 *보여준다*.
+    el.classList.toggle("enemy-stealthed", !!(u.side === "enemy" && u._stealthTurns > 0 && u.alive));
 
     // HP 바
     const hpBar = el.querySelector(".hp-bar-fill");
