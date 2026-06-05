@@ -3653,6 +3653,14 @@ body {
   letter-spacing: -0.03em;
   text-shadow: 0 0 5px rgba(255,120,120,0.95), 0 0 9px rgba(200,120,216,0.6), 0 1px 2px rgba(0,0,0,0.95);
 }
+/* v0.3.8ar: 분산 숫자 — 청록 결속색 (markstrike_split 선과 같은 색). 두 숫자가 "한 사건"임을 색으로 묶는다. */
+.float-number.split {
+  color: #5fd0c0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 6px rgba(95,208,192,0.9), 0 0 10px rgba(95,208,192,0.5), 0 1px 2px rgba(0,0,0,0.95);
+}
 
 @keyframes float-up {
   0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
@@ -3834,6 +3842,34 @@ body {
   0%, 100% { filter: brightness(1); }
   15% { filter: brightness(2) drop-shadow(0 0 8px rgba(255,201,74,0.9)); }
   40% { filter: brightness(1.4) drop-shadow(0 0 4px rgba(255,201,74,0.5)); }
+}
+
+/* v0.3.8ar: 도발 개입 신호 — "내가 막았다"는 결속의 한 박자.
+   transform 미사용(아바타 scale 보존). box-shadow 청록 링 + 밝기 펄스 0.5초. */
+.unit.taunt-intervene .unit-portrait {
+  animation: taunt-intervene-pulse 0.5s ease-out;
+}
+@keyframes taunt-intervene-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(95,208,192,0); filter: brightness(1); }
+  25%  { box-shadow: 0 0 0 4px rgba(95,208,192,0.85), 0 0 14px rgba(95,208,192,0.7); filter: brightness(1.5); }
+  60%  { box-shadow: 0 0 0 3px rgba(95,208,192,0.5), 0 0 8px rgba(95,208,192,0.4); filter: brightness(1.2); }
+  100% { box-shadow: 0 0 0 0 rgba(95,208,192,0); filter: brightness(1); }
+}
+/* 개입 순간 머리 위 방패 아이콘 (짧게 떠올랐다 사라짐) */
+.taunt-intervene-shield {
+  position: absolute;
+  top: -10px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  pointer-events: none;
+  z-index: 6;
+  animation: shield-pop 0.6s ease-out forwards;
+}
+@keyframes shield-pop {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.5); }
+  25%  { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.2); }
+  60%  { opacity: 1; transform: translateX(-50%) translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.9); }
 }
 
 /* 위급 피격 (HP 25% 이하) — 가장 강함 */
@@ -5755,7 +5791,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8aq-assassin-rhythm-taunt-line";
+const BUILD_VERSION = "v0.3.8ar-taunt-intervene-visible";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -9179,19 +9215,40 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   // 총 피해를 50:50 (반올림 관례: 도발 몫 floor, 표식 몫 나머지 → 총합 보존)
   const tauntShare = Math.floor(totalDmg * 0.5);
   const markShare = totalDmg - tauntShare;   // 총합 = totalDmg (어긋남 0)
-  // v0.3.8aq: 연출 재정비 (유키 §3) — "둘이 따로 맞았다"가 아니라 "도발이 표식 대상을 지키며 함께 나눠 받았다".
-  //   1) 기습 공격선은 암살자 → 표식 대상 방향 (기존 공격 방향 유지)
-  //   2) 표식 대상 ↔ 도발 영웅 사이에 짧은 결속/분산선 (markstrike_split — 청록 보호색)
-  //   3) 텍스트는 하나만 (도발 영웅에 "칼끝 분산!"). 양쪽에 따로 안 띄움 (식별 혼란 방지)
-  //   4) 피해 숫자는 표식 대상·도발 영웅 양쪽에 각각 (실제 둘 다 다침)
-  dealDamage(actor, marked, markShare, {});
-  drawLine(actor, marked, "attack");                  // ① 기습은 표식 대상을 향한다
-  dealDamage(actor, tauntor, tauntShare, { fromTaunt: true });
-  drawLine(marked, tauntor, "markstrike_split");      // ② 표식대상↔도발 결속선 (분산의 핵심 시각)
-  // ③ 텍스트 하나만 — 도발 영웅이 칼끝을 갈라 받았다
-  showActionLabel(tauntor, "칼끝 분산!", "taunt");
+  // v0.3.8ar [도발 개입을 "사건"으로 보이게 — 손맛: "분산됐다는 인지 실패"]:
+  //   문제는 밸런스가 아니라 연출. 공격선·결속선·두 숫자가 같은 프레임에 묻혀 "개입 사건"의 순서가 안 보였다.
+  //   해법: 시간 순서를 만든다 — ① 기습이 표식 대상을 향한다 → (짧은 텀) → ② 도발이 끼어든다(개입신호+결속선) → ③ 둘이 "분산 -N"을 함께 받는다.
+  //   둘 다 isSplit 타입 → 청록 "분산 -N"이 양쪽에 떠서 한 사건임을 색·라벨로 묶는다 (요청 §3).
+
+  // ① 기습은 표식 대상을 향한다 (공격 방향 유지) — 표식 대상이 먼저 분산 피해
+  drawLine(actor, marked, "attack");
+  dealDamage(actor, marked, markShare, { isSplit: true });
+
+  // ② 한 박자 뒤 — 도발 영웅이 끼어든다 (개입 사건). 결속선 + 방패 점멸 + 텍스트 하나.
+  fxTimeout(() => {
+    drawLine(marked, tauntor, "markstrike_split");      // 표식대상↔도발 결속선 (분산의 핵심 시각)
+    const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
+    if (tEl) {
+      tEl.classList.add("taunt-intervene");              // 청록 방패 점멸 (CSS, transform 미사용)
+      setTimeout(() => tEl.classList.remove("taunt-intervene"), 520);
+      const portrait = tEl.querySelector(".unit-portrait") || tEl;
+      const shield = document.createElement("div");
+      shield.className = "taunt-intervene-shield";
+      shield.textContent = "🛡️";
+      portrait.appendChild(shield);
+      setTimeout(() => shield.remove(), 620);
+    }
+    showActionLabel(tauntor, "도발 개입!", "taunt");      // 텍스트 하나만 (양쪽에 따로 안 띄움)
+    // 미뤄진 피해 적용 직전 생존 재확인 (race 방지). 도발 영웅이 그새 죽었으면 표식 대상이 마저 받음(총량 보존).
+    if (tauntor.alive) {
+      dealDamage(actor, tauntor, tauntShare, { fromTaunt: true, isSplit: true });
+    } else if (marked.alive) {
+      dealDamage(actor, marked, tauntShare, { isSplit: true });
+    }
+  }, 180);
+
   if (runState._themeAssassinStats) runState._themeAssassinStats.tauntSplitCount += 1;
-  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞에 서서 기습을 갈라 받았다 — 칼끝 분산! (${marked.name} ${markShare} / ${tauntor.name} ${tauntShare})`, "taunt");
+  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞을 막아 기습을 갈라 받았다 — 도발 개입! 칼끝 분산 (각 ${markShare} / ${tauntShare})`, "taunt");
 }
 
 /* v0.3.8al13 암살자 표식 — 적이 아군 1명을 "사냥감"으로 지정 (예고).
@@ -11620,6 +11677,7 @@ function dealDamage(actor, target, amount, opts = {}) {
     const resultType = opts.isCrush ? "crush"
                      : opts.isExecute ? "execute"
                      : opts.isSnipe ? "snipe"
+                     : opts.isSplit ? "split"
                      : opts.isCritical ? "critical"
                      : "damage";
     showResultText(target, dmg, resultType);
@@ -14878,6 +14936,8 @@ function _emitResultText(target, payload, seq = 0) {
     text = `분쇄 -${amount}`;   // v0.3.8aa: 분쇄 — 누적 강화 개성 (도적 처형과 분리)
   } else if (type === "snipe") {
     text = `저격 -${amount}`;   // v0.3.8: 추적자 저격 — 대상 쪽 빨강 (처형 결 계열)
+  } else if (type === "split") {
+    text = `분산 -${amount}`;   // v0.3.8ar: 칼끝 분산 — 표식대상·도발영웅 양쪽에 같은 "분산" 맥락으로 (한 사건 인지)
   } else if (type === "damage") {
     text = `-${amount}`;
   } else if (type === "heal") {
