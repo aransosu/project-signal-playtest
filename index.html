@@ -2476,6 +2476,54 @@ body {
   z-index: 5;
 }
 
+/* v0.3.8bb: 그림자 분신 — 유키 결: "진짜처럼 보이지만, 정확히 보면 무너지는 허상."
+   기본은 살짝 흐리고(채도↓) 테두리가 불안정하게 일렁인다. 완전히 "가짜"라 단정 못 하게 약하게만. */
+.unit.is-clone .unit-portrait {
+  opacity: 0.72;
+  filter: grayscale(0.35) brightness(0.92);
+  outline: 1px dashed rgba(120, 110, 160, 0.55);
+  outline-offset: 1px;
+  border-radius: 8px;
+  animation: clone-flicker 1.8s ease-in-out infinite;
+}
+@keyframes clone-flicker {
+  0%, 100% { opacity: 0.72; }
+  45%      { opacity: 0.58; }
+  60%      { opacity: 0.78; }
+}
+.unit.is-clone::after {
+  content: "허상";
+  position: absolute;
+  top: -6px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #b9b0d6;
+  background: rgba(24, 20, 40, 0.78);
+  border: 1px solid rgba(120, 110, 160, 0.5);
+  border-radius: 6px;
+  padding: 1px 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+/* 생성 잔상 — 흐릿하게 솟아오르듯 */
+.unit.clone-spawn .unit-portrait {
+  animation: clone-spawn-fx 0.7s ease-out;
+}
+@keyframes clone-spawn-fx {
+  0%   { opacity: 0; filter: grayscale(0.8) blur(3px) brightness(0.6); }
+  50%  { opacity: 0.8; filter: grayscale(0.4) blur(1px); }
+  100% { opacity: 0.72; filter: grayscale(0.35) brightness(0.92); }
+}
+/* 소멸 — 연기/잔상처럼 흩어진다 (퍽 죽기 X) */
+.unit.clone-dissolve .unit-portrait {
+  animation: clone-dissolve-fx 0.55s ease-out forwards;
+}
+@keyframes clone-dissolve-fx {
+  0%   { opacity: 0.72; filter: blur(0px); }
+  100% { opacity: 0; filter: blur(5px) brightness(0.4); }
+}
+
 /* v0.3.7.4: 마도 원형 파동 — CSS animation (iOS Safari SMIL 누락 결 대체)
    SVG circle을 stroke만 박고, transform-origin은 inline 좌표로 박음.
    r 변화 대신 transform: scale로 박음 (iOS Safari GPU 합성 강건).
@@ -3904,6 +3952,92 @@ body.fx-debug-strong .float-number.split {
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.9); }
 }
 
+/* v0.3.8au: 도발 결속 링크 — 유키 결: "선이 지나가고 사라지는 게 아니라, 두 영웅이 잠깐 연결되어 있어야 한다."
+   순간선(markstrike_split, 500ms 통과)을 대신해 0.8초 *유지*되며 중앙에서 한 번 맥동하는 사슬 링크.
+   SVG path 위에 stroke-dashoffset 흐름(사슬이 살아 움직이듯) + 중앙 빛 맥동(별도 원). */
+.taunt-link-chain {
+  fill: none;
+  stroke: #5fd0c0;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-dasharray: 7 5;
+  filter: drop-shadow(0 0 5px rgba(95,208,192,0.85));
+  opacity: 0;
+  animation: taunt-link-life 0.85s ease-out forwards, taunt-link-flow 0.85s linear;
+}
+@keyframes taunt-link-life {
+  0%   { opacity: 0; }
+  14%  { opacity: 1; }            /* 빠르게 맺힌다 */
+  70%  { opacity: 1; }            /* 유지 — 둘이 연결되어 있는 구간 */
+  100% { opacity: 0; }            /* 페이드아웃 */
+}
+@keyframes taunt-link-flow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -48; }  /* 사슬이 한 방향으로 흐르듯 — 살아 있는 링크 */
+}
+/* 링크 중앙에서 한 번 빛나는 맥동 (별도 원) */
+.taunt-link-pulse {
+  fill: rgba(95,208,192,0.55);
+  stroke: #aef3e9;
+  stroke-width: 1.2;
+  opacity: 0;
+  animation: taunt-link-pulse 0.85s ease-out forwards;
+}
+@keyframes taunt-link-pulse {
+  0%   { opacity: 0; r: 2; }
+  35%  { opacity: 0; r: 2; }
+  55%  { opacity: 0.9; r: 9; }     /* 중앙 한 번 빛난다 */
+  75%  { opacity: 0.4; r: 14; }
+  100% { opacity: 0; r: 18; }
+}
+body.fx-debug-strong .taunt-link-chain {
+  stroke-width: 5;
+  filter: drop-shadow(0 0 9px rgba(95,208,192,1));
+}
+
+/* v0.3.8az [도발 결속 링크 폴리시 — 유키 결: "공격은 선. 보호는 링크. 분산은 링크의 발동."]:
+   링크 양 끝 앵커 링 + 중앙 매듭(방패) — "둘이 연결됐다"를 한눈에. 곡선은 부드럽게(아군-아군). */
+.taunt-link-anchor {
+  fill: none;
+  stroke: #aef3e9;
+  stroke-width: 1.6;
+  opacity: 0;
+  animation: taunt-link-anchor 0.85s ease-out forwards;
+}
+@keyframes taunt-link-anchor {
+  0%   { opacity: 0; r: 1; }
+  16%  { opacity: 1; r: 4.5; }   /* 양 끝에 고리가 맺힌다 (연결 지점) */
+  70%  { opacity: 0.9; r: 4; }
+  100% { opacity: 0; r: 5.5; }
+}
+/* 중앙 매듭 — 두 영웅 사이 "묶였다"는 결속점 (방패 이모지를 foreignObject로) */
+.taunt-link-knot {
+  opacity: 0;
+  animation: taunt-link-knot 0.9s ease-out forwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes taunt-link-knot {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  55%  { opacity: 1; }           /* 매듭 유지 */
+  100% { opacity: 0; }
+}
+.taunt-link-knot-icon {
+  font-size: 15px;
+  filter: drop-shadow(0 0 5px rgba(95,208,192,0.95));
+}
+body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
+/* 분산 재점화 — 기습 시 기존 링크가 다시 밝아지고 굵어짐 ("약속이 발동한다") */
+.taunt-link-chain.reignite {
+  stroke: #7ff0df;
+  stroke-width: 4.2;
+  filter: drop-shadow(0 0 9px rgba(127,240,223,1));
+}
+.taunt-link-pulse.reignite {
+  fill: rgba(127,240,223,0.7);
+}
+
 /* 위급 피격 (HP 25% 이하) — 가장 강함 */
 .unit.hit-critical {
   animation: hit-critical 0.5s ease-out;
@@ -5214,11 +5348,40 @@ body.fx-debug-strong .float-number.split {
     <div class="battlefield" id="battlefield">
       <svg class="battle-svg" id="battle-svg"></svg>
       <div id="dev-fx-replay" style="display:none; position:absolute; top:4px; right:4px; z-index:40; flex-direction:column; gap:3px;">
-        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="devReplayInterveneFX()">▶ 도발개입 재생</button>
+        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevTauntBindReplayForce();">① 도발 결속 재생</button>
+        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevTauntSplitReplayForce(); updateTauntSplitReadout();">② 도발 분산 재생</button>
+        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevCloneReplayForce();">③ 분신 재현</button>
         <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="document.body.classList.toggle('fx-debug-strong'); this.textContent = document.body.classList.contains('fx-debug-strong') ? '강조 ON' : '강조 OFF';">강조 OFF</button>
+        <div id="taunt-split-readout" style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#5fd0c0; background:rgba(0,0,0,0.55); padding:2px 5px; border-radius:4px; line-height:1.4; white-space:nowrap;">분산 0회 / 나눔 0</div>
       </div>
-      <div class="battle-zone enemy">
-        <div class="lane enemy" id="lane-enemy-back"></div>
+      <!-- v0.3.8av: 도발 분산 상세 디버그 패널 — DEV 모드/재현실 한정 (유키 결: 일반런 UI 노출 금지).
+           발동 순간 "누가 누구를 어떻게 막았다"가 화면에 뜬다. updateTauntSplitPanel()이 채움. -->
+      <div id="taunt-split-panel" style="display:none; position:absolute; top:4px; left:4px; z-index:40; font-size:9px; font-family:'JetBrains Mono',monospace; color:#aef3e9; background:rgba(0,30,28,0.78); border:1px solid rgba(95,208,192,0.5); padding:4px 7px; border-radius:5px; line-height:1.5; white-space:nowrap; box-shadow:0 0 8px rgba(95,208,192,0.3);">
+        <div style="color:#5fd0c0; font-weight:900; letter-spacing:0.05em;">TAUNT SPLIT</div>
+        <div id="tsp-pair">표식: — / 도발: —</div>
+        <div id="tsp-share">분산: — + —</div>
+        <div id="tsp-count">count: 0</div>
+        <div id="tsp-trace" style="color:#ffd27a; margin-top:2px; font-size:8px; line-height:1.35;"></div>
+      </div>
+      <!-- v0.3.8ax: 실전 도발 분산 LIVE 추적 — DEV 모드 한정 (유키 결: A/B 진단 증명). 일반런 UI 노출 금지.
+           실전 전투 중 splitMarkedStrikeByTaunt가 실제로 도는지 / 어느 조건에서 막히는지 화면에 찍힌다. -->
+      <div id="live-taunt-panel" style="display:none; position:absolute; top:4px; left:4px; z-index:41; font-size:9px; font-family:'JetBrains Mono',monospace; color:#ffd6e8; background:rgba(40,0,20,0.82); border:1px solid rgba(255,120,170,0.55); padding:4px 7px; border-radius:5px; line-height:1.5; white-space:nowrap; box-shadow:0 0 8px rgba(255,120,170,0.3);">
+        <div style="color:#ff86ab; font-weight:900; letter-spacing:0.05em;">LIVE TAUNT SPLIT</div>
+        <div id="ltp-fire">발동: 0</div>
+        <div id="ltp-pair">표식: — / 도발: —</div>
+        <div id="ltp-share">분산: — + —</div>
+        <div id="ltp-link">link: —</div>
+        <div id="ltp-trace" style="color:#ffd27a; margin-top:2px; font-size:8px; line-height:1.35;"></div>
+      </div>
+      <!-- v0.3.8bc: 분신 관측 패널 — DEV 모드 한정. 분신 생성/생존/간파/붕괴 실시간. 일반런 노출 X. -->
+      <div id="clone-test-panel" style="display:none; position:absolute; top:4px; right:4px; z-index:41; font-size:9px; font-family:'JetBrains Mono',monospace; color:#c9c0ee; background:rgba(20,16,40,0.85); border:1px solid rgba(150,130,210,0.55); padding:4px 7px; border-radius:5px; line-height:1.5; white-space:nowrap; box-shadow:0 0 8px rgba(150,130,210,0.3);">
+        <div style="color:#b9a6f0; font-weight:900; letter-spacing:0.05em;">CLONE TEST</div>
+        <div id="ctp-summon">분신 생성: 0</div>
+        <div id="ctp-alive">분신 생존: 0</div>
+        <div id="ctp-reveal">간파: 0</div>
+        <div id="ctp-destroyed">허상 붕괴: 0</div>
+        <button class="dev-btn small" style="font-size:9px; padding:2px 6px; margin-top:3px;" onclick="toggleCloneObserveMode();" id="clone-observe-btn">관측무적 OFF</button>
+      </div>
         <div class="lane enemy" id="lane-enemy-front"></div>
       </div>
       <div class="clash-line"></div>
@@ -5827,7 +5990,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8at-fx-replay-stage";
+const BUILD_VERSION = "v0.3.8bd-clone-observe-cleanup";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -5891,6 +6054,7 @@ const DEV_MODE_MENU = [
     { presetKey: "assassin_s20", desc: "밤칼 지휘관 / 급사 방지" },
     { presetKey: "assassin_s25", desc: "무영단장 보스 / 보호·제어로 끊기" },
     { presetKey: "assassin_split_repro", desc: "★연출 재현 — 도발 분산(피격 전 가로막기)+추적자 간파 / 발동 보장" },
+    { presetKey: "assassin_clone_observe", desc: "★분신 관측실 — 분신/조준/간파 긴 턴 (죽지 않는 무대)" },
   ]},
 ];
 
@@ -6092,6 +6256,19 @@ const DEV_STAGE_PRESETS = {
              { kind: "fusion", id: "tracker", lvl: 3 }, // 추적자 — 은신 간파 (은신의 천적)
              { kind: "trait", id: "heal" },           // 사제 — 후열 (표식 대상 후보)
              { kind: "trait", id: "snipe" } ],         // 저격 — 후열 (표식 대상 후보)
+  },
+  // v0.3.8bc→bd: 분신 관측실 — 유키 결: "관측실은 실험실. 한 번에 하나의 문법만." 도발 결속 완전 격리.
+  //   도발 직업(bravery/guard/blessing=holy_sustain) 전부 제외 → 도발 결속이 안 섞임. 분신만 본다.
+  //   아군만 무적(옵션A) — 적·분신은 정상 사망, 전투 자연 종료. 추적자는 분신 판별자(필수).
+  assassin_clone_observe: {
+    label: "Assassin 분신 관측실 — 분신/조준/간파 (분신만)", startStage: 14, themeId: "assassin",
+    purpose: "분신 생성→추적자 조준→간파→허상 붕괴를 차분히 관측 (아군만 무적, 도발 격리)", type: "fx_repro",
+    cloneObserve: true,   // 입장 시 관측 모드 ON (아군만 무적)
+    traitLevels: { snipe: 3, heal: 2, disrupt: 2 },
+    party: [ { kind: "fusion", id: "tracker", lvl: 3 }, // 추적자 — 분신 판별자 (필수)
+             { kind: "trait", id: "heal" },           // 사제 — 후열 유지
+             { kind: "trait", id: "snipe" },           // 저격 — 딜러
+             { kind: "trait", id: "disrupt" } ],        // 교란 — 비-도발 전열 딜러 (도발 격리)
   },
 };
 
@@ -6384,6 +6561,20 @@ const ENEMY_TEMPLATES = {
   smoke_caster: {      // 연막 술사 — 후열 캐스터 (교란 느낌)
     race: "orc", role: "caster", hp: 65, atk: 14, def: 2, spd: 100,
     displayName: "연막 술사", themeTag: "assassin",
+  },
+  // v0.3.8bb: 그림자 분신 — 암살자가 시간을 버는 *연막*(강적 X). 낮은 HP/ATK, 타겟 교란용.
+  //   isClone: 추적자 조준/간파에 즉시 소멸(허상 붕괴). 일반 공격으로도 잡히나 1~3대 손해.
+  shadow_clone: {
+    race: "goblin", role: "ranged", hp: 28, atk: 6, def: 0, spd: 104,
+    isClone: true,
+    displayName: "그림자 분신", themeTag: "assassin",
+  },
+  // v0.3.8bb: 분신술사 — 침묵 암살자 변종. 전투 첫 행동에 "분신!" 1회 (그림자 분신 2기). 본체는 표식 딜러.
+  cloneweaver_killer: {
+    race: "orc", role: "guard", hp: 70, atk: 18, def: 2, spd: 110,
+    markOnTurn: 0.5, markStrikeBonus: 0.65,
+    cloneSummon: 2,        // 첫 행동에 분신 2기 소환 (1회)
+    displayName: "분신술사", themeTag: "assassin",
   },
   // S10 — 그림자 척후대장 (검문소. 빠른 후열 압박형 미니보스)
   shadow_captain: {
@@ -6738,7 +6929,7 @@ const THEME_STAGE_OVERRIDES = {
     11: { name: "사냥감 지정", enemies: ["night_archer", "silent_killer", "shadow_dagger", "smoke_caster"] },
     12: { name: "연막의 벽", enemies: ["silent_killer", "night_archer", "night_archer"] },
     13: { name: "밤칼날 훈련", enemies: ["shadow_dagger", "silent_killer", "smoke_caster", "night_archer"] },
-    14: { name: "기습 예고", enemies: ["night_archer", "night_archer", "silent_killer"] },
+    14: { name: "기습 예고", enemies: ["cloneweaver_killer", "night_archer", "night_archer"] },
     15: { name: "두 번째 표식", enemies: ["silent_killer", "night_archer", "shadow_dagger", "smoke_caster", "shadow_dagger"] },
     // S16~19 압력 상승
     16: { name: "검은 쇄도", enemies: ["night_archer", "silent_killer", "silent_killer", "smoke_caster"] },
@@ -7052,6 +7243,24 @@ function devJumpToStage(presetKey) {
   // 4) 목표 스테이지 진입 (preset에 enemiesOverride 있으면 적 교체 — seed 관측용)
   runState.stage = preset.startStage;
   loadStage(preset.startStage, preset.enemiesOverride);
+  // v0.3.8bc: 분신 관측실 프리셋 — 관측 무적 ON + CLONE 패널 노출 (긴 턴 관측 무대).
+  if (preset.cloneObserve) {
+    runState._cloneObserveMode = true;
+    // v0.3.8bd: 분신 stat 0부터 — 관측실은 항상 깨끗한 계기판에서 시작 (정합성, 유키 판단3).
+    if (runState._themeAssassinStats) {
+      runState._themeAssassinStats.cloneSummonCount = 0;
+      runState._themeAssassinStats.cloneRevealCount = 0;
+      runState._themeAssassinStats.cloneDestroyedCount = 0;
+    }
+    const btn = document.getElementById("clone-observe-btn");
+    if (btn) btn.textContent = "관측무적 ON";
+    // 화면 정리 — 관측실은 분신만 본다. 도발 결속/분산 패널 숨김 (유키 결: 한 번에 하나의 문법만).
+    const _ltP = document.getElementById("live-taunt-panel");
+    if (_ltP) _ltP.style.display = "none";
+    const _tsP = document.getElementById("taunt-split-panel");
+    if (_tsP) _tsP.style.display = "none";
+    if (typeof updateCloneTestPanel === "function") updateCloneTestPanel();
+  }
   enterBattleScreen();
 }
 
@@ -8698,8 +8907,13 @@ function makeEnemyUnit(templateId) {
   // v0.3.7.24: Stage 13+ 테스트 완화 — HP/ATK만 곱함 (속도/DEF X)
   //   임시 테스트 빌드. ENABLE_STAGE13_TEST_SOFTENING으로 ON/OFF.
   const testMult = getEnemyStatMultiplier(stageNum);
-  const finalHp  = Math.floor(hp  * testMult);
-  const finalAtk = Math.floor(atk * testMult);
+  let finalHp  = Math.floor(hp  * testMult);
+  let finalAtk = Math.floor(atk * testMult);
+  // v0.3.8bb: 분신은 스테이지 스케일링 면제 — 연막은 단단해지면 안 된다(유키 결). 템플릿 raw 값 유지.
+  if (tpl.isClone) {
+    finalHp  = tpl.hp;
+    finalAtk = tpl.atk;
+  }
 
   return {
     uid: nextUid(),
@@ -8745,6 +8959,8 @@ function makeEnemyUnit(templateId) {
     // v0.3.8al13: 암살자 표식 — 예고 → 기습 (후열 즉사 X, 읽고 막는 게임)
     markOnTurn: tpl.markOnTurn || 0,          // 행동 시 표식 부여 확률
     markStrikeBonus: tpl.markStrikeBonus || 0,  // 표식 대상 공격 시 추가피해 배수
+    isClone: tpl.isClone || false,              // v0.3.8bb: 그림자 분신 — 추적자 간파에 즉시 소멸(허상)
+    cloneSummon: tpl.cloneSummon || 0,          // v0.3.8bb: 분신 소환 횟수(>0이면 첫 행동에 분신 생성)
     // v0.3.8z: 페이즈 전환 공통 훅
     phases: tpl.phases || null,        // 페이즈 전환 데이터 (없으면 전환 연출 없음)
     _phaseKey: null,                   // 현재 활성 페이즈 키 (아바타 교체/오라 추적)
@@ -8957,8 +9173,12 @@ function initRunFromParty() {
     stealthCount: 0,          // 은신 진입 횟수
     markedStrikeCount: 0,     // 표식 기습(armed) 성립 횟수
     tauntSplitCount: 0,       // 도발 칼끝 분산 발동 횟수
+    tauntSplitDamageShared: 0,// v0.3.8au: 도발 영웅이 나눠 받은 총 피해(진실 확인용)
     trackerRevealCount: 0,    // 추적자 색적/간파로 은신 벗긴 횟수
     markInterruptedCount: 0,  // 색적으로 표식이 흐트러진 횟수
+    cloneSummonCount: 0,      // v0.3.8bb: 분신 소환 발동 횟수
+    cloneRevealCount: 0,      // v0.3.8bb: 추적자가 분신을 간파한 횟수
+    cloneDestroyedCount: 0,   // v0.3.8bb: 분신이 소멸한 총 횟수(간파+일반)
   };
   // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
   //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
@@ -8969,6 +9189,7 @@ function initRunFromParty() {
   // v0.3.8r2: dev 점프 표식 리셋 — 일반 "새 작전" 런은 항상 devTest=null (오염 방지)
   //   devJumpToStage가 initRunFromParty 뒤에 다시 박으므로, 일반 런은 여기서 null로 시작.
   runState.devTest = null;
+  runState._cloneObserveMode = false;   // v0.3.8bc: 관측 무적은 일반 새 런에 새지 않는다 (DEV 프리셋 입장 시만 ON)
   runState.units = partyState.slots
     .filter(Boolean)
     .map(jobId => makeAllyUnit(jobId));
@@ -9028,6 +9249,15 @@ function loadStage(stageNum, enemiesOverride) {
   // v0.3.8at: DEV 연출 재생 버튼 — DEV 모드 + 암살자 테마일 때만 노출 (그 외 숨김)
   const _fxBtn = document.getElementById("dev-fx-replay");
   if (_fxBtn) _fxBtn.style.display = (DEV_MODE_ENABLED && runState.themeId === "assassin") ? "flex" : "none";
+  // v0.3.8av: 상세 분산 패널 — 새 전투 진입 시 숨김 리셋 (옛 내용 잔류 방지). 첫 분산 발동이 다시 띄움.
+  const _tsPanel = document.getElementById("taunt-split-panel");
+  if (_tsPanel) _tsPanel.style.display = "none";
+  // v0.3.8ax: LIVE 패널도 새 전투 진입 시 숨김 리셋 (실전 분산 발동 시 다시 뜸).
+  const _ltPanel = document.getElementById("live-taunt-panel");
+  if (_ltPanel) _ltPanel.style.display = "none";
+  // v0.3.8bc: 분신 관측 패널 — 암살자 테마 + DEV일 때만, 관측모드면 노출 유지 (그 외 숨김).
+  const _ctPanel = document.getElementById("clone-test-panel");
+  if (_ctPanel) _ctPanel.style.display = (DEV_MODE_ENABLED && runState._cloneObserveMode) ? "block" : "none";
 
   // v0.3.8ab: 히드라 관측 리셋 — 새 전투마다 새로 누적 (이전 전투 데이터 섞임 방지)
   runState.hydraObs = null;
@@ -9264,9 +9494,12 @@ function getActiveTauntor() {
   return (tauntor && tauntor.alive) ? tauntor : null;
 }
 function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
+  // v0.3.8ax LIVE 추적: 실전 분산 경로 진입 (B 진단 — 발동은 하는데 연출이 연결되나).
+  liveTauntTrace("LIVE_TAUNT_SPLIT_ENTER");
   // 총 피해를 50:50 (반올림 관례: 도발 몫 floor, 표식 몫 나머지 → 총합 보존)
   const tauntShare = Math.floor(totalDmg * 0.5);
   const markShare = totalDmg - tauntShare;   // 총합 = totalDmg (어긋남 0)
+  liveTauntTrace(`LIVE_TAUNT_SPLIT_CONDITION_TRUE (total ${totalDmg} → ${markShare}/${tauntShare})`);
   // v0.3.8as [피격 전 가로막기 — 유키 결: "도발 개입이 먼저 보이고, 그 결과로 분산 피해가 떠야 한다"]:
   //   ar의 문제: 기습 명중(markShare 즉시) → 180ms 뒤 도발 → 도발이 "사후 설명"처럼 보였다.
   //   as의 해법: 순서를 뒤집는다. *피해를 둘 다 미뤄* 도발 개입을 먼저 보이게 한다.
@@ -9276,25 +9509,14 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   // ① 기습선이 표식 대상에게 향한다 (방향 예고 — 피해는 아직 안 들어감)
   drawLine(actor, marked, "attack");
 
-  // ②③④ 짧은 예고 멈춤 뒤 — 도발이 "피격 직전" 가로막는다 (방패 먼저 → 결속선)
+  // ②③④ 짧은 예고 멈춤 뒤 — 기습이 들어올 때 이미 맺어둔 결속 링크가 *다시 밝아진다* (분산은 링크의 발동) [공용 연출 헬퍼]
   fxTimeout(() => {
-    // ③ 도발 방패가 먼저 뜬다 (가로막기 — 아직 아무도 안 맞음)
-    const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
-    if (tEl) {
-      tEl.classList.add("taunt-intervene");              // 청록 방패 점멸 (CSS, transform 미사용)
-      setTimeout(() => tEl.classList.remove("taunt-intervene"), 520);
-      const portrait = tEl.querySelector(".unit-portrait") || tEl;
-      const shield = document.createElement("div");
-      shield.className = "taunt-intervene-shield";
-      shield.textContent = "🛡️";
-      portrait.appendChild(shield);
-      setTimeout(() => shield.remove(), 620);
-    }
-    showActionLabel(tauntor, "도발 개입!", "taunt");      // 텍스트 하나만 (가로막는 순간)
-    // ④ 결속선 — 두 사람을 같은 사건으로 묶는다
-    drawLine(marked, tauntor, "markstrike_split");
+    showTauntInterveneText(tauntor, "분산!");   // 텍스트 하나 "분산!" + 중앙 배너
+    const _linkOk = drawTauntLink(marked, tauntor, { mode: "reignite" });   // ④ 결속 링크 재점화 (DEV와 동일 공용 함수)
+    liveTauntTrace(_linkOk ? "LIVE_TAUNT_LINK_DRAWN ✓ (reignite)" : "LIVE_TAUNT_LINK_DRAWN ✗ (좌표 누락)");
+    updateLiveTauntPanel(marked.name, tauntor.name, markShare, tauntShare, _linkOk ? "reignite" : "no-coord");
 
-    // ⑤ 그 다음(짧은 텀) — 가로막은 결과로 양쪽이 "분산 -N"을 *동시에* 받는다
+    // ⑤ 그 다음(짧은 텀) — 가로막은 결과로 양쪽이 *실제* 분산 피해를 받는다 (실전 경로 — DEV와 달리 진짜 피해)
     fxTimeout(() => {
       dealDamage(actor, marked, markShare, { isSplit: true });
       // 미뤄진 피해 적용 직전 생존 재확인 (race 방지). 도발 영웅이 그새 죽었으면 표식 대상이 마저 받음(총량 보존).
@@ -9303,11 +9525,24 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
       } else if (marked.alive) {
         dealDamage(actor, marked, tauntShare, { isSplit: true });
       }
+      liveTauntTrace("LIVE_TAUNT_SPLIT_APPLIED ✓");
     }, 130);
   }, 140);
 
-  if (runState._themeAssassinStats) runState._themeAssassinStats.tauntSplitCount += 1;
+  if (runState._themeAssassinStats) {
+    runState._themeAssassinStats.tauntSplitCount += 1;
+    runState._themeAssassinStats.tauntSplitDamageShared += tauntShare;  // v0.3.8au: 도발이 나눠 받은 총 피해(진실 확인)
+  }
+  liveTauntTrace("LIVE_TAUNT_SPLIT_COUNT_INCREMENTED ✓");
+  // v0.3.8au [TAUNT_SPLIT_DEBUG] — 기능이 실제 발동했는지 콘솔+로그로 명시 (확인 전용).
+  console.log("[TAUNT_SPLIT_DEBUG]", {
+    source: actor.name, markedTarget: marked.name, tauntor: tauntor.name,
+    totalDamage: totalDmg, markedShare: markShare, tauntShare: tauntShare,
+    result: "split applied"
+  });
   pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞을 막아 기습을 갈라 받았다 — 도발 개입! 칼끝 분산 (각 ${markShare} / ${tauntShare})`, "taunt");
+  updateTauntSplitReadout();
+  updateTauntSplitPanel(marked.name, tauntor.name, markShare, tauntShare);  // v0.3.8av: DEV 상세 패널
 }
 
 // v0.3.8at: 도발 개입 중앙 배너 — "확실히 보이는" 한 박자 (전장 중앙).
@@ -9321,54 +9556,417 @@ function showInterveneBanner(text) {
   setTimeout(() => banner.remove(), 1000);
 }
 
+// v0.3.8au [도발 결속 링크 — 유키 결: "선이 지나가고 사라지는 게 아니라, 두 영웅이 잠깐 연결되어 있어야 한다"]:
+//   기존 markstrike_split 순간선(500ms 통과)을 대신해 — 표식 대상 ↔ 도발 영웅을 *0.8초 유지되는 사슬 링크*로 잇는다.
+//   사슬은 흐르고(dashoffset), 중앙에서 한 번 맥동한다(별도 원). 실전·DEV재현 공용 틀.
+//   battle-svg viewBox 좌표계에 path + circle을 직접 그린다 (transform 미사용 — 아바타 scale 보존).
+function drawTauntLink(marked, tauntor, opts = {}) {
+  const svg = document.getElementById("battle-svg");
+  if (!svg) return false;
+  syncBattleSvg();
+  // v0.3.8ba: 전용 측면 anchor — 서로 마주 보는 3시/9시에서 시작·도착 (행동선 anchor 탈피).
+  const a = getTauntLinkAnchor(marked, tauntor);
+  const b = getTauntLinkAnchor(tauntor, marked);
+  if (!a || !b) { console.warn("[drawTauntLink] 측면 anchor 누락 — 링크 생략"); return false; }
+
+  // v0.3.8az: 결속(bind) vs 분산 재점화(reignite) — 같은 링크의 두 상태. 분산은 더 밝게 굵게.
+  const isReignite = opts.mode === "reignite";
+  const knotIcon = opts.knot || (isReignite ? "🛡️" : "🔗");   // 결속=고리, 분산=방패
+
+  const ns = "http://www.w3.org/2000/svg";
+
+  // v0.3.8ba: 측면 anchor 두 점 — 완만한 곡선 링크 ()~~~~() 느낌. 측면이라 내려꽂힘/치유선 느낌 제거.
+  const ax = a.x, ay = a.y;
+  const bx = b.x, by = b.y;
+  const mx = (ax + bx) / 2;
+  const my = (ay + by) / 2;
+  const dist = Math.hypot(bx - ax, by - ay);
+  const bow = Math.max(Math.min(dist * 0.18, 28), 12);   // 수평 거리 기반 완만한 보호 아치 (과하게 안 꺾이게 캡)
+  const ctrlY = my - bow;   // 제어점을 위로 — ⌒ 완만한 관계선
+  const knotX = mx;
+  const knotY = (my + ctrlY) / 2;   // 두 영웅 실제 중간점 근처
+
+  // ── 사슬 곡선 ──
+  const chain = document.createElementNS(ns, "path");
+  chain.setAttribute("class", "taunt-link-chain" + (isReignite ? " reignite" : ""));
+  chain.setAttribute("d", `M ${ax} ${ay} Q ${mx} ${ctrlY} ${bx} ${by}`);
+  svg.appendChild(chain);
+
+  // ── 양 끝 앵커 링 (두 영웅에게 "붙었다") ──
+  const anchorA = document.createElementNS(ns, "circle");
+  anchorA.setAttribute("class", "taunt-link-anchor");
+  anchorA.setAttribute("cx", ax); anchorA.setAttribute("cy", ay); anchorA.setAttribute("r", "1");
+  svg.appendChild(anchorA);
+  const anchorB = document.createElementNS(ns, "circle");
+  anchorB.setAttribute("class", "taunt-link-anchor");
+  anchorB.setAttribute("cx", bx); anchorB.setAttribute("cy", by); anchorB.setAttribute("r", "1");
+  svg.appendChild(anchorB);
+
+  // ── 중앙 맥동 ──
+  const pulse = document.createElementNS(ns, "circle");
+  pulse.setAttribute("class", "taunt-link-pulse" + (isReignite ? " reignite" : ""));
+  pulse.setAttribute("cx", knotX);
+  pulse.setAttribute("cy", knotY);
+  pulse.setAttribute("r", "2");
+  svg.appendChild(pulse);
+
+  // ── 중앙 매듭 아이콘 (방패/고리 — "묶였다"는 결속점) ──
+  const knot = document.createElementNS(ns, "foreignObject");
+  knot.setAttribute("class", "taunt-link-knot");
+  knot.setAttribute("x", knotX - 10);
+  knot.setAttribute("y", knotY - 10);
+  knot.setAttribute("width", "20");
+  knot.setAttribute("height", "20");
+  const knotDiv = document.createElement("div");
+  knotDiv.className = "taunt-link-knot-icon";
+  knotDiv.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;";
+  knotDiv.textContent = knotIcon;
+  knot.appendChild(knotDiv);
+  svg.appendChild(knot);
+
+  // 0.9초 링크 수명 끝나면 정리 (cleanup — 잔재 안 남게)
+  setTimeout(() => {
+    chain.remove(); pulse.remove(); anchorA.remove(); anchorB.remove(); knot.remove();
+  }, 950);
+  return true;
+}
+
+// v0.3.8ay [도발 결속 미리보기 — 유키 결: "도발은 연결. 결속이 먼저 생긴다"]:
+//   기습 전, 표식 대상 ↔ 도발 영웅을 *미리* 잇는 링크. drawTauntLink와 같은 청록 사슬이되
+//   "결속 예약" 느낌으로 한 번 보여준다 (기습 때 drawTauntLink로 재점화). 0.8초 유지.
+function drawTauntLinkPreview(marked, guard) {
+  return drawTauntLink(marked, guard, { mode: "bind", knot: "🔗" });   // 결속 미리보기 — 고리 매듭
+}
+
+// v0.3.8ay [결속 예약 — 유키 결: "도발이 기습 순간 우연히 있어야 하는 구조 X / 표식 이후 미리 결속 O"]:
+//   도발 영웅이 도발 행동/갱신할 때, 현재 표식 걸린 아군이 있으면 그 표식에 이 도발 영웅을 결속한다.
+//   표식 대상에 _markGuardUid/_markGuardName/_markGuardLinked를 박고, 미리보기 링크 + "도발 결속!" 표시.
+//   기습 시점엔 getActiveTauntor(우연 탐색) 대신 이 예약된 guard를 우선 쓴다.
+function bindTauntGuardToMarked(tauntor) {
+  if (!tauntor || !tauntor.alive) return false;
+  if (runState._cloneObserveMode) return false;   // v0.3.8bd: 분신 관측실은 도발 결속 격리 (분신만 본다)
+  // 살아있는 표식 대상 찾기 (자기 자신은 제외 — 도발 영웅이 표식 대상이면 결속 의미 없음)
+  const marked = runState.units.find(u =>
+    u.alive && u._marked > 0 && u.uid !== tauntor.uid);
+  if (!marked) return false;
+  marked._markGuardUid = tauntor.uid;
+  marked._markGuardName = tauntor.name;
+  marked._markGuardLinked = true;
+  // 미리보기 링크 + 결속 텍스트 ("연결됐다" 느낌)
+  fxTimeout(() => {
+    drawTauntLinkPreview(marked, tauntor);
+    showActionLabel(tauntor, "도발 결속!", "taunt");
+    showInterveneBanner("도발 결속!");
+  }, 130);
+  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b>의 표식에 결속했다 — 도발 결속! (기습 시 함께 나눠 받는다)`, "taunt");
+  liveTauntTrace(`결속 예약: ${tauntor.name} ⇄ ${marked.name} (_markGuardUid 박힘)`, true);
+  return true;
+}
+
+// v0.3.8au: DEV 실시간 분산 카운터 갱신 — "기능이 실제로 도는가"를 화면으로 (확인 전용).
+function updateTauntSplitReadout() {
+  const el = document.getElementById("taunt-split-readout");
+  if (!el) return;
+  const s = runState && runState._themeAssassinStats;
+  const c = s ? (s.tauntSplitCount || 0) : 0;
+  const d = s ? (s.tauntSplitDamageShared || 0) : 0;
+  el.textContent = `분산 ${c}회 / 나눔 ${d}`;
+}
+
+// v0.3.8av: 도발 분산 상세 디버그 패널 — DEV 모드/재현실 한정 (유키 결: 일반런 UI 노출 금지).
+//   발동 순간 "표식 / 도발 / 분산 N+N / count"를 화면에 띄운다. DEV_MODE_ENABLED 일 때만 보인다.
+function updateTauntSplitPanel(markedName, tauntorName, markShare, tauntShare) {
+  // 격리: DEV 모드가 아니면 패널 자체를 숨기고 끝 (일반런 노출 금지)
+  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  const panel = document.getElementById("taunt-split-panel");
+  if (!panel) return;
+  const s = runState && runState._themeAssassinStats;
+  const c = s ? (s.tauntSplitCount || 0) : 0;
+  const pair  = document.getElementById("tsp-pair");
+  const share = document.getElementById("tsp-share");
+  const cnt   = document.getElementById("tsp-count");
+  if (pair)  pair.textContent  = `표식: ${markedName} / 도발: ${tauntorName}`;
+  if (share) share.textContent = `분산: ${markShare} + ${tauntShare}`;
+  if (cnt)   cnt.textContent   = `count: ${c}`;
+  panel.style.display = "block";
+}
+
 // v0.3.8at [DEV 연출 재현실 — 유키 결: "죽지 않는 고정 무대에서 연출만 강제 재생"]:
 //   실제 전투 흐름/피해/사망을 기다리지 않고, 도발 분산 시퀀스를 강제로 1회 재생한다.
 //   현재 전투의 살아있는 유닛(암살자 적 / 도발 아군 / 표식대상 후열 / 추적자)을 무대 배우로 빌려 쓴다.
 //   피해는 고정값(50/50), 사망/패배/클리어 처리는 _fxReplayLock으로 잠깐 차단.
-function devReplayInterveneFX() {
-  if (!runState || !runState.units) { alert("전투 중에만 재현 가능 — 먼저 ★연출 재현 프리셋으로 입장하세요."); return; }
-  // 배우 캐스팅: 적 1(암살자) / 도발 아군 / 표식대상(후열 아군) / (추적자 있으면 메모만)
-  const enemy   = runState.units.find(u => u.alive && u.side === "enemy");
-  const tauntor = getActiveTauntor()
-               || runState.units.find(u => u.alive && u.side === "ally" && (u.traitId === "bravery" || u.baseJob === "bravery"));
-  const marked  = runState.units.find(u => u.alive && u.side === "ally" && u.uid !== (tauntor && tauntor.uid) && u.role === "back")
-               || runState.units.find(u => u.alive && u.side === "ally" && u.uid !== (tauntor && tauntor.uid));
-  if (!enemy || !tauntor || !marked) { alert("무대 배우 부족 — 암살자/도발/표식대상이 모두 살아있어야 합니다."); return; }
+// v0.3.8aw [공용 연출 헬퍼 — 실전/DEV 둘 다 쓰는 자리]:
+//   유키 결: "공용으로 쓸 것은 연출 함수만." 실전 split 경로와 DEV force 경로가 이것만 공유한다.
+function showSplitDamage(target, amount) {
+  if (!target || !target.uid) return;
+  showResultText(target, amount, "split");   // 청록 "분산 -N"
+}
+function showTauntInterveneText(tauntor, text) {
+  const t = text || "분산!";
+  if (tauntor) showActionLabel(tauntor, t, "taunt");
+  showInterveneBanner(t);
+}
+function showTauntShield(tauntor) {
+  if (!tauntor) return;
+  const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
+  if (!tEl) return;
+  tEl.classList.add("taunt-intervene");
+  setTimeout(() => tEl.classList.remove("taunt-intervene"), 800);
+  const portrait = tEl.querySelector(".unit-portrait") || tEl;
+  const shield = document.createElement("div");
+  shield.className = "taunt-intervene-shield";
+  shield.textContent = "🛡️";
+  portrait.appendChild(shield);
+  setTimeout(() => shield.remove(), 820);
+}
 
-  // 사망/결과 처리 잠깐 차단 (연출 보는 동안 무적)
+// v0.3.8aw [DEV 단계 추적 — 유키 요청]: 버튼 클릭부터 어느 단계까지 갔는지 화면에 순서대로 찍는다.
+//   count 0이면 "어디서 끊겼나"가 이 한 줄로 보인다. DEV 패널의 tsp-trace에 표시.
+function tauntSplitTrace(step, reset) {
+  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  console.log("[DEV_TAUNT_TRACE]", step);
+  const el = document.getElementById("tsp-trace");
+  if (!el) return;
+  const panel = document.getElementById("taunt-split-panel");
+  if (panel) panel.style.display = "block";
+  if (reset) el.innerHTML = "";
+  el.innerHTML += (el.innerHTML ? "<br>" : "") + "▸ " + step;
+}
+
+// v0.3.8ax [실전 LIVE 추적 — 유키 결: "실전 split 경로가 같은 링크 연출을 타는지 증명"]:
+//   실전 splitMarkedStrikeByTaunt가 실제로 도는지 / 어느 조건에서 막히는지 화면(DEV 한정)+콘솔에 찍는다.
+//   A(거의 발동 안 함) vs B(발동하나 연출 미연결)를 이 trace 한 줄로 가른다.
+function liveTauntTrace(step, reset) {
+  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  if (runState && runState._cloneObserveMode) return;   // v0.3.8bd: 분신 관측실은 도발 trace 격리 (분신만 본다)
+  console.log("[LIVE_TAUNT_TRACE]", step);
+  const el = document.getElementById("ltp-trace");
+  if (!el) return;
+  const panel = document.getElementById("live-taunt-panel");
+  if (panel) panel.style.display = "block";
+  if (reset) el.innerHTML = "";
+  // 최근 6줄만 유지 (실전은 여러 번 찍히니 넘침 방지)
+  const lines = (el.innerHTML ? el.innerHTML.split("<br>") : []);
+  lines.push("▸ " + step);
+  while (lines.length > 6) lines.shift();
+  el.innerHTML = lines.join("<br>");
+}
+function updateLiveTauntPanel(markedName, tauntorName, markShare, tauntShare, linkState) {
+  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  if (runState && runState._cloneObserveMode) return;   // v0.3.8bd: 분신 관측실은 도발 패널 격리
+  const panel = document.getElementById("live-taunt-panel");
+  if (!panel) return;
+  const s = runState && runState._themeAssassinStats;
+  const c = s ? (s.tauntSplitCount || 0) : 0;
+  const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+  set("ltp-fire", `발동: ${c}`);
+  set("ltp-pair", `표식: ${markedName} / 도발: ${tauntorName}`);
+  set("ltp-share", `분산: ${markShare} + ${tauntShare}`);
+  set("ltp-link", `link: ${linkState}`);
+  panel.style.display = "block";
+}
+
+// v0.3.8bc: 분신 관측 패널 갱신 — 생성/생존/간파/붕괴 실시간 (DEV 한정). "기능이 돌고 있구나"를 화면으로.
+function updateCloneTestPanel() {
+  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;
+  const panel = document.getElementById("clone-test-panel");
+  if (!panel) return;
+  const s = runState && runState._themeAssassinStats;
+  const aliveClones = (runState.enemies || []).filter(e => e.alive && e.isClone).length;
+  const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+  set("ctp-summon",    `분신 생성: ${s ? (s.cloneSummonCount || 0) : 0}`);
+  set("ctp-alive",     `분신 생존: ${aliveClones}`);
+  set("ctp-reveal",    `간파: ${s ? (s.cloneRevealCount || 0) : 0}`);
+  set("ctp-destroyed", `허상 붕괴: ${s ? (s.cloneDestroyedCount || 0) : 0}`);
+  panel.style.display = "block";
+}
+
+// v0.3.8bc: 분신 관측 무적 토글 — 켜면 아군·적 본체 안 죽고 전투가 계속 흐른다(분신 관측 무대).
+//   분신(isClone)은 예외로 소멸 가능(허상 붕괴를 봐야 하니까). DEV 한정.
+function toggleCloneObserveMode() {
+  if (!runState) return;
+  runState._cloneObserveMode = !runState._cloneObserveMode;
+  const btn = document.getElementById("clone-observe-btn");
+  if (btn) btn.textContent = runState._cloneObserveMode ? "관측무적 ON" : "관측무적 OFF";
+  if (typeof pushEvent === "function") {
+    pushEvent(runState._cloneObserveMode
+      ? "[DEV] 분신 관측 무적 ON — 아군·적 본체가 죽지 않습니다. 분신만 간파로 소멸."
+      : "[DEV] 분신 관측 무적 OFF — 일반 전투 흐름 복귀.", "info");
+  }
+}
+
+// v0.3.8aw [DEV 강제 재현 — 유키 결: "버튼이 곧 사건을 만들어야 한다. split 조건을 기다리면 안 된다"]:
+//   실전 조건(getActiveTauntor / role / armed / totalDamage)을 *전부 우회*하고,
+//   고정값(100→50/50)으로 분산 사건을 강제 생성한다. 배우를 못 찾아도 살아있는 유닛을 빌리고,
+//   최소한의 배우도 없으면 명확한 trace를 남긴다. 무적 무대(_fxReplayLock)에서 재생.
+// v0.3.8ay [DEV 결속 재생 — 유키 결: "결속이 먼저 생기고, 나중에 분산된다를 따로 본다"]:
+//   기습/분산 없이, 표식 대상 ↔ 도발 영웅 사이 *결속 링크만* 강제로 보여준다.
+function runDevTauntBindReplayForce() {
+  tauntSplitTrace("1. BUTTON_CLICKED (결속 재생)", true);
+  if (!runState || !runState.units || !runState.units.length) {
+    tauntSplitTrace("✗ NO_BATTLE — ★연출 재현 프리셋으로 먼저 입장하세요");
+    return;
+  }
+  const allies = runState.units.filter(u => u.side === "ally");
+  const marked  = allies.find(u => u.role === "back") || allies[0] || runState.units[0];
+  const tauntor = allies.find(u => u.uid !== (marked && marked.uid))
+               || runState.units.find(u => u.uid !== (marked && marked.uid)) || marked;
+  if (!marked || !tauntor) { tauntSplitTrace("✗ ACTORS_MISSING"); return; }
+  [marked, tauntor].forEach(u => { u.alive = true; if (u.maxHp) u.hp = u.maxHp; });
+  // 표식 + 결속 예약을 강제로 박는다
+  marked._marked = 2; marked._markArmed = false;
+  marked._markGuardUid = tauntor.uid;
+  marked._markGuardName = tauntor.name;
+  marked._markGuardLinked = true;
+  tauntSplitTrace(`2. ACTORS_FOUND (표식:${marked.name} / 도발:${tauntor.name})`);
+  tauntSplitTrace("3. GUARD_RESERVED (_markGuardUid 박힘)");
   runState._fxReplayLock = true;
-  const FIXED = 50;   // 고정 분산값
-
-  // ① 기습선이 표식 대상을 향한다 (피해 없이, 예고)
-  drawLine(enemy, marked, "attack");
-  pushEvent(`[DEV 재현] ${enemy.name} → ${marked.name} 기습 예고`, "info");
-
-  // ②③④ 140ms 뒤 — 도발이 피격 직전 가로막는다 (방패 먼저 → 결속선 → 중앙 배너)
   fxTimeout(() => {
-    const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
-    if (tEl) {
-      tEl.classList.add("taunt-intervene");
-      setTimeout(() => tEl.classList.remove("taunt-intervene"), 800);
-      const portrait = tEl.querySelector(".unit-portrait") || tEl;
-      const shield = document.createElement("div");
-      shield.className = "taunt-intervene-shield";
-      shield.textContent = "🛡️";
-      portrait.appendChild(shield);
-      setTimeout(() => shield.remove(), 820);
-    }
-    drawLine(marked, tauntor, "markstrike_split");
-    showActionLabel(tauntor, "도발 개입!", "taunt");
-    showInterveneBanner("도발 개입! 칼끝 분산");
+    const ok = drawTauntLinkPreview(marked, tauntor);
+    showActionLabel(tauntor, "도발 결속!", "taunt");
+    showInterveneBanner("도발 결속!");
+    tauntSplitTrace(ok ? "4. BIND_LINK_DRAWN ✓ (기습 전 미리 연결)" : "4. BIND_LINK_DRAWN ✗ (좌표 누락)");
+    pushEvent(`[DEV 결속재현] ${tauntor.name} ⇄ ${marked.name} 도발 결속 (기습 시 분산 예약)`, "taunt");
+    setTimeout(() => { runState._fxReplayLock = false; }, 600);
+  }, 140);
+}
 
-    // ⑤ 130ms 뒤 — 양쪽 청록 "분산 -N" (고정값, 실제 피해 X — showResultText만)
+// v0.3.8bb [DEV 분신 재현 — 유키 14번]: "분신!" → 분신 2기 생성 → 추적자 조준 → 간파! → 즉시 소멸.
+//   현재 전투의 적 1기를 본체로 빌려 분신을 소환하고, 아군 추적자(있으면)가 색적하는 흐름을 보여준다.
+function runDevCloneReplayForce() {
+  if (!runState || !runState.units) { alert("전투 중에만 재현 가능 — ★연출 재현 프리셋으로 입장하세요."); return; }
+  const owner = runState.enemies && runState.enemies.find(e => e.alive);
+  if (!owner) { alert("본체로 쓸 적이 없습니다 — 적이 있는 전투에서 재현하세요."); return; }
+  runState._fxReplayLock = true;
+  // ① 분신 2기 생성 ("분신!")
+  summonShadowClones(owner, 2);
+  // ② 잠시 뒤 추적자(있으면)가 분신을 조준·간파 (없으면 텍스트로만 시연)
+  fxTimeout(() => {
+    const tracker = runState.units.find(u => u.alive && u.kind === "fusion" && u.fusionId === "tracker");
+    const clone = runState.enemies.find(e => e.alive && e.isClone);
+    if (clone) {
+      if (tracker) drawLine(tracker, clone, "attack");
+      showActionLabel(clone, "간파!", "attack");
+      pushEvent(`[DEV 분신재현] ${tracker ? tracker.name : "추적자"}가 허상을 조준했다 — 간파! 허상 붕괴!`, "death");
+      // 즉시 소멸 연출
+      fxTimeout(() => {
+        const el = document.querySelector(`[data-uid="${clone.uid}"]`);
+        if (el) el.classList.add("clone-dissolve");
+        if (runState._themeAssassinStats) runState._themeAssassinStats.cloneRevealCount += 1;
+        setTimeout(() => { runState._fxReplayLock = false; }, 600);
+      }, 300);
+    } else {
+      runState._fxReplayLock = false;
+    }
+  }, 500);
+}
+
+function runDevTauntSplitReplayForce() {
+  tauntSplitTrace("1. BUTTON_CLICKED", true);
+
+  if (!runState || !runState.units || !runState.units.length) {
+    tauntSplitTrace("✗ NO_BATTLE — ★연출 재현 프리셋으로 먼저 입장하세요");
+    return;
+  }
+
+  // 배우 확보 — 조건 안 가린다. 못 찾으면 살아있는 아무 유닛이라도 빌린다.
+  const allies  = runState.units.filter(u => u.side === "ally");
+  const enemies = (runState.enemies && runState.enemies.length)
+                  ? runState.enemies
+                  : runState.units.filter(u => u.side === "enemy");
+  // 표식 대상 = 아군 후열 우선, 없으면 아무 아군
+  const marked  = allies.find(u => u.role === "back") || allies[0] || runState.units[0];
+  // 도발 영웅 = marked가 아닌 아군, 없으면 아무 다른 유닛
+  const tauntor = allies.find(u => u.uid !== (marked && marked.uid))
+               || runState.units.find(u => u.uid !== (marked && marked.uid))
+               || marked;
+  // 암살자(기습선 시작점) = 적, 없으면 아무 유닛 (선의 출발점일 뿐)
+  const enemy   = (enemies && enemies[0]) || runState.units.find(u => u.side === "enemy") || tauntor;
+
+  if (!marked || !tauntor) {
+    tauntSplitTrace("✗ ACTORS_MISSING — 아군 유닛이 없습니다");
+    return;
+  }
+  // 무적 무대: 배우들 살리고 HP 채운다 (DEV 재현 동안 죽지 않게)
+  [marked, tauntor].forEach(u => { u.alive = true; if (u.maxHp) u.hp = u.maxHp; });
+  tauntSplitTrace(`2. ACTORS_FOUND (표식:${marked.name} / 도발:${tauntor.name} / 기습:${enemy.name})`);
+
+  // 무적 잠금 — 사망/패배/클리어 처리 차단
+  runState._fxReplayLock = true;
+
+  // 고정 분산값
+  const TOTAL = 100, markShare = 50, tauntShare = 50;
+  tauntSplitTrace(`3. FORCE_SPLIT_EVENT_CREATED (total ${TOTAL} → ${markShare}/${tauntShare})`);
+
+  // ① 기습선 (예고, 피해 없음)
+  drawLine(enemy, marked, "attack");
+  pushEvent(`[DEV 강제재현] ${enemy.name} → ${marked.name} 기습 예고`, "info");
+
+  // ②③④ 140ms 뒤 — 도발 가로막기: 방패 → 링크 → 텍스트
+  fxTimeout(() => {
+    const linkOk = drawTauntLink(marked, tauntor, { mode: "reignite" });   // 공용 연출 — 결속 링크 재점화
+    tauntSplitTrace(linkOk ? "4. LINK_DRAWN ✓" : "4. LINK_DRAWN ✗ (좌표 누락 — 배우가 화면에 없음)");
+    showTauntInterveneText(tauntor, "분산!");
+
+    // 카운트/계기판 (count는 숫자가 늘기 전에 +1 → 패널 count:1)
+    if (runState._themeAssassinStats) {
+      runState._themeAssassinStats.tauntSplitCount += 1;
+      runState._themeAssassinStats.tauntSplitDamageShared += tauntShare;
+    }
+    console.log("[TAUNT_SPLIT_DEBUG]", {
+      source: enemy.name, markedTarget: marked.name, tauntor: tauntor.name,
+      totalDamage: TOTAL, markedShare: markShare, tauntShare: tauntShare,
+      result: "split applied (DEV force)"
+    });
+    updateTauntSplitReadout();
+    updateTauntSplitPanel(marked.name, tauntor.name, markShare, tauntShare);
+    tauntSplitTrace("6. COUNT_INCREMENTED ✓");
+
+    // ⑤ 130ms 뒤 — 양쪽 "분산 -N" (고정값, 실제 피해 X)
     fxTimeout(() => {
-      showResultText(marked, FIXED, "split");
-      showResultText(tauntor, FIXED, "split");
-      pushEvent(`[DEV 재현] 칼끝 분산 — ${marked.name} 분산 -${FIXED} / ${tauntor.name} 분산 -${FIXED}`, "taunt");
+      showSplitDamage(marked, markShare);
+      showSplitDamage(tauntor, tauntShare);
+      tauntSplitTrace("5. SPLIT_NUMBERS_SHOWN ✓");
+      pushEvent(`[DEV 강제재현] 칼끝 분산 — ${marked.name} -${markShare} / ${tauntor.name} -${tauntShare}`, "taunt");
       // 연출 끝 — 무적 해제
-      setTimeout(() => { runState._fxReplayLock = false; }, 400);
+      setTimeout(() => { runState._fxReplayLock = false; }, 600);
     }, 130);
   }, 140);
+}
+
+// v0.3.8at→aw: 기존 버튼 호환 — devReplayInterveneFX는 force 재현으로 위임 (조건 의존 제거).
+function devReplayInterveneFX() {
+  runDevTauntSplitReplayForce();
+}
+
+/* v0.3.8bb 그림자 분신 소환 — 유키 결: "분신은 암살자의 힘이 아니라 시간을 버는 연막."
+   본체(actor) 옆에 shadow_clone N기를 생성. 낮은 HP/ATK(템플릿) — 타겟 교란용.
+   추적자 조준/간파에 즉시 소멸(허상 붕괴). 일반 공격으로도 잡히나 손해. */
+function summonShadowClones(actor, count) {
+  if (!actor || !actor.alive) return;
+  const n = Math.max(1, count || 2);
+  const made = [];
+  for (let i = 0; i < n; i++) {
+    const clone = makeEnemyUnit("shadow_clone");
+    clone._cloneOwnerUid = actor.uid;   // 본체 추적(연출/정리용)
+    runState.enemies.push(clone);
+    made.push(clone);
+  }
+  if (runState._themeAssassinStats) runState._themeAssassinStats.cloneSummonCount += 1;
+  showActionLabel(actor, "분신!", "debuff");
+  pushEvent(`<b>${actor.name}</b>가 그림자를 흩뿌린다 — <b>분신!</b> 그림자 분신 ${n}기가 나타났다.`, "debuff");
+  updateBattlefield();   // 새 적 즉시 화면 반영
+  updateCloneTestPanel();
+  // 생성 잔상 FX — 새로 그려진 분신 엘리먼트에 흐림/불안정 클래스
+  fxTimeout(() => {
+    made.forEach(c => {
+      const el = document.querySelector(`[data-uid="${c.uid}"]`);
+      if (el) {
+        el.classList.add("clone-spawn");
+        setTimeout(() => el.classList.remove("clone-spawn"), 700);
+      }
+    });
+  }, 60);
 }
 
 /* v0.3.8al13 암살자 표식 — 적이 아군 1명을 "사냥감"으로 지정 (예고).
@@ -9387,6 +9985,10 @@ function _assassinApplyMark(actor) {
   target._marked = 2;   // 2턴 유지 (예고 → 기습 시간)
   target._markSourceUid = actor.uid;
   target._markArmed = false;   // v0.3.8ao: 부여 턴엔 "예고"만 — 기습 추가피해 발동 X. 건 적의 다음 자기 턴에 무장.
+  // v0.3.8ay: 도발 결속 후보 필드 초기화 — 표식 부여 시 아직 결속 없음. 도발 영웅이 도발하면 박힌다.
+  target._markGuardUid = null;
+  target._markGuardName = null;
+  target._markGuardLinked = false;
   showActionLabel(actor, "표식!", "debuff");
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(target, "사냥감 지정", "debuff"), 120);
   pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>을(를) 노립니다 — 그림자 표식`, "debuff");
@@ -9401,6 +10003,12 @@ function _assassinApplyMark(actor) {
   }
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(actor, "은신", "debuff"), 240);
   pushEvent(`<b>${actor.name}</b>가 표식을 남기고 그림자 속으로 숨었다 — 은신`, "debuff");
+  // v0.3.8ay: 표식이 걸리는 순간 이미 살아있는 도발 영웅이 있으면 즉시 결속 (그 한 박자에 연결).
+  //   순서가 "도발 먼저 → 표식"일 때도 결속이 누락되지 않게.
+  const _existingTauntor = getActiveTauntor();
+  if (_existingTauntor && _existingTauntor.uid !== target.uid) {
+    bindTauntGuardToMarked(_existingTauntor);
+  }
 }
 
 function _nagaAbsorbPoison(actor) {
@@ -9505,6 +10113,11 @@ function executeAction(actor) {
   let actionType;
   if (actor.side === "enemy") {
     actionType = "enemy_attack";
+    // v0.3.8bb: 분신 소환 — cloneSummon>0이고 아직 안 썼으면 첫 행동에 "분신!" (그림자 분신 N기). 1회.
+    if (actor.cloneSummon > 0 && !actor._cloneSummoned) {
+      summonShadowClones(actor, actor.cloneSummon);
+      actor._cloneSummoned = true;
+    }
     // v0.3.8al10 [7] 나가 독 흡수 — 보스 3종이 행동 시 아군에 쌓인 중독을 역이용 (empower/heal/shield_or_enrage)
     if (actor.poisonAbsorbMode) _nagaAbsorbPoison(actor);
     // v0.3.8al13 암살자 표식 — 기존 표식 자연 감소(예고 유지시간) 후, markOnTurn이면 새 표식 부여.
@@ -9717,6 +10330,8 @@ function actTaunt(actor) {
   }, 130);
 
   pushEvent(`<b>${actor.name}</b> 도발 — 적의 시선을 끈다`, "taunt");
+  // v0.3.8ay: 도발하는 순간 표식 걸린 아군이 있으면 그 표식에 결속한다 (결속 예약).
+  bindTauntGuardToMarked(actor);
 }
 
 function actHarden(actor) {
@@ -10584,6 +11199,8 @@ function actFusion(actor) {
         const aliveEnemies = runState.enemies.filter(e => e.alive);
         setTimeout(() => { aliveEnemies.forEach(e => { if (e.alive) drawLine(e, actor, "taunt"); }); }, 130);
         pushEvent(`<b>${actor.name}</b> 막아선다! (${tauntReason}) — 적의 시선을 끌고 ◇${shieldAmt} 보호막`, "taunt");
+        // v0.3.8ay: 수문장이 막아서는 순간 표식 걸린 아군이 있으면 결속 (결속 예약).
+        bindTauntGuardToMarked(actor);
       } else {
         // 전열 적 공격
         let target = pickEnemyTarget(actor, "front") || pickEnemyTarget(actor, "any");
@@ -11301,12 +11918,15 @@ function actEnemyAttack(actor) {
     const tauntor = runState.units.find(u => u.uid === t.tauntorUid);
     return tauntor && tauntor.alive;
   });
-  // v0.3.8an [옵션3]: 표식 대상을 노리는 암살자 + 살아있는 도발자가 있으면 —
+  // v0.3.8an→ay [옵션3]: 표식 대상을 노리는 암살자 + 그 표식에 *결속된 guard*가 살아있으면 —
   //   기존 85% all-or-nothing 도발 끌림을 *건너뛴다*. 대신 아래 표식 기습 블록에서 50:50 분산.
-  //   (표식 무관 적/일반 공격은 이 가드가 false → 기존 도발 끌림 100% 보존)
+  //   (표식 무관 적/일반 공격/결속 없는 표식은 이 가드가 false → 기존 도발 끌림 100% 보존)
   const _markedDamageRouting = (actor.markStrikeBonus > 0)
-    && runState.units.some(u => u.alive && u._marked > 0)
-    && getActiveTauntor();
+    && runState.units.some(u => {
+      if (!(u.alive && u._marked > 0 && u._markGuardUid)) return false;
+      const g = runState.units.find(x => x.uid === u._markGuardUid);
+      return g && g.alive;
+    });
   if (!_markedDamageRouting && activeTaunts.length > 0 && Math.random() < 0.85) {
     // 가장 최근 도발자 우선
     const latest = activeTaunts[activeTaunts.length - 1];
@@ -11424,6 +12044,10 @@ function actEnemyAttack(actor) {
     target._marked = 0;   // 활성 기습 성립 → 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결)
     target._markSourceUid = null;
     target._markArmed = false;
+    // v0.3.8ay: 표식 소비 시 결속 예약도 정리 (다음 표식에 옛 guard가 남지 않게).
+    target._markGuardUid = null;
+    target._markGuardName = null;
+    target._markGuardLinked = false;
     if (runState._themeAssassinStats) runState._themeAssassinStats.markedStrikeCount += 1;
     // v0.3.8aq [P3 최소 보정, 유키 옵션A]: 기습을 끝낸 암살자는 다음 자기 턴 한 박자 쉰다 (바로 새 표식 안 검).
     //   "난사처럼 보이는" 현상 방지 — armed 구조/speed는 안 건드리고 표식 부여 리듬만 정리.
@@ -11433,10 +12057,22 @@ function actEnemyAttack(actor) {
       actor._stealthTurns = 0;
       actor._stealthMarkTargetUid = null;
     }
-    // v0.3.8an [옵션3]: 표식 기습이 성립한 이 공격 — 살아있는 도발 유닛이 있으면 총 dmg를 50:50 분산.
-    //   markStrikeBonus 포함 총 dmg 확정 후 분산 ("강화된 기습 한 방을 둘이 나눠 맞았다").
-    const _tauntor = getActiveTauntor();
-    if (_tauntor && _tauntor.uid !== target.uid) _markStrikeSplit = _tauntor;
+    // v0.3.8ay [결속 예약 우선 — 유키 결: "기습 순간 우연이 아니라, 표식 이후 예약된 결속을 쓴다"]:
+    //   매번 살아있는 도발 유닛을 새로 찾지 않는다. 먼저 표식에 예약된 _markGuardUid를 본다.
+    //   guard 살아있으면 분산 / 죽었으면 "guard broken" → 표식 대상이 전체 피해를 받는다.
+    let _guard = null;
+    if (target._markGuardUid) {
+      const g = runState.units.find(u => u.uid === target._markGuardUid);
+      if (g && g.alive && g.uid !== target.uid) {
+        _guard = g;
+        liveTauntTrace(`표식기습 성립 (${actor.name}→${target.name}) / 결속 guard: ${g.name} (예약됨)`, true);
+      } else {
+        liveTauntTrace(`표식기습 성립 / guard broken (${target._markGuardName || "?"} 사망/부재) → 전체 피해`, true);
+      }
+    } else {
+      liveTauntTrace(`표식기습 성립 (${actor.name}→${target.name}) / 결속 guard 없음 (도발 미개입) → 전체 피해`, true);
+    }
+    if (_guard) _markStrikeSplit = _guard;
   }
   if (_markStrikeSplit) {
     // 분산: 표식 대상 50% / 도발 유닛 50% (일반 dealDamage 경로는 건너뜀 — 중복 방지)
@@ -11611,6 +12247,12 @@ function pickEnemyTarget(actor, mode) {
     // 4. 그 외 은신 적 중 고체력 우선 (가장 위협적인 사냥꾼부터)
     return stealthed.slice().sort((a, b) => (b.hp || 0) - (a.hp || 0))[0];
   }
+  // v0.3.8bb: 추적자 분신 판별 — 은신 진짜가 없을 때, 살아있는 분신이 있으면 우선 조준(허상 판별).
+  //   유키 우선순위: 은신 진짜(위) > 분신(여기) > 일반. "추적자 = 은신 간파 + 분신 판별."
+  if (_isTracker(actor)) {
+    const clones = aliveRaw.filter(e => e.isClone);
+    if (clones.length > 0) return clones[0];
+  }
   // 그 외 아군: 은신 적은 일반 후보에서 제외 (전부 은신이면 어쩔 수 없이 포함 — 타겟 없음 방지).
   const visible = aliveRaw.filter(e => !(e._stealthTurns > 0));
   const alive = visible.length > 0 ? visible : aliveRaw;
@@ -11730,6 +12372,18 @@ function dealDamage(actor, target, amount, opts = {}) {
   if (dmg > 0) {
     const hpBeforeDamage = target.hp;   // v0.3.8ac: overkill 제외용 (실제 깎은 양 = min(dmg, 이 값))
     target.hp = Math.max(0, target.hp - dmg);
+    // v0.3.8bb: 그림자 분신 판별 — 추적자의 직접 조준에 맞으면 *즉시 소멸*(허상 붕괴). 일반 공격은 HP대로 처치.
+    //   reflect/dot은 "정조준 색적"이 아니므로 제외 (은신 해제와 같은 결).
+    if (target.isClone && target.alive && opts.reason !== "reflect" && opts.reason !== "binder_reflect") {
+      const _byTracker = actor && actor.kind === "fusion" && actor.fusionId === "tracker";
+      if (_byTracker && target.hp > 0) {
+        target.hp = 0;   // 간파 = 즉시 소멸
+        showActionLabel(target, "간파!", "attack");
+        pushEvent(`<b>${actor.name}</b>가 허상을 조준했다 — <b>간파!</b> 그림자 분신이 흩어진다 — 허상 붕괴!`, "death");
+        if (runState._themeAssassinStats) runState._themeAssassinStats.cloneRevealCount += 1;
+        updateCloneTestPanel();
+      }
+    }
     // v0.3.8ap: 은신 해제 — 직접 피해를 받으면 그림자가 벗겨진다.
     //   이 dealDamage 경로엔 poison/dot가 안 들어온다(별도 applyStatusDamage) → 독·재생억제는 자동으로 은신 못 풂(만능키 방지).
     //   reflect(반사)도 "정조준 색적"이 아니므로 제외 — 직접 공격/색적만 그림자를 벗긴다.
@@ -11896,10 +12550,20 @@ function markIfDead(unit, opts = {}) {
   if (unit.hp > 0) return false;
   // v0.3.8at: DEV 연출 재현 중엔 사망 확정 차단 (죽지 않는 고정 무대) — HP 1로 되살려 무대 유지
   if (runState._fxReplayLock) { unit.hp = Math.max(1, unit.hp); return false; }
+  // v0.3.8bd: 분신 관측 모드 — 유키 결(옵션A): *아군만* 무적. 적 본체·분신은 정상 사망 → 전투 자연 종료.
+  //   나라님이 안 죽고 차분히 보되, 분신 생성/붕괴/소멸 카운트가 꼬이지 않는다.
+  if (runState._cloneObserveMode && unit.side === "ally") { unit.hp = Math.max(1, unit.hp); return false; }
 
   // 1) 사망 확정
   unit.alive = false;
   unit.gauge = 0;
+  // v0.3.8bb: 그림자 분신 소멸 — 계기판 누적 + 연기처럼 흩어지는 연출(퍽 죽기 X).
+  if (unit.isClone) {
+    if (runState._themeAssassinStats) runState._themeAssassinStats.cloneDestroyedCount += 1;
+    const cEl = document.querySelector(`[data-uid="${unit.uid}"]`);
+    if (cEl) cEl.classList.add("clone-dissolve");
+    updateCloneTestPanel();
+  }
   // v0.3.8ab: 히드라 관측 — 아군 최초 사망자/시점/히드라 잔존도 (히드라전만, 최초 1명)
   if (unit.side === "ally" && typeof hydraObsAllyDeath === "function") hydraObsAllyDeath(unit);
 
@@ -12210,6 +12874,7 @@ function finishAction(actor) {
 function checkBattleEnd() {
   // v0.3.8at: DEV 연출 재현 중엔 전투 종료/패배 판정 차단 (죽지 않는 고정 무대)
   if (runState._fxReplayLock) return;
+  // v0.3.8bd: 분신 관측 모드는 종료 판정을 막지 않는다 — 아군만 무적이라 패배는 없고, 적 전멸 시 자연 승리(전투 종료).
   // v0.3.7.28: 이미 종료 예약 중이거나 런 끝났으면 즉시 return (stale 콜백 방어)
   debugResult("checkBattleEnd enter", {
     stage: runState.stage, phase: currentPhaseLabel(), token: runState.battleToken,
@@ -14772,6 +15437,7 @@ function renderUnitHTML(u) {
   // v0.3.8r: 대형 몬스터 / 광폭화 시각 강조 (seed — 카드 크게 + 배지)
   if (u.isLargeEnemy) unitClasses += ` large-enemy size-${u.sizeSlots || 1} pattern-${u.occupiedPattern || "single"}`;
   if (u.isMiniboss)   unitClasses += " miniboss";
+  if (u.isClone)      unitClasses += " is-clone";   // v0.3.8bb: 분신 — 흐림/불안정 외곽 (허상 표현)
   if (u._enraged)     unitClasses += " enraged";
   // v0.3.8z: 페이즈 오라 — 활성 페이즈의 fxClass 유지 (재렌더 후에도 오라 지속)
   if (u._phaseKey && u.phases) {
@@ -15292,6 +15958,40 @@ function getActionLineAnchor(unitOrUid) {
     cy = r.bottom - inset - svgRect.top;
   }
   return { x: cx, y: cy, side };
+}
+
+// v0.3.8ba [도발 결속선 전용 측면 anchor — 유키/나라 결: "도발은 관계선. 서로 마주 보는 옆구리에서 잇는다"]:
+//   행동선 anchor(getActionLineAnchor)는 12시/6시(위/아래)라 아군끼리면 "내려꽂히는" 치유선처럼 보인다.
+//   결속선은 fromUnit이 toUnit을 *바라보는 측면*(3시/9시)에서 시작·도착한다.
+//   toUnit이 오른쪽이면 from의 3시, 왼쪽이면 from의 9시. 세로 차 커도 측면 우선(약간의 수직 보정만).
+function getTauntLinkAnchor(fromUnit, toUnit) {
+  const fromUid = (typeof fromUnit === "string") ? fromUnit : fromUnit?.uid;
+  const toUid   = (typeof toUnit === "string")   ? toUnit?.uid   : toUnit?.uid;
+  if (!fromUid || !toUid) return null;
+  const svg = document.getElementById("battle-svg");
+  if (!svg) return null;
+  const svgRect = svg.getBoundingClientRect();
+  if (svgRect.width <= 0 || svgRect.height <= 0) return null;
+  const fEl = document.querySelector(`[data-uid="${fromUid}"] .unit-portrait`) || document.querySelector(`[data-uid="${fromUid}"]`);
+  const tEl = document.querySelector(`[data-uid="${toUid}"] .unit-portrait`)   || document.querySelector(`[data-uid="${toUid}"]`);
+  if (!fEl || !tEl) return null;
+  const fr = fEl.getBoundingClientRect();
+  const tr = tEl.getBoundingClientRect();
+  if (fr.width <= 0 || tr.width <= 0) return null;
+
+  // svg 좌표계로 변환한 두 아바타 중심
+  const fcx = fr.left + fr.width / 2 - svgRect.left;
+  const fcy = fr.top  + fr.height / 2 - svgRect.top;
+  const tcx = tr.left + tr.width / 2 - svgRect.left;
+  // 아바타 반지름 (약간 안쪽으로 — 가장자리에 살짝 붙되 침범 안 하게)
+  const radius = Math.min(fr.width, fr.height) / 2 - 2;
+
+  // toUnit이 오른쪽이면 3시(+), 왼쪽이면 9시(-)
+  const toRight = tcx >= fcx;
+  const ax = fcx + (toRight ? radius : -radius);
+  // 측면 우선: y는 아바타 중심 높이 (HP바/피해숫자가 보통 위·아래라 중간 높이가 덜 겹침)
+  const ay = fcy;
+  return { x: ax, y: ay, toRight };
 }
 
 /* v0.3.6.2 디버그 패널 — iPhone PWA에서 행동선 자리 진단용
