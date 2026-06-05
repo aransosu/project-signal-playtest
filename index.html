@@ -5755,7 +5755,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ap-assassin-stealth-tracker-clite";
+const BUILD_VERSION = "v0.3.8aq-assassin-rhythm-taunt-line";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -8865,6 +8865,16 @@ function initRunFromParty() {
     regenSuppressCount: 0,       // 독으로 재생이 꺾인 횟수
     regenSuppressAmount: 0,      // 독이 말린 재생량 총합 (원래 회복 - 실제 회복)
   };
+  // v0.3.8aq [암살자 테마 계기판]: 호흡·파훼 문법이 숫자로 남게 (themePoison/Troll 선례 복제).
+  //   "전투 로그가 실제 전투와 같은 말을 하게" — 표식/은신/기습/분산/색적/간파가 계기판에 박힌다.
+  runState._themeAssassinStats = {
+    markCount: 0,             // 표식 부여 횟수
+    stealthCount: 0,          // 은신 진입 횟수
+    markedStrikeCount: 0,     // 표식 기습(armed) 성립 횟수
+    tauntSplitCount: 0,       // 도발 칼끝 분산 발동 횟수
+    trackerRevealCount: 0,    // 추적자 색적/간파로 은신 벗긴 횟수
+    markInterruptedCount: 0,  // 색적으로 표식이 흐트러진 횟수
+  };
   // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
   //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
   runState.timeStats = createInitialTimeStats();
@@ -8999,6 +9009,7 @@ function loadStage(stageNum, enemiesOverride) {
     u._markArmed = false;   // v0.3.8ao: 무장 상태도 리셋
     u._stealthTurns = 0;    // v0.3.8ap: 암살자 은신 (기습 전까지, 최대 2 source-turn 안전캡)
     u._stealthMarkTargetUid = null;   // v0.3.8ap: 이 은신이 노리는 표식 대상(아군) uid
+    u._markCooldown = 0;    // v0.3.8aq: 표식 쿨다운 리셋 (기습 직후 한 박자 쉼)
     u._wallActiveUid = null;
     u._wallActiveTurns = 0;
     u._wallProtectorUid = null;
@@ -9168,16 +9179,19 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   // 총 피해를 50:50 (반올림 관례: 도발 몫 floor, 표식 몫 나머지 → 총합 보존)
   const tauntShare = Math.floor(totalDmg * 0.5);
   const markShare = totalDmg - tauntShare;   // 총합 = totalDmg (어긋남 0)
-  // 표식 대상에게 (조준당한 자도 여전히 다친다)
+  // v0.3.8aq: 연출 재정비 (유키 §3) — "둘이 따로 맞았다"가 아니라 "도발이 표식 대상을 지키며 함께 나눠 받았다".
+  //   1) 기습 공격선은 암살자 → 표식 대상 방향 (기존 공격 방향 유지)
+  //   2) 표식 대상 ↔ 도발 영웅 사이에 짧은 결속/분산선 (markstrike_split — 청록 보호색)
+  //   3) 텍스트는 하나만 (도발 영웅에 "칼끝 분산!"). 양쪽에 따로 안 띄움 (식별 혼란 방지)
+  //   4) 피해 숫자는 표식 대상·도발 영웅 양쪽에 각각 (실제 둘 다 다침)
   dealDamage(actor, marked, markShare, {});
-  drawLine(actor, marked, "attack");
-  // 도발 유닛에게 (칼끝을 나눠 받는다 — 죽을 수 있음)
+  drawLine(actor, marked, "attack");                  // ① 기습은 표식 대상을 향한다
   dealDamage(actor, tauntor, tauntShare, { fromTaunt: true });
-  drawLine(actor, tauntor, "attack_tauntpull");
-  // 읽히는 표시 (실제 분산이 일어났을 때만 — 거짓 표시 금지)
-  showActionLabel(tauntor, "기습 가로막기", "taunt");
-  if (typeof showStatusText === "function") showStatusText(marked, "칼끝 분산", { kind: "taunt" });
-  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞에 서서 기습을 나눠 받았다 — 칼끝이 갈라진다 (${marked.name} ${markShare} / ${tauntor.name} ${tauntShare})`, "taunt");
+  drawLine(marked, tauntor, "markstrike_split");      // ② 표식대상↔도발 결속선 (분산의 핵심 시각)
+  // ③ 텍스트 하나만 — 도발 영웅이 칼끝을 갈라 받았다
+  showActionLabel(tauntor, "칼끝 분산!", "taunt");
+  if (runState._themeAssassinStats) runState._themeAssassinStats.tauntSplitCount += 1;
+  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞에 서서 기습을 갈라 받았다 — 칼끝 분산! (${marked.name} ${markShare} / ${tauntor.name} ${tauntShare})`, "taunt");
 }
 
 /* v0.3.8al13 암살자 표식 — 적이 아군 1명을 "사냥감"으로 지정 (예고).
@@ -9204,6 +9218,10 @@ function _assassinApplyMark(actor) {
   //   해제 3경로: ① 기습 소비 ② 추적자 직접 피격 ③ 표식 자체 해제 동반. (poison/dot/regen억제로는 안 풀림)
   actor._stealthTurns = 2;
   actor._stealthMarkTargetUid = target.uid;
+  if (runState._themeAssassinStats) {
+    runState._themeAssassinStats.markCount += 1;
+    runState._themeAssassinStats.stealthCount += 1;
+  }
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(actor, "은신", "debuff"), 240);
   pushEvent(`<b>${actor.name}</b>가 표식을 남기고 그림자 속으로 숨었다 — 은신`, "debuff");
 }
@@ -9336,7 +9354,13 @@ function executeAction(actor) {
         }
       }
     }
-    if (actor.markOnTurn && Math.random() < actor.markOnTurn) _assassinApplyMark(actor);
+    // v0.3.8aq [P3 최소 보정, 유키 옵션A]: 표식 쿨다운 — 직전 기습을 끝낸 암살자는 이번 자기 턴 한 박자 쉰다.
+    //   armed 구조/speed 불변, 표식 부여 리듬만 정리해 "난사처럼 보이는 현상"을 막는다.
+    if (actor._markCooldown > 0) {
+      actor._markCooldown -= 1;
+    } else if (actor.markOnTurn && Math.random() < actor.markOnTurn) {
+      _assassinApplyMark(actor);
+    }
   } else if (actor.kind === "fusion") {
     actionType = "fusion";
   } else {
@@ -11223,6 +11247,10 @@ function actEnemyAttack(actor) {
     target._marked = 0;   // 활성 기습 성립 → 표식 소비 (분산돼도 기습 1회 성립 → 소비. 유키 결)
     target._markSourceUid = null;
     target._markArmed = false;
+    if (runState._themeAssassinStats) runState._themeAssassinStats.markedStrikeCount += 1;
+    // v0.3.8aq [P3 최소 보정, 유키 옵션A]: 기습을 끝낸 암살자는 다음 자기 턴 한 박자 쉰다 (바로 새 표식 안 검).
+    //   "난사처럼 보이는" 현상 방지 — armed 구조/speed는 안 건드리고 표식 부여 리듬만 정리.
+    if (actor) actor._markCooldown = 1;
     // v0.3.8ap: 기습이 성립하면 그 owner 암살자의 은신도 해제 ("기습 전까지" 규칙의 종료점).
     if (actor._stealthTurns > 0) {
       actor._stealthTurns = 0;
@@ -11392,11 +11420,19 @@ function pickEnemyTarget(actor, mode) {
   //   ※ 전투 유닛은 jobId가 아니라 fusionId로 합체를 식별한다 (파수궁 fusionId==="hunter" 선례). 코드 진실에 맞춤.
   const _isTracker = (a) => a && a.kind === "fusion" && a.fusionId === "tracker";
   if (_isTracker(actor) && stealthed.length > 0) {
-    const myMark = stealthed.find(e => {
-      const mk = runState.units.find(u => u.alive && u._marked > 0 && u._markSourceUid === e.uid);
-      return !!mk;
-    });
-    return myMark || stealthed[0];
+    // v0.3.8aq: 은신 적이 있으면 추적자는 무조건 먼저 본다. 복수 은신 시 4단 우선순위 (유키 결).
+    //   1. 기습 임박(armed된 표식의 source) 2. 표식 owner 3. 현재 표식 건 source 4. 고체력/후열.
+    const markedUnits = runState.units.filter(u => u.alive && u._marked > 0);
+    // 1. 기습 임박 — armed된 표식을 건 source 적
+    const imminent = stealthed.find(e =>
+      markedUnits.some(u => u._markSourceUid === e.uid && u._markArmed === true));
+    if (imminent) return imminent;
+    // 2~3. 표식 owner / 현재 표식을 건 source (예고 상태 포함)
+    const owner = stealthed.find(e =>
+      markedUnits.some(u => u._markSourceUid === e.uid));
+    if (owner) return owner;
+    // 4. 그 외 은신 적 중 고체력 우선 (가장 위협적인 사냥꾼부터)
+    return stealthed.slice().sort((a, b) => (b.hp || 0) - (a.hp || 0))[0];
   }
   // 그 외 아군: 은신 적은 일반 후보에서 제외 (전부 은신이면 어쩔 수 없이 포함 — 타겟 없음 방지).
   const visible = aliveRaw.filter(e => !(e._stealthTurns > 0));
@@ -11527,6 +11563,7 @@ function dealDamage(actor, target, amount, opts = {}) {
       if (_byTracker) {
         showActionLabel(target, "간파!", "attack");
         pushEvent(`<b>${actor.name}</b>가 숨어든 <b>${target.name}</b>을(를) 색적해 간파했다 — 은신 해제`, "death");
+        if (runState._themeAssassinStats) runState._themeAssassinStats.trackerRevealCount += 1;
         // v0.3.8ap: 색적된 owner가 건 표식도 함께 흐트러진다 (사냥꾼을 자르면 조준선이 풀린다).
         let _markCleared = false;
         runState.units.forEach(u => {
@@ -11537,7 +11574,10 @@ function dealDamage(actor, target, amount, opts = {}) {
             _markCleared = true;
           }
         });
-        if (_markCleared) pushEvent(`사냥꾼을 잃은 표식이 흐트러졌다`, "info");
+        if (_markCleared) {
+          pushEvent(`사냥꾼을 잃은 표식이 흐트러졌다`, "info");
+          if (runState._themeAssassinStats) runState._themeAssassinStats.markInterruptedCount += 1;
+        }
       } else {
         showActionLabel(target, "은신 해제", "info");
         pushEvent(`<b>${target.name}</b>의 은신이 벗겨졌다`, "info");
@@ -13521,6 +13561,8 @@ function createFootprintFromRun() {
       themePoison: Object.assign({}, runState._themePoisonStats || {}),
       // v0.3.8am [트롤 심장 1단계, ao 복원]: 독이 트롤 재생을 말린 횟수/총량 (관측용)
       themeTroll: Object.assign({}, runState._themeTrollStats || {}),
+      // v0.3.8aq [암살자 테마]: 표식/은신/기습/분산/색적/간파 관측 (계기판이 실제 전투와 같은 말을 하게)
+      themeAssassin: Object.assign({}, runState._themeAssassinStats || {}),
     },
   };
 
@@ -15212,6 +15254,7 @@ function drawLine(actor, target, kind, opts = {}) {
   const baseCurveRatio = {
     attack:           0.18,
     attack_tauntpull: 0.18,
+    markstrike_split: 0.5,
     heal:             0.32,
     shield:           0.26,
     support:          0.28,
@@ -15304,6 +15347,16 @@ function drawLine(actor, target, kind, opts = {}) {
     endMarker.setAttribute("r", "3"); endMarker.setAttribute("fill", color);
     endMarker.setAttribute("stroke", "#fff"); endMarker.setAttribute("stroke-width", "0.4");
     duration = 450;
+  } else if (kind === "markstrike_split") {
+    // v0.3.8aq: 칼끝 분산선 — 표식 대상 ↔ 도발 영웅 사이 "결속/보호선".
+    //   공격선(빨강)과 성격을 구분: 청록 보호색 + 굵은 점선. "함께 나눠 받았다"는 결속의 연출.
+    color = "#5fd0c0"; glow = "rgba(95,208,192,0.55)";
+    path.setAttribute("stroke", color);
+    path.setAttribute("stroke-width", "2.2");
+    path.setAttribute("stroke-dasharray", "6 3");
+    startMarker.setAttribute("r", "2.6"); startMarker.setAttribute("fill", color); startMarker.setAttribute("opacity", "0.7");
+    endMarker.setAttribute("r", "2.6"); endMarker.setAttribute("fill", color); endMarker.setAttribute("opacity", "0.7");
+    duration = 500;
   } else if (kind === "attack_tauntpull") {
     // 도발 끌림 공격선: 빨강 + 살짝 황금 글로우 (v0.3.7.13: 얇게)
     color = "#ff7878"; glow = "rgba(255,201,74,0.5)";
