@@ -3860,10 +3860,42 @@ body {
   position: absolute;
   top: -10px; left: 50%;
   transform: translateX(-50%);
-  font-size: 16px;
+  font-size: 20px;
   pointer-events: none;
-  z-index: 6;
+  z-index: 25;   /* v0.3.8at: 데미지 숫자(22)보다 위 — 묻힘 방지 */
+  filter: drop-shadow(0 0 4px rgba(95,208,192,0.9));
   animation: shield-pop 0.6s ease-out forwards;
+}
+/* v0.3.8at: 디버그 강조 모드 — body.fx-debug-strong 일 때 연출 강도 과장 (손맛 확정 후 끔) */
+body.fx-debug-strong .taunt-intervene-shield {
+  font-size: 30px;
+  animation-duration: 0.8s;
+}
+body.fx-debug-strong .float-number.split {
+  font-size: 30px;
+  text-shadow: 0 0 10px rgba(95,208,192,1), 0 0 18px rgba(95,208,192,0.8), 0 1px 3px rgba(0,0,0,1);
+}
+/* v0.3.8at: 도발 개입 중앙 배너 — "확실히 보이는" 한 박자 (전장 중앙 상단). */
+.taunt-intervene-banner {
+  position: absolute;
+  top: 38%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  color: #5fd0c0;
+  text-shadow: 0 0 10px rgba(95,208,192,0.9), 0 0 20px rgba(95,208,192,0.6), 0 2px 4px rgba(0,0,0,1);
+  pointer-events: none;
+  z-index: 30;
+  white-space: nowrap;
+  animation: intervene-banner 0.95s ease-out forwards;
+}
+@keyframes intervene-banner {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  45%  { opacity: 1; transform: translate(-50%, -54%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -64%) scale(1); }
 }
 @keyframes shield-pop {
   0%   { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.5); }
@@ -5181,6 +5213,10 @@ body {
 
     <div class="battlefield" id="battlefield">
       <svg class="battle-svg" id="battle-svg"></svg>
+      <div id="dev-fx-replay" style="display:none; position:absolute; top:4px; right:4px; z-index:40; flex-direction:column; gap:3px;">
+        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="devReplayInterveneFX()">▶ 도발개입 재생</button>
+        <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="document.body.classList.toggle('fx-debug-strong'); this.textContent = document.body.classList.contains('fx-debug-strong') ? '강조 ON' : '강조 OFF';">강조 OFF</button>
+      </div>
       <div class="battle-zone enemy">
         <div class="lane enemy" id="lane-enemy-back"></div>
         <div class="lane enemy" id="lane-enemy-front"></div>
@@ -5791,7 +5827,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ar-taunt-intervene-visible";
+const BUILD_VERSION = "v0.3.8at-fx-replay-stage";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -5854,6 +5890,7 @@ const DEV_MODE_MENU = [
     { presetKey: "assassin_s10", desc: "그림자 척후대장 / 후열 위협" },
     { presetKey: "assassin_s20", desc: "밤칼 지휘관 / 급사 방지" },
     { presetKey: "assassin_s25", desc: "무영단장 보스 / 보호·제어로 끊기" },
+    { presetKey: "assassin_split_repro", desc: "★연출 재현 — 도발 분산(피격 전 가로막기)+추적자 간파 / 발동 보장" },
   ]},
 ];
 
@@ -6043,6 +6080,18 @@ const DEV_STAGE_PRESETS = {
     traitLevels: { guard: 5, heal: 4, disrupt: 4, blessing: 2 },
     party: [ { kind: "fusion", id: "wall", lvl: 5 }, { kind: "fusion", id: "binder", lvl: 4 },
              { kind: "fusion", id: "hunter", lvl: 4 }, { kind: "trait", id: "heal" } ],
+  },
+  // v0.3.8as [도발 분산 연출 재현 — 유키 요청]: "표식대상 + 도발영웅 생존 + 기습 발생"이 확정되는 관측 상황.
+  //   도발 분산은 일반런에서 발동이 드물어 "연출을 봤는지"가 흐려진다 → 도발(bravery)+추적자(tracker)+후열 보장.
+  //   S20 암살자전(markOnTurn 0.8 — 표식 자주) → 도발 개입(피격 전 가로막기) + 추적자 간파를 둘 다 관측.
+  assassin_split_repro: {
+    label: "Assassin 연출 재현 — 도발 분산 + 추적자 간파", startStage: 20, themeId: "assassin",
+    purpose: "도발 분산(피격 전 가로막기)·추적자 간파 연출 확정 재현 / 발동 조건 보장", type: "fx_repro",
+    traitLevels: { bravery: 3, guard: 3, heal: 2 },
+    party: [ { kind: "trait", id: "bravery" },        // 전사 — 도발 (칼끝 분산의 핵심: 표식대상 앞을 막는다)
+             { kind: "fusion", id: "tracker", lvl: 3 }, // 추적자 — 은신 간파 (은신의 천적)
+             { kind: "trait", id: "heal" },           // 사제 — 후열 (표식 대상 후보)
+             { kind: "trait", id: "snipe" } ],         // 저격 — 후열 (표식 대상 후보)
   },
 };
 
@@ -8976,6 +9025,9 @@ function statsBump(uid, key, n = 1) {
 function loadStage(stageNum, enemiesOverride) {
   const stage = getStageForTheme(stageNum, runState.themeId);   // v0.3.8ak: 테마 반영 (enemies/name 등)
   if (!stage) return;
+  // v0.3.8at: DEV 연출 재생 버튼 — DEV 모드 + 암살자 테마일 때만 노출 (그 외 숨김)
+  const _fxBtn = document.getElementById("dev-fx-replay");
+  if (_fxBtn) _fxBtn.style.display = (DEV_MODE_ENABLED && runState.themeId === "assassin") ? "flex" : "none";
 
   // v0.3.8ab: 히드라 관측 리셋 — 새 전투마다 새로 누적 (이전 전투 데이터 섞임 방지)
   runState.hydraObs = null;
@@ -9215,18 +9267,18 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   // 총 피해를 50:50 (반올림 관례: 도발 몫 floor, 표식 몫 나머지 → 총합 보존)
   const tauntShare = Math.floor(totalDmg * 0.5);
   const markShare = totalDmg - tauntShare;   // 총합 = totalDmg (어긋남 0)
-  // v0.3.8ar [도발 개입을 "사건"으로 보이게 — 손맛: "분산됐다는 인지 실패"]:
-  //   문제는 밸런스가 아니라 연출. 공격선·결속선·두 숫자가 같은 프레임에 묻혀 "개입 사건"의 순서가 안 보였다.
-  //   해법: 시간 순서를 만든다 — ① 기습이 표식 대상을 향한다 → (짧은 텀) → ② 도발이 끼어든다(개입신호+결속선) → ③ 둘이 "분산 -N"을 함께 받는다.
-  //   둘 다 isSplit 타입 → 청록 "분산 -N"이 양쪽에 떠서 한 사건임을 색·라벨로 묶는다 (요청 §3).
+  // v0.3.8as [피격 전 가로막기 — 유키 결: "도발 개입이 먼저 보이고, 그 결과로 분산 피해가 떠야 한다"]:
+  //   ar의 문제: 기습 명중(markShare 즉시) → 180ms 뒤 도발 → 도발이 "사후 설명"처럼 보였다.
+  //   as의 해법: 순서를 뒤집는다. *피해를 둘 다 미뤄* 도발 개입을 먼저 보이게 한다.
+  //   ① 기습선이 표식 대상을 향한다(피해 아직 X) → ② 짧은 예고 멈춤 → ③ 도발 방패가 먼저 뜬다(가로막기)
+  //   → ④ 결속선 → ⑤ 그 다음 양쪽 "분산 -N" 동시에. "맞기 직전 끼어들어 나눠 받았다."
 
-  // ① 기습은 표식 대상을 향한다 (공격 방향 유지) — 표식 대상이 먼저 분산 피해
+  // ① 기습선이 표식 대상에게 향한다 (방향 예고 — 피해는 아직 안 들어감)
   drawLine(actor, marked, "attack");
-  dealDamage(actor, marked, markShare, { isSplit: true });
 
-  // ② 한 박자 뒤 — 도발 영웅이 끼어든다 (개입 사건). 결속선 + 방패 점멸 + 텍스트 하나.
+  // ②③④ 짧은 예고 멈춤 뒤 — 도발이 "피격 직전" 가로막는다 (방패 먼저 → 결속선)
   fxTimeout(() => {
-    drawLine(marked, tauntor, "markstrike_split");      // 표식대상↔도발 결속선 (분산의 핵심 시각)
+    // ③ 도발 방패가 먼저 뜬다 (가로막기 — 아직 아무도 안 맞음)
     const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
     if (tEl) {
       tEl.classList.add("taunt-intervene");              // 청록 방패 점멸 (CSS, transform 미사용)
@@ -9238,17 +9290,85 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
       portrait.appendChild(shield);
       setTimeout(() => shield.remove(), 620);
     }
-    showActionLabel(tauntor, "도발 개입!", "taunt");      // 텍스트 하나만 (양쪽에 따로 안 띄움)
-    // 미뤄진 피해 적용 직전 생존 재확인 (race 방지). 도발 영웅이 그새 죽었으면 표식 대상이 마저 받음(총량 보존).
-    if (tauntor.alive) {
-      dealDamage(actor, tauntor, tauntShare, { fromTaunt: true, isSplit: true });
-    } else if (marked.alive) {
-      dealDamage(actor, marked, tauntShare, { isSplit: true });
-    }
-  }, 180);
+    showActionLabel(tauntor, "도발 개입!", "taunt");      // 텍스트 하나만 (가로막는 순간)
+    // ④ 결속선 — 두 사람을 같은 사건으로 묶는다
+    drawLine(marked, tauntor, "markstrike_split");
+
+    // ⑤ 그 다음(짧은 텀) — 가로막은 결과로 양쪽이 "분산 -N"을 *동시에* 받는다
+    fxTimeout(() => {
+      dealDamage(actor, marked, markShare, { isSplit: true });
+      // 미뤄진 피해 적용 직전 생존 재확인 (race 방지). 도발 영웅이 그새 죽었으면 표식 대상이 마저 받음(총량 보존).
+      if (tauntor.alive) {
+        dealDamage(actor, tauntor, tauntShare, { fromTaunt: true, isSplit: true });
+      } else if (marked.alive) {
+        dealDamage(actor, marked, tauntShare, { isSplit: true });
+      }
+    }, 130);
+  }, 140);
 
   if (runState._themeAssassinStats) runState._themeAssassinStats.tauntSplitCount += 1;
   pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b> 앞을 막아 기습을 갈라 받았다 — 도발 개입! 칼끝 분산 (각 ${markShare} / ${tauntShare})`, "taunt");
+}
+
+// v0.3.8at: 도발 개입 중앙 배너 — "확실히 보이는" 한 박자 (전장 중앙).
+function showInterveneBanner(text) {
+  const bf = document.getElementById("battlefield");
+  if (!bf) return;
+  const banner = document.createElement("div");
+  banner.className = "taunt-intervene-banner";
+  banner.textContent = text;
+  bf.appendChild(banner);
+  setTimeout(() => banner.remove(), 1000);
+}
+
+// v0.3.8at [DEV 연출 재현실 — 유키 결: "죽지 않는 고정 무대에서 연출만 강제 재생"]:
+//   실제 전투 흐름/피해/사망을 기다리지 않고, 도발 분산 시퀀스를 강제로 1회 재생한다.
+//   현재 전투의 살아있는 유닛(암살자 적 / 도발 아군 / 표식대상 후열 / 추적자)을 무대 배우로 빌려 쓴다.
+//   피해는 고정값(50/50), 사망/패배/클리어 처리는 _fxReplayLock으로 잠깐 차단.
+function devReplayInterveneFX() {
+  if (!runState || !runState.units) { alert("전투 중에만 재현 가능 — 먼저 ★연출 재현 프리셋으로 입장하세요."); return; }
+  // 배우 캐스팅: 적 1(암살자) / 도발 아군 / 표식대상(후열 아군) / (추적자 있으면 메모만)
+  const enemy   = runState.units.find(u => u.alive && u.side === "enemy");
+  const tauntor = getActiveTauntor()
+               || runState.units.find(u => u.alive && u.side === "ally" && (u.traitId === "bravery" || u.baseJob === "bravery"));
+  const marked  = runState.units.find(u => u.alive && u.side === "ally" && u.uid !== (tauntor && tauntor.uid) && u.role === "back")
+               || runState.units.find(u => u.alive && u.side === "ally" && u.uid !== (tauntor && tauntor.uid));
+  if (!enemy || !tauntor || !marked) { alert("무대 배우 부족 — 암살자/도발/표식대상이 모두 살아있어야 합니다."); return; }
+
+  // 사망/결과 처리 잠깐 차단 (연출 보는 동안 무적)
+  runState._fxReplayLock = true;
+  const FIXED = 50;   // 고정 분산값
+
+  // ① 기습선이 표식 대상을 향한다 (피해 없이, 예고)
+  drawLine(enemy, marked, "attack");
+  pushEvent(`[DEV 재현] ${enemy.name} → ${marked.name} 기습 예고`, "info");
+
+  // ②③④ 140ms 뒤 — 도발이 피격 직전 가로막는다 (방패 먼저 → 결속선 → 중앙 배너)
+  fxTimeout(() => {
+    const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
+    if (tEl) {
+      tEl.classList.add("taunt-intervene");
+      setTimeout(() => tEl.classList.remove("taunt-intervene"), 800);
+      const portrait = tEl.querySelector(".unit-portrait") || tEl;
+      const shield = document.createElement("div");
+      shield.className = "taunt-intervene-shield";
+      shield.textContent = "🛡️";
+      portrait.appendChild(shield);
+      setTimeout(() => shield.remove(), 820);
+    }
+    drawLine(marked, tauntor, "markstrike_split");
+    showActionLabel(tauntor, "도발 개입!", "taunt");
+    showInterveneBanner("도발 개입! 칼끝 분산");
+
+    // ⑤ 130ms 뒤 — 양쪽 청록 "분산 -N" (고정값, 실제 피해 X — showResultText만)
+    fxTimeout(() => {
+      showResultText(marked, FIXED, "split");
+      showResultText(tauntor, FIXED, "split");
+      pushEvent(`[DEV 재현] 칼끝 분산 — ${marked.name} 분산 -${FIXED} / ${tauntor.name} 분산 -${FIXED}`, "taunt");
+      // 연출 끝 — 무적 해제
+      setTimeout(() => { runState._fxReplayLock = false; }, 400);
+    }, 130);
+  }, 140);
 }
 
 /* v0.3.8al13 암살자 표식 — 적이 아군 1명을 "사냥감"으로 지정 (예고).
@@ -11774,6 +11894,8 @@ function dealDamage(actor, target, amount, opts = {}) {
 function markIfDead(unit, opts = {}) {
   if (!unit || !unit.alive) return false;
   if (unit.hp > 0) return false;
+  // v0.3.8at: DEV 연출 재현 중엔 사망 확정 차단 (죽지 않는 고정 무대) — HP 1로 되살려 무대 유지
+  if (runState._fxReplayLock) { unit.hp = Math.max(1, unit.hp); return false; }
 
   // 1) 사망 확정
   unit.alive = false;
@@ -12086,6 +12208,8 @@ function finishAction(actor) {
 /* ---------- 전투 종료 판정 ---------- */
 
 function checkBattleEnd() {
+  // v0.3.8at: DEV 연출 재현 중엔 전투 종료/패배 판정 차단 (죽지 않는 고정 무대)
+  if (runState._fxReplayLock) return;
   // v0.3.7.28: 이미 종료 예약 중이거나 런 끝났으면 즉시 return (stale 콜백 방어)
   debugResult("checkBattleEnd enter", {
     stage: runState.stage, phase: currentPhaseLabel(), token: runState.battleToken,
