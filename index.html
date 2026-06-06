@@ -5169,7 +5169,10 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
 </head>
 <body>
 <!-- v0.3.8bj: 빌드 버전 고정 배지 — 타이틀/전투 무관 항상 우하단에 표시. 캐시 진단용 (어느 폰이 옛 빌드인지 즉시 확인). -->
+<div id="matrix-badge" style="display:none; position:fixed; bottom:4px; left:6px; z-index:99999; font-size:9px; font-family:'JetBrains Mono',monospace; color:#9adfde; background:rgba(0,30,28,0.6); padding:1px 6px; border-radius:6px; pointer-events:none;">MATRIX</div>
 <div id="build-badge" style="position:fixed; bottom:4px; right:6px; z-index:99999; font-size:9px; font-family:'JetBrains Mono',monospace; color:rgba(180,200,220,0.55); background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:6px; pointer-events:none; letter-spacing:0.02em;">···</div>
+<!-- v0.3.8ca [A안 계측 — 유키 승인]: DEV 한정 프레임타임 미니 표시. 상품 UI 아님 (DEV에서만 보임). -->
+<div id="frame-meter" style="display:none; position:fixed; bottom:18px; right:6px; z-index:99999; font-size:9px; font-family:'JetBrains Mono',monospace; color:rgba(160,220,180,0.6); background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:6px; pointer-events:none; letter-spacing:0.02em;">F ···</div>
 <div id="app">
 
   <!-- ============================================================
@@ -5307,6 +5310,26 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
           <button class="dev-btn" onclick="showBalanceExportText()">데이터 펼쳐보기</button>
           <button class="dev-btn" onclick="downloadBalanceExportJson()">JSON 파일 저장</button>
           <button class="dev-btn danger" onclick="clearFootprintsWithConfirm()">발자취 초기화</button>
+        </div>
+        <!-- v0.3.8bu [QA Matrix Runner MVP — 유키 승인]: 18런 무인 주회. 나라님은 시작만 누르고 손 뗀다. -->
+        <div style="margin-top:8px; padding-top:8px; border-top:1px dashed rgba(150,150,170,0.3);">
+          <div style="font-size:10px; color:#9adfde; margin-bottom:4px;">QA MATRIX (무인 주회 — matrix_run / 발자취 10캡과 분리 적재)</div>
+          <div class="dev-tools-buttons">
+            <button class="dev-btn primary" onclick="startMatrixMvp(3)">▶ Matrix MVP 시작 (18런)</button>
+            <button class="dev-btn" onclick="startMatrixCanaryWin()">카나리아 1런 (CLEAR 회귀)</button>
+            <button class="dev-btn" onclick="startMatrixPoison1B()">▶ Poison 9런 (1B)</button>
+            <button class="dev-btn" onclick="startMatrixTroll1C()">▶ Troll 9런 (1C)</button>
+            <button class="dev-btn" onclick="stopMatrixMvp('수동 중단')">■ 중단</button>
+            <button class="dev-btn" onclick="matrixCopyToClipboard()">JSON 복사</button>
+            <button class="dev-btn" onclick="matrixDownloadJson()">JSON 파일 저장</button>
+            <button class="dev-btn" onclick="matrixShowText()">펼쳐보기</button>
+            <button class="dev-btn danger" onclick="matrixClearStore()">Matrix 비움</button>
+          </div>
+          <div id="matrix-status" style="font-size:10px; color:#b9c4d0; margin-top:4px;">대기 — PC 브라우저 탭/화면 켠 폰에서 실행 권장 (백그라운드 스로틀 주의)</div>
+          <div id="matrix-ta-wrap" style="display:none; margin-top:6px;">
+            <textarea id="matrix-textarea" readonly style="width:100%; height:120px; font-size:9px; background:rgba(0,0,0,0.4); color:#cfe; border:1px solid rgba(150,170,190,0.3); border-radius:6px;"></textarea>
+            <button class="dev-btn small" onclick="matrixHideText()">접기</button>
+          </div>
         </div>
         <div class="export-feedback" id="export-feedback"></div>
         <div class="export-textarea-wrap" id="export-textarea-wrap" style="display:none;">
@@ -6113,7 +6136,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8bt-quiet-reserve";
+const BUILD_VERSION = "v0.3.8ca-frame-meter";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6442,6 +6465,80 @@ const DEV_STAGE_PRESETS = {
              { kind: "fusion", id: "trapper", lvl: 2 },     // 덫꾼 — 제어/덫
              { kind: "trait", id: "blessing" } ],            // 신관 — 후열 (표식 대상 후보)
   },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8bu [QA Matrix Runner MVP — 유키 결: "나라님의 시간은 주회에 쓰지 않는다"]:
+  //   매트릭스 전용 프리셋 6종 (beginner/assassin × bal/key/fail). DEV 메뉴 비노출(러너 전용).
+  //   전부 S1 시작 + lockComposition(조성 고정 — 우선순위: 고정성>재현성>적재>일반런 유사).
+  //   traitLevels 없음(프레시) / fusion lvl 2 균일 — 군 간 비교 가능성을 위해 조건 통일.
+  // v0.3.8bu→bv [QA Matrix Phase 1A — 유키 확정 사양]: 프리셋 6종.
+  //   nov(beginner) 3종 = S1 / asn 3종 = S8. 전부 lockComposition(조성 고정 우선 — 유키 정책 C).
+  //   렌 확정 직업 (회신 1): 표준딜1 = 궁수(snipe — 기본 직업 중 원거리 단일딜의 표준형) /
+  //   nov_fail = 딜4 노힐(전사/궁수/유격수/도적) / asn_fail = 정답 부재(힐은 있되 도발·추적자 없음).
+  //   nov_key는 nov_bal과 *완전 동일* — A/A 테스트 (같은 조건에서 Runner 결과 요동 측정용 분리 코드).
+  mx_nov_bal: { label:"MX nov bal", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_nov_key: { label:"MX nov key (A/A — bal과 동일)", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_nov_fail: { label:"MX nov fail (딜4 노힐)", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"disrupt"}, {kind:"fusion",id:"rogue",lvl:2} ] },
+  mx_asn_bal: { label:"MX asn bal", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_asn_key: { label:"MX asn key (qa_a1_bind 재사용 — 동일 구성)", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    traitLevels: { bravery: 2, guard: 2, blessing: 1 },
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"gatekeeper",lvl:2}, {kind:"fusion",id:"tracker",lvl:2}, {kind:"trait",id:"blessing"} ] },
+  mx_asn_fail: { label:"MX asn fail (정답 부재 — 도발·추적자 無)", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"heal"}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"disrupt"} ] },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8by [QA Matrix Phase 1B — 유키 승인: "같은 렌즈를 중독 하늘로"]: poison 3종, S8 시작.
+  //   목적: Runner의 테마 확장 검증 (중독 밸런스 판정 아님 — 9런은 스모크/확장 검증용).
+  //   프레시 관례(1A 동일): traitLevels 없음 / lvl 표기로 강도 조정하지 않음 → "프레시 정화사"의 가치.
+  //   S8 = "비늘 수호진" (독무술사 poisonOnHit 1.0 확정 독 — 첫 전투부터 독 점등 보장 / asn S8과 대칭).
+  //   bal·fail = nov_bal·fail과 동일 구성(테마만 교체) / key = bal에서 도적→정화사 1슬롯 단일 변수.
+  mx_psn_bal: { label:"MX psn bal (nov_bal 동일 구성)", startStage:8, themeId:"poison", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_psn_key: { label:"MX psn key (도적→정화사 단일 교체 — 정화사 가치)", startStage:8, themeId:"poison", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"purifier",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_psn_fail: { label:"MX psn fail (nov_fail 동일 — 정화0·회복0 세금 측정)", startStage:8, themeId:"poison", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"disrupt"}, {kind:"fusion",id:"rogue",lvl:2} ] },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8bz [QA Matrix Phase 1C — 유키 승인: "트롤의 못 끝내는 실패를 Runner가 안전하게 기록할 수 있는가"]:
+  //   troll 3종, S8 시작 (3테마 대칭). 프레시 관례 유지. 스톨 가드(MATRIX_STALL_TICKS)가 선행 조건.
+  //   bal = 3테마 상수 파티 — ★판독 각주: 도적 독이 suppression 조건을 켜므로 "경해답(단일·간헐 억제) 포함 기준선".
+  //   key = 도적→덫꾼 단일 교체 — suppress 유무가 아니라 *억제 강도/커버리지* 비교 (덫꾼 = 2명 동시·미중독 우선).
+  //   fail = 거북 기준선 (독0·억제0·저화력·탱힐 보유) — "빨리 죽는 실패"가 아니라 "못 끝내는 실패"의 무대.
+  //          nov_fail 재사용 금지 (고화력+도적 독이 해답 후보와 겹침 — 유키 결).
+  mx_trl_bal: { label:"MX trl bal (3테마 상수 파티 — 경해답 포함 기준선)", startStage:8, themeId:"troll", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_trl_key: { label:"MX trl key (도적→덫꾼 단일 교체 — 억제 커버리지)", startStage:8, themeId:"troll", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"trapper",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_trl_fail: { label:"MX trl fail (거북 — 못 끝내는 실패 기준선)", startStage:8, themeId:"troll", lockComposition:true, type:"matrix",
+    choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"trait",id:"guard"}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"heal"} ] },
+  // v0.3.8bw→bx [CLEAR 카나리아 — 유키 결: "폐기하지 말고 상비"]: Matrix 저장 경로 회귀 검사 전용. 밸런스 무관.
+  //   역할(상비): 빌드 갱신 후 ① CLEAR 행 저장 경로 회귀 ② 발자취 격리(적재 0) 유지 확인.
+  //   검증 대상 필드: result:"CLEAR" / survivors 비공백 / checkpointPassS15 / bossReachedS25.
+  //   S24 시작: 스테이지 경계(prep→S25 boss) 통과 + 보스 클리어까지 Matrix 루프가 끝까지 도는지 확인.
+  //   파티 = "클리어 거의 보장" 과성장 (저장 경로 테스트라 수치 의미 없음 — 압도가 미덕).
+  //   ⚠ 코드 진실(bx 런타임 검증이 잡음): 프리셋 lvl 필드는 스탯 미반영(계승/표시용) —
+  //   fusion 스탯은 생성 시점 traitLevels(재료 강화값)로 계산된다(makeFusionUnit inheritedLevel).
+  //   그래서 재료 전부를 12로 과급: dragoon=rogue+snipe / rogue=bravery+snipe / cleric=heal+blessing / wall=guard+blessing.
+  //   일반 Matrix 플랜(MATRIX_MVP_PLAN)에 미포함 / DEV 프리셋 메뉴 비노출 — 전용 버튼으로만 1런.
+  //   (bw에서 mx_test_win으로 태어나 1A WIN 경로 검증 합격 → bx에서 카나리아로 상비 전환)
+  mx_canary_win: { label:"MX canary win (상비 — CLEAR 행 회귀 검사)", startStage:24, themeId:"beginner", lockComposition:true, type:"matrix_infra",
+    choicePolicy:"lock_composition",
+    traitLevels: { bravery: 12, snipe: 12, heal: 12, blessing: 12, guard: 12, rogue: 12 },
+    party:[ {kind:"fusion",id:"dragoon",lvl:12}, {kind:"fusion",id:"rogue",lvl:12}, {kind:"fusion",id:"cleric",lvl:12}, {kind:"fusion",id:"wall",lvl:12} ] },
 };
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -9377,12 +9474,19 @@ function initRunFromParty() {
     poisonAbsorbHeal: 0,         // 흡수 회복 총량
     poisonAbsorbShield: 0,       // 흡수 보호막 총량
     poisonAbsorbBuffCount: 0,    // 흡수 강화 발동 횟수
+    // v0.3.8by [Phase 1B 신규 — 유키 A안 확정]:
+    cleanseCount: 0,             // purify_heal 정화 시전 성공 1회당 +1 (거둔 상태이상 개수 합산 아님)
+    poisonDeathCount: 0,         // 독 자해 틱(applyStatusDamage reason:"poison")이 막타가 된 *아군* 사망 +1
+                                 //   ("중독 상태로 사망" 전체 아님 — 과대계상 방지, 좁고 정직한 카운트)
   };
   // v0.3.8am [트롤 심장 1단계]: "독이 재생을 말린다" 관측 계기판 (ao에서 복원 — 색감 사고와 같은 계열 유실 후 복구).
   //   유키 결: 독은 트롤 재생을 삭제하지 않고 크게 꺾는다(×0.25). 봉쇄량(원래−실제)을 기록.
   runState._themeTrollStats = {
     regenSuppressCount: 0,       // 독으로 재생이 꺾인 횟수
     regenSuppressAmount: 0,      // 독이 말린 재생량 총합 (원래 회복 - 실제 회복)
+    // v0.3.8bz [Phase 1C 신규 — 유키 확정 정의]:
+    regenTotal: 0,               // 트롤 규격 재생(공통 1.8% + selfHealPct)의 *실제 회복량* 합산 — min(healAmt, maxHp−hp)
+    regenTriggerCount: 0,        // 실제 회복이 1 이상 적용된 재생 발동 횟수 (재생 실패=0회복은 suppressCount가 센다)
   };
   // v0.3.8aq [암살자 테마 계기판]: 호흡·파훼 문법이 숫자로 남게 (themePoison/Troll 선례 복제).
   //   "전투 로그가 실제 전투와 같은 말을 하게" — 표식/은신/기습/분산/색적/간파가 계기판에 박힌다.
@@ -10020,6 +10124,288 @@ function showShieldClash(tauntor) {
   ring.className = "split-clash-ring";
   portrait.appendChild(ring);
   setTimeout(() => ring.remove(), 480);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   v0.3.8bu [QA Matrix Runner MVP — 유키 승인 A안]
+   "나라님의 시간은 주회에 쓰지 않는다. 나라님의 시간은 최종 손맛 판정에만 쓴다."
+   - 2테마×3군×3회 = 18런 무인 주회. 목표는 승률 판정이 아니라 동작 증명.
+   - 50ms 틱/전투 로직/연출 무변경 (터보틱 금지 — 유키 결). 기존 devJumpToStage·
+     lockComposition·finalizeRunResult·createFootprintFromRun 재사용 (새 전투 경로 X).
+   - runSource:"matrix_run" / 발자취 10캡 비의존(전용 localStorage) / ERROR는 DEFEAT와 분리.
+   - seedLike: Math.random을 매트릭스 동안만 시드 PRNG로 교체+기록. 분산 지연 피해(bq,
+     실시간 270ms)의 틱 착지가 1~2틱 흔들릴 수 있어 "완전 재현"이 아닌 seedLike로 정직 표기.
+   ════════════════════════════════════════════════════════════════════════ */
+const MATRIX_STORAGE_KEY = "project_signal_qa_matrix_v1";
+const MATRIX_MVP_PLAN = [   // v0.3.8bv [Phase 1A — 유키 확정 코드]
+  { presetKey: "mx_nov_bal",  presetCode: "mx_nov_bal",  themeId: "beginner" },
+  { presetKey: "mx_nov_key",  presetCode: "mx_nov_key",  themeId: "beginner" },
+  { presetKey: "mx_nov_fail", presetCode: "mx_nov_fail", themeId: "beginner" },
+  { presetKey: "mx_asn_bal",  presetCode: "mx_asn_bal",  themeId: "assassin" },
+  { presetKey: "mx_asn_key",  presetCode: "mx_asn_key",  themeId: "assassin" },
+  { presetKey: "mx_asn_fail", presetCode: "mx_asn_fail", themeId: "assassin" },
+];
+// v0.3.8by [Phase 1B — 유키 승인]: poison 3종 × 3회 = 9런 전용 플랜. 1A 18런 플랜은 불변.
+const MATRIX_PSN_PLAN = [
+  { presetKey: "mx_psn_bal",  presetCode: "mx_psn_bal",  themeId: "poison" },
+  { presetKey: "mx_psn_key",  presetCode: "mx_psn_key",  themeId: "poison" },
+  { presetKey: "mx_psn_fail", presetCode: "mx_psn_fail", themeId: "poison" },
+];
+// v0.3.8bz [Phase 1C — 유키 승인]: troll 3종 × 3회 = 9런 전용 플랜. 1A 18런·1B 9런 플랜 불변.
+const MATRIX_TRL_PLAN = [
+  { presetKey: "mx_trl_bal",  presetCode: "mx_trl_bal",  themeId: "troll" },
+  { presetKey: "mx_trl_key",  presetCode: "mx_trl_key",  themeId: "troll" },
+  { presetKey: "mx_trl_fail", presetCode: "mx_trl_fail", themeId: "troll" },
+];
+const MATRIX_TICK_WATCHDOG = 120000;   // 최후망: 진짜 코드 오류용 (교착이 아닌 행 — ERROR:"timeout" 분리 적재)
+// v0.3.8bz [스톨 가드 — 유키 승인: "스톨은 코드 오류가 아니라 게임 실패 양상이다"]:
+//   한 전투(tickCount는 전투마다 리셋) 6000틱 초과 = 못 끝내는 실패 → DEFEAT + resultReason:"timeout_stall".
+//   정상 전투 실측 80~300틱 / 카나리아 보스전 포함 수백 틱 — 6000은 20배 이상 여유 (유키 권장값).
+//   let인 이유: 하니스 런타임 검증에서 임시 하향해 발동 경로를 실증하기 위함 (운영값은 6000 고정).
+let MATRIX_STALL_TICKS = 6000;
+
+// mulberry32 — 시드 PRNG (매트릭스 동안만 Math.random 교체, 종료 시 원복)
+function _mulberry32(seed) {
+  let a = seed >>> 0;
+  return function() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const _matrix = {
+  active: false, matrixId: null, queue: [], runIndex: 0, totalRuns: 0,
+  rows: [], watcher: null, origRandom: null, currentMeta: null, runStartTs: 0,
+  startJobs: [], errInfo: null, seedBase: 0,
+};
+
+function _matrixLoadStore() {
+  try { return JSON.parse(localStorage.getItem(MATRIX_STORAGE_KEY)) || null; } catch (e) { return null; }
+}
+function _matrixPersist() {
+  try {
+    localStorage.setItem(MATRIX_STORAGE_KEY, JSON.stringify({
+      exportType: "project_signal_qa_matrix",
+      buildVersion: (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : null,
+      matrixId: _matrix.matrixId, startedAt: _matrix.startedAtIso || null, runs: _matrix.rows,
+    }));
+  } catch (e) { console.warn("[matrix] persist 실패", e); }
+}
+function _matrixStatus(text) {
+  const el = document.getElementById("matrix-status");
+  if (el) el.textContent = text;
+  const badge = document.getElementById("matrix-badge");
+  if (badge) {
+    badge.style.display = _matrix.active ? "block" : "none";
+    if (_matrix.active) badge.textContent = `MATRIX ${_matrix.runIndex}/${_matrix.totalRuns}`;
+  }
+  console.log("[MATRIX]", text);
+}
+
+function startMatrixMvp(repeats, planOverride) {
+  if (_matrix.active) { alert("Matrix가 이미 돌고 있어요."); return; }
+  if (typeof DEV_MODE_ENABLED === "undefined" || !DEV_MODE_ENABLED) return;   // 홈빌드 한정
+  const reps = repeats || 3;
+  // v0.3.8bw [WIN 경로 인프라 — 유키 요청]: planOverride로 단일 프리셋 플랜 주입 가능.
+  //   미지정이면 기존 Phase 1A 18런 플랜 그대로 — 기존 [▶ Matrix MVP 시작] 동작 불변.
+  const plan = planOverride || MATRIX_MVP_PLAN;
+  _matrix.queue = [];
+  plan.forEach(p => { for (let i = 0; i < reps; i++) _matrix.queue.push(Object.assign({ rep: i + 1 }, p)); });
+  _matrix.active = true;
+  _matrix.matrixId = "mx_" + Date.now();
+  _matrix.startedAtIso = new Date().toISOString();
+  _matrix.rows = [];
+  _matrix.runIndex = 0;
+  _matrix.totalRuns = _matrix.queue.length;
+  _matrix.seedBase = (Date.now() % 2147483647) | 1;
+  _matrix.origRandom = Math.random;                 // 원복용 보관
+  window.addEventListener("error", _matrixOnError);
+  _matrixStatus(`시작 — ${_matrix.totalRuns}런 (${reps}회×${plan.length}프리셋)`);
+  _matrixNextRun();
+}
+
+// v0.3.8bw→bx [CLEAR 카나리아 — 유키 결: 상비]: mx_canary_win 1런만 돈다.
+//   역할: 빌드 갱신 후 CLEAR 행 저장 경로 회귀 + 발자취 격리(적재 0) 확인. 밸런스 판정 아님.
+//   기존 startMatrixMvp 기계 전부 재사용 — 새 저장/주회 경로 없음.
+function startMatrixCanaryWin() {
+  startMatrixMvp(1, [ { presetKey: "mx_canary_win", presetCode: "mx_canary_win", themeId: "beginner" } ]);
+}
+
+// v0.3.8by [Phase 1B — 유키 승인: "작게 간다. 중독만 간다. 3프리셋 × 3런만 간다."]
+//   poison 9런 — startMatrixMvp 기계 그대로 (새 주회/저장 경로 0, 1A 합격 배관 불변).
+function startMatrixPoison1B() {
+  startMatrixMvp(3, MATRIX_PSN_PLAN);
+}
+
+// v0.3.8bz [Phase 1C — 유키 승인: "작게 간다. 트롤만 간다. 3프리셋 × 3런만 간다."]
+function startMatrixTroll1C() {
+  startMatrixMvp(3, MATRIX_TRL_PLAN);
+}
+
+function stopMatrixMvp(reason) {
+  if (!_matrix.active) return;
+  if (_matrix.watcher) { clearInterval(_matrix.watcher); _matrix.watcher = null; }
+  _matrix.active = false;
+  if (_matrix.origRandom) { Math.random = _matrix.origRandom; _matrix.origRandom = null; }   // PRNG 원복
+  window.removeEventListener("error", _matrixOnError);
+  _matrixPersist();
+  _matrixStatus(`종료 (${reason || "완료"}) — 적재 ${_matrix.rows.length}행. export로 루다에게.`);
+}
+
+function _matrixOnError(ev) {
+  // ERROR 런 분리 적재 — DEFEAT와 절대 안 섞는다 (유키 안전장치)
+  if (!_matrix.active) return;
+  _matrix.errInfo = String((ev && (ev.message || ev.error)) || "unknown").slice(0, 200);
+}
+
+function _matrixNextRun() {
+  if (!_matrix.active) return;
+  const meta = _matrix.queue.shift();
+  if (!meta) { stopMatrixMvp("완료"); return; }
+  _matrix.runIndex += 1;
+  _matrix.currentMeta = meta;
+  _matrix.errInfo = null;
+  _matrix.runStartTs = Date.now();
+  const seedLike = (_matrix.seedBase + _matrix.runIndex * 1013) >>> 0;
+  meta.seedLike = seedLike;
+  try {
+    Math.random = _mulberry32(seedLike);            // 런마다 재시드 (기록과 1:1)
+    devJumpToStage(meta.presetKey);                 // 기존 점프 기계 그대로 재사용
+    // matrix 표식 — runSource는 기존 _themeContext가 dev.source를 읽으므로 source만 바꾸면 분리됨
+    if (runState.devTest) {
+      runState.devTest.source = "matrix_run";
+      runState.devTest.matrix = true;
+      meta.choicePolicy = (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].choicePolicy) || "random_policy_mvp";
+      runState.devTest.matrixId = _matrix.matrixId;
+      runState.devTest.seedLike = seedLike;
+      runState.devTest.presetCode = meta.presetCode;
+    }
+    _matrix.startJobs = runState.units.map(u => u.name);
+    setSpeed(12);                                   // DEV x6 — 틱 간격(50ms)은 그대로 (터보틱 금지)
+    _matrixStatus(`런 ${_matrix.runIndex}/${_matrix.totalRuns} — ${meta.presetCode} #${meta.rep} (seed ${seedLike})`);
+  } catch (e) {
+    _matrix.errInfo = "jump: " + String(e).slice(0, 180);
+    _matrixCollectRow();                            // 시작도 못 한 런 → ERROR 행
+    setTimeout(_matrixNextRun, 300);
+    return;
+  }
+  if (_matrix.watcher) clearInterval(_matrix.watcher);
+  _matrix.watcher = setInterval(_matrixWatch, 500);
+}
+
+function _matrixWatch() {
+  if (!_matrix.active) return;
+  // v0.3.8bz [스톨 가드 — 유키 승인]: "못 끝내는 실패"는 ERROR가 아니라 게임 실패(DEFEAT)다.
+  //   관측 종료(bn)와 같은 길 — finalizeRunResult 기존 경로 재사용. footprint가 정상 생성되어
+  //   도달/생존/테마 수치 전부 실데이터로 적재. matrix 발자취 스킵 가드가 격리를 지킨다.
+  if (!runState.runEnded && runState.tickCount > MATRIX_STALL_TICKS) {
+    pushEvent(`▸ [MATRIX] 스톨 가드 — 한 전투 ${MATRIX_STALL_TICKS}틱 초과, 못 끝내는 실패로 기록`, "system");
+    finalizeRunResult("lose", "timeout_stall");
+  }
+  // 최후망: 진짜 오류(finalize조차 못 도는 행) → 강제 종료 + ERROR(timeout)
+  if (!runState.runEnded && runState.tickCount > MATRIX_TICK_WATCHDOG) {
+    _matrix.errInfo = "timeout: tickCount>" + MATRIX_TICK_WATCHDOG;
+    try { stopBattleLoop(); } catch (e) {}
+    runState.runEnded = true; runState.result = null;
+  }
+  if (!runState.runEnded) return;
+  clearInterval(_matrix.watcher); _matrix.watcher = null;
+  // 종료 연출(800ms)+분산 보호 타이머(≤270ms) 배수 — 런 간 타이머 누수 격리
+  setTimeout(() => { _matrixCollectRow(); setTimeout(_matrixNextRun, 300); }, 1200);
+}
+
+function _matrixCollectRow() {
+  const meta = _matrix.currentMeta || {};
+  let row;
+  try {
+    const fp = (!_matrix.errInfo && typeof createFootprintFromRun === "function") ? createFootprintFromRun() : null;
+    const t = (fp && fp.totals) || {};
+    const party = (fp && fp.finalParty) || [];
+    const deaths = party.filter(p => !p.alive && typeof p.diedAt === "number");
+    const firstDeath = deaths.sort((a, b) => a.diedAt - b.diedAt)[0] || null;
+    const result = _matrix.errInfo ? "ERROR" : (fp && fp.result === "CLEAR" ? "CLEAR" : "DEFEAT");
+    const reached = fp ? fp.stageReached : (runState ? runState.stage : null);
+    row = {
+      matrixId: _matrix.matrixId,
+      buildVersion: (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : null,
+      runSource: "matrix_run",
+      choicePolicy: meta.choicePolicy || "random_policy_mvp",   // v0.3.8bv: 이번 6종은 전부 lock_composition
+      timestamp: new Date().toISOString(),
+      themeId: meta.themeId || (fp && fp.themeId) || null,
+      presetCode: meta.presetCode || null,
+      rep: meta.rep || null,
+      seedLike: meta.seedLike || null,
+      result,
+      resultReason: (fp && fp.resultReason) || null,   // v0.3.8bz [스톨 가드]: timeout_stall / party_wipe / stage25_boss_clear — 루다 필터용
+      error: _matrix.errInfo || null,               // ERROR 사유 — DEFEAT와 분리
+      reachedStage: reached,
+      wipeStage: result === "DEFEAT" ? reached : null,
+      checkpointPassS15: reached != null ? (result === "CLEAR" || reached > 15) : null,
+      bossReachedS25: reached != null ? reached >= 25 : null,
+      actionCount: (t.actions != null) ? t.actions : null,
+      runDurationTicks: runState ? runState.tickCount : null,
+      partyJobsStart: _matrix.startJobs.slice(),
+      partyJobsFinal: party.map(p => p.name),
+      survivors: party.filter(p => p.alive).map(p => p.name),
+      firstDeathStage: firstDeath ? firstDeath.diedAt : null,
+      firstDeathJob: firstDeath ? firstDeath.name : null,
+      totals: {
+        damageDealt: t.damageDealt != null ? t.damageDealt : null,
+        healDone: t.healDone != null ? t.healDone : null,
+        shieldBlocked: t.shieldBlocked != null ? t.shieldBlocked : null,
+      },
+      themeAssassin: t.themeAssassin || null,
+      themePoison: t.themePoison || null,           // 자리만 (MVP 비대상 — 유키 결)
+      themeTroll: t.themeTroll || null,             // 자리만
+      elapsedMs: Date.now() - _matrix.runStartTs,
+    };
+  } catch (e) {
+    row = { matrixId: _matrix.matrixId, runSource: "matrix_run", presetCode: meta.presetCode || null,
+            rep: meta.rep || null, seedLike: meta.seedLike || null,
+            result: "ERROR", error: "collect: " + String(e).slice(0, 180) };
+  }
+  _matrix.rows.push(row);
+  _matrixPersist();                                 // 런마다 즉시 저장 — 크래시에도 행 보존
+  _matrixStatus(`적재 ${_matrix.rows.length}/${_matrix.totalRuns} — ${row.presetCode} ${row.result}`);
+}
+
+// ── export 3종 (유키 명세: 파일 저장 / textarea 펼쳐보기 / 클립보드 복사) ──
+function _matrixExportJson() {
+  const store = _matrixLoadStore();
+  return JSON.stringify(store || { exportType: "project_signal_qa_matrix", runs: [] }, null, 2);
+}
+function matrixCopyToClipboard() {
+  const txt = _matrixExportJson();
+  const done = () => _matrixStatus("Matrix JSON 복사됨");
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => matrixShowText());
+  else matrixShowText();
+}
+function matrixDownloadJson() {
+  const blob = new Blob([_matrixExportJson()], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `qa_matrix_${(_matrixLoadStore() || {}).matrixId || "export"}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function matrixShowText() {
+  const wrap = document.getElementById("matrix-ta-wrap");
+  const ta = document.getElementById("matrix-textarea");
+  if (!wrap || !ta) return;
+  ta.value = _matrixExportJson();
+  wrap.style.display = "block";
+}
+function matrixHideText() {
+  const wrap = document.getElementById("matrix-ta-wrap");
+  if (wrap) wrap.style.display = "none";
+}
+function matrixClearStore() {
+  if (!confirm("Matrix 적재 데이터를 비울까요? (export 먼저!)")) return;
+  try { localStorage.removeItem(MATRIX_STORAGE_KEY); } catch (e) {}
+  _matrix.rows = [];
+  _matrixStatus("Matrix 적재 비움");
 }
 
 // v0.3.8au: DEV 실시간 분산 카운터 갱신 — "기능이 실제로 도는가"를 화면으로 (확인 전용).
@@ -11233,6 +11619,8 @@ function actFusion(actor) {
         document.querySelectorAll(`[data-uid="${target.uid}"] .float-status.poisoned`).forEach(s => s.remove());
         if (shieldAmt > 0 && typeof showStatusText === "function") showStatusText(target, `◇${shieldAmt}`, { kind: "shield" });
         pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>의 ${cleansed.join("·")}을 씻어냈다 — 회복 +${healAmt} · 보호막 ◇${shieldAmt}`, "heal");
+        // v0.3.8by [Phase 1B — 유키 A안]: 정화 시전 성공 1회당 +1 (개수 합산 아님 — "정화에 화력을 지불할 가치" 판독용)
+        if (runState._themePoisonStats) runState._themePoisonStats.cleanseCount += 1;
       } else {
         // v0.3.8: 상태이상 없음 — 약공격이 아니라 사제처럼 HP 최저 아군 단일 치유
         const woundedAllies = runState.units.filter(u =>
@@ -12568,6 +12956,11 @@ function actEnemyAttack(actor) {
       const healAmt = sup.heal;
       if (sup.suppressed > 0) showTrollRegenSuppressed(actor, sup);
       else showActionLabel(actor, "재생", "heal");
+      // v0.3.8bz [1C]: 실제 회복량 집계 (상한 캡 반영 — "시도량"이 아니라 정직하게)
+      if (healAmt > 0 && runState._themeTrollStats) {
+        runState._themeTrollStats.regenTotal += Math.min(healAmt, actor.maxHp - actor.hp);
+        runState._themeTrollStats.regenTriggerCount += 1;
+      }
       if (healAmt > 0) doHeal(actor, actor, healAmt);
       const tel = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
       if (tel) { tel.classList.add("regen-pulse"); fxTimeout(() => tel.classList.remove("regen-pulse"), 700); }
@@ -12585,6 +12978,11 @@ function actEnemyAttack(actor) {
     const healAmt = sup.heal;
     if (sup.suppressed > 0) showTrollRegenSuppressed(actor, sup);
     else showActionLabel(actor, "재생!", "heal");
+    // v0.3.8bz [1C]: 실제 회복량 집계 (공통 재생 경로와 동일 규격)
+    if (healAmt > 0 && runState._themeTrollStats) {
+      runState._themeTrollStats.regenTotal += Math.min(healAmt, actor.maxHp - actor.hp);
+      runState._themeTrollStats.regenTriggerCount += 1;
+    }
     if (healAmt > 0) doHeal(actor, actor, healAmt);   // 초록 회복 숫자 + 리액션
     const el = document.querySelector(`[data-uid="${actor.uid}"] .unit-portrait`);
     if (el) {
@@ -13207,6 +13605,11 @@ function applyStatusDamage(target, amount, opts = {}) {
     shakeUnit(target, "mild");
   }
   if (target.hp <= 0 && target.alive) {
+    // v0.3.8by [Phase 1B — 유키 A안]: 독 자해 틱이 막타가 된 *아군* 사망만 +1.
+    //   reason 명시 "poison" 경로(중독 자해 틱 5194 단일 호출처) 한정 — "중독 상태로 사망" 전체 아님.
+    if (target.side === "ally" && (opts.reason || "poison") === "poison" && runState._themePoisonStats) {
+      runState._themePoisonStats.poisonDeathCount += 1;
+    }
     markIfDead(target, {
       killerUid: opts.sourceUid || null,
       reason: opts.reason || "poison",
@@ -13432,6 +13835,15 @@ function onStageClear() {
       proceedToNextStage();
       return;
     }
+    // v0.3.8bv [random_policy_mvp — 유키 정책 C]: 비잠금 매트릭스 런은 화면 없이 무작위 성장.
+    //   이번 1A 프리셋 6종은 전부 lock이라 휴면 안전망 — 1B에서 활성 검증 예정.
+    if (runState.devTest && runState.devTest.matrix) {
+      const cands = runState.units.filter(u => u.kind === "trait");
+      if (cands.length) pickGrowth(cands[Math.floor(Math.random() * cands.length)].traitId);
+      pushEvent("▸ [MATRIX] random_policy_mvp — 무작위 성장", "system");
+      proceedToNextStage();
+      return;
+    }
     showGrowth();
     return;
   }
@@ -13445,6 +13857,8 @@ function onStageClear() {
       proceedToNextStage();
       return;
     }
+    // v0.3.8bv [random_policy_mvp]: 비잠금 매트릭스 런 — 합체는 MVP에선 건너뜀(조성 보존이 무작위 합체보다 우선).
+    if (runState.devTest && runState.devTest.matrix) { proceedToNextStage(); return; }
     // v0.3.7.3: 유키 PD 진단 결 — fusion phase에서 *항상 dump 박음*
     // 1) 콘솔 — 유닛 dump + 합체 분석
     const dump = dumpUnits();
@@ -13477,7 +13891,8 @@ function onStageClear() {
 
   if (phase === "recruit") {
     // v0.3.8bo [QA 조성 고정]: lockComposition 런은 영입도 건너뜀 (4인 고정 — legacy 경로까지 닫음).
-    if (runState.devTest && runState.devTest.lockComposition) {
+    // v0.3.8bv: 비잠금 매트릭스 런도 동일 — 4인이면 통과, 미달이면 아래 legacy 영입이 처리(무작위 아님 — MVP 범위 밖).
+    if (runState.devTest && (runState.devTest.lockComposition || runState.devTest.matrix)) {
       proceedToNextStage();
       return;
     }
@@ -14307,11 +14722,15 @@ function showResult() {
   // v0.3.7.25: 발자취 저장 — 한 런에 1번만 (showResult가 여러 번 호출돼도 중복 방지)
   if (!runState._footprintSaved) {
     runState._footprintSaved = true;
-    try {
-      const fp = createFootprintFromRun();
-      if (fp) saveFootprint(fp);
-    } catch (e) {
-      console.warn("[footprints] 저장 실패:", e);
+    // v0.3.8bu [Matrix — 발자취 캡 보호]: matrix_run은 별도 적재소(10캡 비의존)에 1행으로 쌓이므로,
+    //   나라님의 발자취 10칸을 밀어내지 않게 여기 저장은 스킵 (오늘 A군 원본 유실 사고 재발 방지).
+    if (!(runState.devTest && runState.devTest.matrix)) {
+      try {
+        const fp = createFootprintFromRun();
+        if (fp) saveFootprint(fp);
+      } catch (e) {
+        console.warn("[footprints] 저장 실패:", e);
+      }
     }
   }
 
@@ -15190,6 +15609,25 @@ function buildBalanceExportPayload() {
       // v0.3.8bt [예약=조용한 정보 / B군]
       "axis2_reserve_quiet_language",
       "qa_b1_tracker_preset",
+      // v0.3.8bu [QA Matrix Runner MVP]
+      "qa_matrix_runner_mvp",
+      "matrix_run_source",
+      "matrix_footprint_cap_guard",
+      // v0.3.8bv [Phase 1A 사양 확정]
+      "matrix_phase_1a_presets",
+      "random_policy_mvp_dormant",
+      // v0.3.8bw [WIN 경로 인프라 검증] → bx [카나리아 상비 전환]
+      "matrix_win_path_check",
+      "matrix_canary_win_standing",
+      // v0.3.8by [Phase 1B — 중독 1차 확장]
+      "matrix_phase_1b_poison",
+      "poison_qa_fields_cleanse_death",
+      // v0.3.8bz [Phase 1C — 트롤 1차 확장 + 스톨 가드]
+      "matrix_phase_1c_troll",
+      "matrix_stall_guard_defeat_reason",
+      "troll_qa_fields_regen_total_trigger",
+      // v0.3.8ca [트롤 후반 슬로다운 — A안 계측]
+      "dev_frame_meter_avg_p95",
     ],
     devStageTestBuild: (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) || false,
   };
@@ -17407,6 +17845,34 @@ const CODEX_ENTRIES = [
   }
   // v0.3.8al7 검수 장치: 타이틀 버전 표시를 BUILD_VERSION으로 자동 채움 (하드코딩 거짓 제거).
   //   나라님이 타이틀에서 "지금 보는 게 최신 빌드인지" 즉시 확인 (캐시 문제 진단).
+  // v0.3.8ca [A안 계측 — 유키 승인: "숫자 없이 손대면 맛이 죽는다"]: DEV 한정 프레임타임 미터.
+  //   rAF 간격을 링버퍼(120프레임)로 받아 avg + p95를 0.5초마다 갱신. 측정 자체가 부하가 되지 않게
+  //   프레임당 일은 숫자 1개 push뿐, DOM 갱신은 30프레임마다 1회. 탭 복귀 직후 거대 간격(>1000ms)은
+  //   백그라운드 휴면이지 렌더 비용이 아니므로 버린다 (거짓을 표시하지 않는다).
+  //   용도: 나라님이 S19/S20/S22에서 숫자만 읽으면 렌더 측 확정 + B안 수술 전후 비교 기준.
+  //   window._devFrameMeterActive=false로 끌 수 있음 (하니스/검증용).
+  window._devFrameMeterActive = (typeof DEV_MODE_ENABLED !== "undefined" && DEV_MODE_ENABLED);
+  (function _devFrameMeter() {
+    if (!window._devFrameMeterActive) return;
+    const el = document.getElementById("frame-meter");
+    if (!el) return;
+    el.style.display = "block";
+    const buf = new Array(120).fill(16.7);
+    let i = 0, n = 0, last = performance.now();
+    function loop(now) {
+      if (!window._devFrameMeterActive) { el.style.display = "none"; return; }
+      const dt = now - last; last = now;
+      if (dt > 0 && dt < 1000) { buf[i] = dt; i = (i + 1) % 120; n++; }
+      if (n % 30 === 0) {
+        const sorted = buf.slice().sort((a, b) => a - b);
+        const avg = buf.reduce((a, b) => a + b, 0) / 120;
+        const p95 = sorted[Math.floor(120 * 0.95)];
+        el.textContent = `F avg ${avg.toFixed(0)}ms · p95 ${p95.toFixed(0)}ms`;
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  })();
   (function _fillTitleVersion() {
     const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?";
     // v0.3.8bj: 고정 배지 — 항상 보이게 (타이틀/전투 무관). 캐시 진단의 단일 진실.
