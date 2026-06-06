@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- v0.3.8bj: 캐시 방지 — GitHub Pages/Safari PWA가 옛 index.html을 붙잡는 문제 완화 (가능 범위) -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Project Signal Mk.II v0.3.8al13-assassin-theme-mark</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -871,6 +875,18 @@ body {
 }
 .footprint-card.is-clear .fp-result { color: #ff9ec6; }
 .footprint-card.is-defeat .fp-result { color: #ff8888; }
+/* v0.3.8bn [QA 인프라]: 관측 종료 런 — 승도 패도 아닌 제3의 색 (청색). 거짓 표시 금지. */
+.footprint-card.is-observe { border-color: rgba(143,211,255,0.35); }
+.footprint-card.is-observe .fp-result { color: #8fd3ff; }
+.result-status.observe, .result-title.observe { color: #8fd3ff; }
+/* v0.3.8bq [DEV 손맛 최소화 모드 — 유키 결: "손맛 연출은 항상 보이고, 디버그만 숨는 방향"]:
+   body.dev-panels-hidden이면 전투 중 디버그 패널/재생버튼만 숨긴다. 갱신 함수들이 인라인
+   display를 계속 만져도 !important가 이겨 다시 안 뜬다 (토글 해제하면 즉시 복귀).
+   손맛 연출(배너/링크/라벨/분산 수치)은 이 클래스와 무관 — 항상 보인다. */
+body.dev-panels-hidden #live-taunt-panel,
+body.dev-panels-hidden #taunt-split-panel,
+body.dev-panels-hidden #clone-test-panel,
+body.dev-panels-hidden #dev-fx-replay { display: none !important; }
 .footprint-card .fp-date {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
@@ -3926,7 +3942,10 @@ body.fx-debug-strong .float-number.split {
 /* v0.3.8at: 도발 개입 중앙 배너 — "확실히 보이는" 한 박자 (전장 중앙 상단). */
 .taunt-intervene-banner {
   position: absolute;
-  top: 38%; left: 50%;
+  /* v0.3.8bq [유키 결: "분산은 아군 쪽 사건으로 읽혀야 함"]: top 38%(적 진영 가운데) → 62%(아군 진영 쪽).
+     이 배너의 사용처(분산!/도발 결속!)는 전부 아군 개입 사건 — 일괄 이동이 결에 맞다.
+     z-index 30→45: 손맛 연출은 디버그 패널(z40/41)보다 항상 위 (bh 결의 연출판). */
+  top: 62%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: 'JetBrains Mono', monospace;
   font-weight: 900;
@@ -3935,7 +3954,7 @@ body.fx-debug-strong .float-number.split {
   color: #5fd0c0;
   text-shadow: 0 0 10px rgba(95,208,192,0.9), 0 0 20px rgba(95,208,192,0.6), 0 2px 4px rgba(0,0,0,1);
   pointer-events: none;
-  z-index: 30;
+  z-index: 45;   /* v0.3.8bq: 디버그 패널(z40/41)보다 위 — 연출이 패널에 가려지지 않게 */
   white-space: nowrap;
   animation: intervene-banner 0.95s ease-out forwards;
 }
@@ -4033,6 +4052,84 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
   stroke: #7ff0df;
   stroke-width: 4.2;
   filter: drop-shadow(0 0 9px rgba(127,240,223,1));
+}
+/* v0.3.8br [시각 위계 분리 — 유키 결: "결속은 차분한 정보, 분산은 짧고 강한 클라이맥스"]:
+   분산 전용 위계. 결속 연출(사슬/매듭/배너 기본형)은 한 줄도 안 만짐 — 분산만 한 단계 위로. */
+/* ① 분산 배너 — 흰-청록 핫코어 + 진한 외곽. 페이드 구간을 줄이고 유지 구간을 늘린 전용 곡선. */
+.taunt-intervene-banner.split {
+  font-size: 30px;
+  color: #eafffb;
+  -webkit-text-stroke: 1px rgba(10,60,54,0.9);
+  text-shadow: 0 0 6px rgba(127,240,223,1), 0 0 16px rgba(127,240,223,0.95),
+               0 0 30px rgba(95,208,192,0.7), 0 2px 5px rgba(0,0,0,1);
+  animation: intervene-banner-split 0.9s ease-out forwards;
+}
+@keyframes intervene-banner-split {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }   /* 펀치 인 — 확대→정착 */
+  70%  { opacity: 1; transform: translate(-50%, -51%) scale(1.0); }   /* 유지 — 수명의 58%가 선명 구간 */
+  100% { opacity: 0; transform: translate(-50%, -58%) scale(0.98); }
+}
+/* ② 분산 전용 라벨 — 도발 영웅 위. 결속(노랑 taunt 버블)과 색·크기로 구분. */
+.action-label-split {
+  background: #103a36;
+  color: #eafffb;
+  border: 1px solid rgba(127,240,223,0.9);
+  box-shadow: 0 0 16px rgba(127,240,223,0.95), 0 2px 4px rgba(0,0,0,0.6);
+  font-size: 14px;
+  animation: action-label-pop 1.8s ease-out forwards;
+}
+/* ③ 분산 매듭 발광 — 재점화 매듭(🛡️)만 순간 확대+발광. 결속 매듭(🔗)은 그대로. */
+.taunt-link-knot-icon.reignite-burst {
+  animation: knot-burst 0.5s ease-out;
+  filter: drop-shadow(0 0 10px rgba(127,240,223,1)) drop-shadow(0 0 18px rgba(127,240,223,0.8));
+}
+@keyframes knot-burst {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.7); }
+  100% { transform: scale(1); }
+}
+/* v0.3.8bs [축2 폴리시 — 유키 결: "예약은 약하게, 발동은 강하게"] */
+/* ① 보호 예고선 — "너를 보고 있어". 정보이지 사건이 아니다: 얇고, 연하고, 거의 안 움직인다.
+      일반 도발선(노랑 점선)·결속 사슬(청록 굵음)·분산 재점화(밝은 청록)와 한눈에 구분되는 최약 톤. */
+.taunt-watch-line {
+  fill: none;
+  stroke: #9adfde;
+  stroke-width: 1.0;                /* v0.3.8bt: 더 얇게 (나라님 디렉션 — "나야, 너 보고 있어" 톤) */
+  stroke-linecap: round;
+  stroke-dasharray: 2 6;            /* 성긴 약점선 — 사슬(7 5)과 다른 결 */
+  opacity: 0.22;
+  animation: watch-breath 2.8s ease-in-out infinite;   /* 아주 약한 숨결 */
+  pointer-events: none;
+}
+@keyframes watch-breath {
+  0%, 100% { opacity: 0.16; }
+  50%      { opacity: 0.28; }
+}
+/* ② 방패 충돌 링 — "검이 방패에 튕겼다". 도발 영웅에서 퍼지는 한 박자 링 (자체 요소 transform — 아바타 무관). */
+.split-clash-ring {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 18px; height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2.5px solid rgba(234,255,251,0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(127,240,223,0.9), inset 0 0 8px rgba(127,240,223,0.6);
+  pointer-events: none;
+  z-index: 24;
+  animation: clash-ring 0.45s ease-out forwards;
+}
+@keyframes clash-ring {
+  0%   { transform: scale(0.5); opacity: 1; }
+  60%  { transform: scale(2.6); opacity: 0.8; }
+  100% { transform: scale(3.4); opacity: 0; }
+}
+/* ③ 충돌 플래시 — portrait 밝기만 친다 (filter — transform 미사용 결 보존, 아바타 scale 안 건드림). */
+.split-clash-flash { animation: clash-flash 0.4s ease-out; }
+@keyframes clash-flash {
+  0%   { filter: brightness(1); }
+  25%  { filter: brightness(1.9) saturate(1.3); }
+  100% { filter: brightness(1); }
 }
 .taunt-link-pulse.reignite {
   fill: rgba(127,240,223,0.7);
@@ -5071,6 +5168,8 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
 </style>
 </head>
 <body>
+<!-- v0.3.8bj: 빌드 버전 고정 배지 — 타이틀/전투 무관 항상 우하단에 표시. 캐시 진단용 (어느 폰이 옛 빌드인지 즉시 확인). -->
+<div id="build-badge" style="position:fixed; bottom:4px; right:6px; z-index:99999; font-size:9px; font-family:'JetBrains Mono',monospace; color:rgba(180,200,220,0.55); background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:6px; pointer-events:none; letter-spacing:0.02em;">···</div>
 <div id="app">
 
   <!-- ============================================================
@@ -5147,6 +5246,13 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
         <span id="dev-unlock-status" class="dev-unlock-status">해금: ?</span>
         <button class="dev-btn" onclick="devToggleForceUnlock()">강제해금 토글</button>
         <button class="dev-btn" onclick="devResetUnlock()">해금 리셋</button>
+      </div>
+      <!-- v0.3.8bj: 캐시/버전 도구 — 캐시 문제 진단·해결 (GitHub Pages/Safari PWA) -->
+      <div class="dev-unlock-tools" style="margin-top:4px;">
+        <span class="dev-unlock-status" id="dev-build-label">build: ?</span>
+        <button class="dev-btn" onclick="devHardRefresh()">앱 새로고침(캐시 우회)</button>
+        <button class="dev-btn" onclick="devClearCaches()">캐시/저장소 초기화</button>
+        <button class="dev-btn" onclick="devCopyVersionLink()">버전 링크 복사 (?v=)</button>
       </div>
     </div>
     <div id="dev-mode-list" class="dev-mode-list"><!-- JS가 섹션/항목 렌더 --></div>
@@ -5331,6 +5437,12 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
           <button class="battle-btn active" id="btn-x1" onclick="setSpeed(3)" style="display:none;">x1</button>
           <button class="battle-btn" id="btn-x3" onclick="setSpeed(6)" style="display:none;">x2</button>
           <button class="battle-btn" id="btn-x6" onclick="setSpeed(12)" style="display:none;">x6</button>
+          <!-- v0.3.8bo [QA 인프라]: DEV 한정 관측 종료 — bn의 전장 좌상단 배치가 live-taunt-panel(같은 좌표, z41)에
+               가려져 클릭 불가였음(루다 관측). 컨트롤 줄은 일반 레이아웃 흐름이라 어떤 패널도 못 가린다.
+               노출은 loadStage의 _isDevDebugContext 가드 — 일반런 절대 노출 X. -->
+          <button class="battle-btn" id="btn-observe-end" onclick="devObserveEnd()" style="display:none;" title="관측 종료 — 발자취 저장 (OBSERVE)">⏸ 관측저장</button>
+          <!-- v0.3.8bq [QA]: DEV 패널 접기 — x1 손맛 검증 때 화면 가림 방지. 손맛 연출은 항상 보임. -->
+          <button class="battle-btn" id="btn-dev-panels" onclick="toggleDevPanels()" style="display:none;" title="디버그 패널 접기/펴기 (손맛 연출은 항상 보임)">🙈</button>
         </div>
       </div>
       <!-- 스테이지 고유 이름 + 다음 칸 예고 보조문장 (한 줄, 진행을 방해하지 않게 짧게) -->
@@ -5347,6 +5459,7 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
 
     <div class="battlefield" id="battlefield">
       <svg class="battle-svg" id="battle-svg"></svg>
+      <!-- v0.3.8bo: 관측 종료 버튼은 전장 좌상단(패널과 겹침)에서 상단 컨트롤 줄로 이주 — 가림 원천 차단 -->
       <div id="dev-fx-replay" style="display:none; position:absolute; top:4px; right:4px; z-index:40; flex-direction:column; gap:3px;">
         <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevTauntBindReplayForce();">① 도발 결속 재생</button>
         <button class="dev-btn small" style="font-size:10px; padding:3px 7px;" onclick="runDevTauntSplitReplayForce(); updateTauntSplitReadout();">② 도발 분산 재생</button>
@@ -6000,7 +6113,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8bi-split-guard-order-fix";
+const BUILD_VERSION = "v0.3.8bt-quiet-reserve";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6070,6 +6183,9 @@ const DEV_MODE_MENU = [
     { presetKey: "assassin_s25", desc: "무영단장 보스 / 보호·제어로 끊기" },
     { presetKey: "assassin_split_repro", desc: "★연출 재현 — 도발 분산(피격 전 가로막기)+추적자 간파 / 발동 보장" },
     { presetKey: "assassin_clone_observe", desc: "★분신 관측실 — 분신/조준/간파 긴 턴 (죽지 않는 무대)" },
+    { presetKey: "qa_a1_bind", desc: "★QA 스모크 — A-1(전사/수문장/추적자/신관) S8 / 계기판 0순위" },
+    { presetKey: "qa_c1_guard", desc: "★QA C군 — 전사/수문장/신관/바드 (추적자 無) S8 / 분산 무대" },
+    { presetKey: "qa_b1_tracker", desc: "★QA B군 — 추적자/도적/덫꾼/신관 (도발 無) S8" },
   ]},
 ];
 
@@ -6284,6 +6400,47 @@ const DEV_STAGE_PRESETS = {
              { kind: "trait", id: "heal" },           // 사제 — 후열 유지
              { kind: "trait", id: "snipe" },           // 저격 — 딜러
              { kind: "trait", id: "disrupt" } ],        // 교란 — 비-도발 전열 딜러 (도발 격리)
+  },
+  // v0.3.8bn [QA 인프라 — 유키 결: "qa_a1_bind는 S8 시작"]: 루다 0순위 계기판 스모크용 A-1 파티.
+  //   목적: 클리어 검증이 아니라 bindOkCount/tauntSplitCount/trackerRevealCount를 짧게 읽는 무대.
+  //   S8 = 암살자 테마 "그림자 결속" (silent_killer markOnTurn 0.6 — 표식이 자주 걸려 결속/분산 관측에 적합).
+  //   나라님 인간 시간 보호 — 긴 일반런 반복 없이 A-1 파티를 바로 세운다. 밸런스 무관(관측 전용).
+  qa_a1_bind: {
+    label: "QA 스모크 A-1 — 전사/수문장/추적자/신관", startStage: 8, themeId: "assassin",
+    purpose: "0순위 계기판 스모크 — bindOk/tauntSplit/trackerReveal 판독용 (클리어 검증 아님)", type: "qa_smoke",
+    lockComposition: true,   // v0.3.8bo [유키 결: "A-1 스모크는 4인 고정성 우선"]: 성장/합체/영입 화면 건너뜀 — 조성 오염 방지 (S8 합체로 전사+신관→선봉 소실됐던 루다 관측)
+    traitLevels: { bravery: 2, guard: 2, blessing: 1 },
+    party: [ { kind: "trait", id: "bravery" },              // 전사 — 도발 (결속의 한 축)
+             { kind: "fusion", id: "gatekeeper", lvl: 2 },  // 수문장 — 도발 탱커 (결속의 다른 축)
+             { kind: "fusion", id: "tracker", lvl: 2 },     // 추적자 — 은신 간파 (축1 관측)
+             { kind: "trait", id: "blessing" } ],            // 신관 — 후열 (표식 대상 후보)
+  },
+  // v0.3.8bp [QA C군 — 유키 결: "추적자 없는 보호군에서 분산 무대가 살아나는지 본다"]:
+  //   A-1과의 비교군. 추적자가 없으니 은신 간파가 없다 → 암살자가 armed 기습까지 살아남는다
+  //   → 기습이 풍부해지고, 전사/수문장 도발 결속이 실제 분산으로 이어지는지 관측 (split 2~4 목표는 여기).
+  //   "추적자가 칼을 먼저 잡는다" 가설을 A군↔C군 대조로 확정하는 자리. 밸런스 무관(관측 전용).
+  qa_c1_guard: {
+    label: "QA C군 — 전사/수문장/신관/바드 (추적자 無)", startStage: 8, themeId: "assassin",
+    purpose: "비교군 — 간파 없는 무대에서 기습 빈도·도발 결속→분산 연결 관측 (split 2~4 목표)", type: "qa_smoke",
+    lockComposition: true,   // A-1과 같은 조성 고정 — 비교군은 변수가 적을수록 좋다
+    traitLevels: { bravery: 2, guard: 2, blessing: 1 },
+    party: [ { kind: "trait", id: "bravery" },              // 전사 — 도발 (결속 축)
+             { kind: "fusion", id: "gatekeeper", lvl: 2 },  // 수문장 — 도발 탱커 (결속 축)
+             { kind: "trait", id: "blessing" },              // 신관 — 후열 (표식 대상 후보)
+             { kind: "fusion", id: "bard", lvl: 2 } ],       // 바드 — 후열 지원 (간파 없음, 표식 대상 후보)
+  },
+  // v0.3.8bt [QA B군 — 유키 결: "추적자 하나로 은신·표식·기습 테마 압력이 너무 쉽게 꺼지는지 확인"]:
+  //   축1 만능키 검증. 도발이 없으니 분산 무대는 닫힘(tauntSplitCount ≈ 0 정상) — 간파/표식 지표가 주인공.
+  //   루다 판독: trackerReveal / markInterrupted / markCount / markedStrike / 기습률 / S10 통과 / 생존.
+  qa_b1_tracker: {
+    label: "QA B군 — 추적자/도적/덫꾼/신관 (도발 無)", startStage: 8, themeId: "assassin",
+    purpose: "축1 만능키 검증 — 추적자 간파가 테마 압력을 얼마나 끄는지 (도발 없음, split≈0 정상)", type: "qa_smoke",
+    lockComposition: true,   // A/C군과 같은 조성 고정 — 비교군 변수 최소화
+    traitLevels: { snipe: 2, disrupt: 2, blessing: 1 },
+    party: [ { kind: "fusion", id: "tracker", lvl: 2 },     // 추적자 — 간파 (축1의 주인공)
+             { kind: "fusion", id: "rogue", lvl: 2 },       // 도적 — 처형 딜러
+             { kind: "fusion", id: "trapper", lvl: 2 },     // 덫꾼 — 제어/덫
+             { kind: "trait", id: "blessing" } ],            // 신관 — 후열 (표식 대상 후보)
   },
 };
 
@@ -7173,6 +7330,49 @@ function openDevMode() {
   }
   showScreen("screen-dev-mode");
   devRefreshUnlockStatus();
+  // v0.3.8bj: DEV 열 때 build 라벨 채움 (현재 빌드 즉시 확인)
+  const _bl = document.getElementById("dev-build-label");
+  if (_bl) _bl.textContent = "build: " + ((typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?");
+}
+
+// v0.3.8bj [캐시 도구 — 유키/나라 결: "어느 폰이 옛 빌드인지, 어떻게 최신으로"]:
+//   앱 새로고침(캐시 우회): URL에 ?v=빌드명을 붙여 강제 재요청 → GitHub Pages/Safari가 새 index.html을 받게.
+function devHardRefresh() {
+  const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : Date.now();
+  const base = location.href.split("?")[0].split("#")[0];
+  location.replace(base + "?v=" + encodeURIComponent(ver) + "&t=" + Date.now());
+}
+// 캐시/저장소 초기화: cache storage(있으면) + localStorage/sessionStorage 비우고 새로고침.
+async function devClearCaches() {
+  try {
+    if (window.caches && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (e) { console.warn("[cache] clear caches 실패", e); }
+  try { if (window.localStorage) localStorage.clear(); } catch (e) {}
+  try { if (window.sessionStorage) sessionStorage.clear(); } catch (e) {}
+  // service worker 안 쓰지만, 혹시 과거 등록분이 있으면 해제
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch (e) {}
+  alert("캐시/저장소 초기화 완료 — 새로고침합니다.\n(Safari는 여전히 옛 버전이면: 공유→홈화면 앱 삭제 후 재설치 / Safari 설정→방문기록·데이터 지우기)");
+  devHardRefresh();
+}
+// 버전 링크 복사: ?v=빌드명 형태 — 다른 폰에 보낼 때 캐시 우회 링크.
+function devCopyVersionLink() {
+  const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?";
+  const base = location.href.split("?")[0].split("#")[0];
+  const link = base + "?v=" + encodeURIComponent(ver);
+  const done = () => alert("버전 링크 복사됨:\n" + link + "\n\n다른 폰에서 이 링크로 열면 최신 빌드를 강제로 받습니다.");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(done).catch(() => { prompt("복사해서 쓰세요:", link); });
+  } else {
+    prompt("복사해서 쓰세요:", link);
+  }
 }
 
 /* v0.3.8ak1: DEV 해금 도구 — 상태 표시 / 강제해금 토글 / 리셋. */
@@ -7238,6 +7438,7 @@ function devJumpToStage(presetKey) {
     testId: preset.testId || presetKey,
     startStage: preset.startStage,
     preset: presetKey,
+    lockComposition: !!preset.lockComposition,   // v0.3.8bo [QA]: 조성 고정 런 — 성장/합체/영입 건너뜀
     themeId: runState.themeId,   // v0.3.8al STEP5: 로그에 themeId (유키 요구 — themeId/stage/presetName)
     // v0.3.8ab: devPresetMeta — 로그 해석을 위한 프리셋 정보 (시작 누적/스탯/재현형 여부)
     devPresetMeta: {
@@ -9190,6 +9391,7 @@ function initRunFromParty() {
     stealthCount: 0,          // 은신 진입 횟수
     markedStrikeCount: 0,     // 표식 기습(armed) 성립 횟수
     tauntSplitCount: 0,       // 도발 칼끝 분산 발동 횟수
+    bindOkCount: 0,           // v0.3.8bm [QA 계기판]: 도발 결속 성립 횟수 — [BIND_OK]의 숫자판. 루다가 JSON으로 "결속됐는데 분산이 적은지 / 결속 자체가 부족한지" 가른다.
     tauntSplitDamageShared: 0,// v0.3.8au: 도발 영웅이 나눠 받은 총 피해(진실 확인용)
     trackerRevealCount: 0,    // 추적자 색적/간파로 은신 벗긴 횟수
     markInterruptedCount: 0,  // 색적으로 표식이 흐트러진 횟수
@@ -9266,6 +9468,13 @@ function loadStage(stageNum, enemiesOverride) {
   // v0.3.8at: DEV 연출 재생 버튼 — DEV 모드 + 암살자 테마일 때만 노출 (그 외 숨김)
   const _fxBtn = document.getElementById("dev-fx-replay");
   if (_fxBtn) _fxBtn.style.display = (_isDevDebugContext() && runState.themeId === "assassin") ? "flex" : "none";
+  // v0.3.8bn→bo [QA 인프라]: 관측 종료 버튼 — DEV 프리셋 런에서만 (테마 무관, 일반런 절대 노출 X).
+  //   bo: 전장 좌상단 div → 컨트롤 줄 버튼(btn-observe-end)으로 이주 (live-taunt-panel 가림 수정).
+  const _obsBtn = document.getElementById("btn-observe-end");
+  if (_obsBtn) _obsBtn.style.display = _isDevDebugContext() ? "" : "none";
+  // v0.3.8bq: 패널 접기 버튼 — 같은 가드. 일반런 절대 노출 X.
+  const _pnlBtn = document.getElementById("btn-dev-panels");
+  if (_pnlBtn) _pnlBtn.style.display = _isDevDebugContext() ? "" : "none";
   // v0.3.8bg: ③ 분신 재현 버튼 — 분신 실험 OFF면 숨김 (분신 컷, 구조 보존).
   const _cloneBtn = document.getElementById("dev-clone-replay-btn");
   if (_cloneBtn) _cloneBtn.style.display = ENABLE_CLONE_EXPERIMENT ? "block" : "none";
@@ -9462,6 +9671,9 @@ function tickBattle() {
   // v0.3.8o: 전투 진행 시간 누적 (x1 환산). 자체 5조건 게이트로 전투 시간만 집계.
   updateRunTimeStats();
 
+  // v0.3.8bs: 보호 예고선 유지 — 유효 예약일 때만 그려지고, 깨지면 즉시 사라진다 (조건은 함수 내부).
+  updateTauntWatchLine();
+
   runState.tickCount++;
   const speedMult = battleState.speed;
   const tickGauge = 1.0 * speedMult;  // 50ms당 게이지 증가량 (v0.1: 0.7 → 1.0 / 기본 체감 강화)
@@ -9516,6 +9728,7 @@ function getActiveTauntor() {
 function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   // v0.3.8ax LIVE 추적: 실전 분산 경로 진입 (B 진단 — 발동은 하는데 연출이 연결되나).
   liveTauntTrace("LIVE_TAUNT_SPLIT_ENTER");
+  console.log("[SPLIT_FIRE]", actor.name, "기습 →", marked.name, "/ 분산 guard:", tauntor.name, "총", totalDmg);  // v0.3.8bl: 일반런 진단(콘솔만)
   // 총 피해를 50:50 (반올림 관례: 도발 몫 floor, 표식 몫 나머지 → 총합 보존)
   const tauntShare = Math.floor(totalDmg * 0.5);
   const markShare = totalDmg - tauntShare;   // 총합 = totalDmg (어긋남 0)
@@ -9530,6 +9743,10 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
   drawLine(actor, marked, "attack");
 
   // ②③④ 짧은 예고 멈춤 뒤 — 기습이 들어올 때 이미 맺어둔 결속 링크가 *다시 밝아진다* (분산은 링크의 발동) [공용 연출 헬퍼]
+  // v0.3.8bq: protect — 같은 tick 창에서 전투가 끝나면(checkBattleEnd→clearTrackedFxTimers) 이 지연
+  //   연출+피해가 통째로 취소돼 "count만 오르고 화면은 침묵"이 됐다 (루다: 계기판 3 vs 목격 1).
+  //   분산은 count가 이미 박힌 사건 — 연출과 피해도 반드시 같은 말을 한다. (피해는 dealDamage→markIfDead→
+  //   checkBattleEnd가 battleEnding lock으로 이중 종료를 막아 안전. 800ms 종료 연출 안에서 끝남.)
   fxTimeout(() => {
     showTauntInterveneText(tauntor, "분산!");   // 텍스트 하나 "분산!" + 중앙 배너
     const _linkOk = drawTauntLink(marked, tauntor, { mode: "reignite" });   // ④ 결속 링크 재점화 (DEV와 동일 공용 함수)
@@ -9546,8 +9763,8 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
         dealDamage(actor, marked, tauntShare, { isSplit: true });
       }
       liveTauntTrace("LIVE_TAUNT_SPLIT_APPLIED ✓");
-    }, 130);
-  }, 140);
+    }, 130, { protect: true });
+  }, 140, { protect: true });
 
   if (runState._themeAssassinStats) {
     runState._themeAssassinStats.tauntSplitCount += 1;
@@ -9566,11 +9783,12 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
 }
 
 // v0.3.8at: 도발 개입 중앙 배너 — "확실히 보이는" 한 박자 (전장 중앙).
-function showInterveneBanner(text) {
+function showInterveneBanner(text, kind) {
   const bf = document.getElementById("battlefield");
   if (!bf) return;
   const banner = document.createElement("div");
-  banner.className = "taunt-intervene-banner";
+  // v0.3.8br: kind "split"이면 분산 전용 위계 (핫코어/펀치/긴 유지). 기본형(결속 등)은 기존 그대로.
+  banner.className = "taunt-intervene-banner" + (kind === "split" ? " split" : "");
   banner.textContent = text;
   bf.appendChild(banner);
   setTimeout(() => banner.remove(), 1000);
@@ -9638,7 +9856,7 @@ function drawTauntLink(marked, tauntor, opts = {}) {
   knot.setAttribute("width", "20");
   knot.setAttribute("height", "20");
   const knotDiv = document.createElement("div");
-  knotDiv.className = "taunt-link-knot-icon";
+  knotDiv.className = "taunt-link-knot-icon" + (isReignite ? " reignite-burst" : "");   // v0.3.8br: 분산 매듭만 순간 발광
   knotDiv.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;";
   knotDiv.textContent = knotIcon;
   knot.appendChild(knotDiv);
@@ -9669,20 +9887,54 @@ function bindTauntGuardToMarked(tauntor) {
   const marked = runState.units.find(u =>
     u.alive && u._marked > 0 && u.uid !== tauntor.uid);
   if (!marked) return false;
+  // v0.3.8bs [유키 결: "상시 결속처럼 보이지 않게"]: 같은 guard로의 *갱신* 결속(전사 도발/수문장
+  //   막아서기가 행동마다 다시 맺는 경우)은 사슬/라벨/이벤트 피드 연출을 생략한다 — 예약 중임은
+  //   보호 예고선(taunt-watch-line)이 조용히 말한다. 새 결속/guard 교체만 연출.
+  //   계기판 불변: bindOkCount/[BIND_OK]/DEV trace는 갱신에도 그대로 (루다에게 보고된 정의 유지).
+  const _isRefresh = !!(marked._markGuardLinked && marked._markGuardUid === tauntor.uid);
   marked._markGuardUid = tauntor.uid;
   marked._markGuardName = tauntor.name;
   marked._markGuardLinked = true;
-  // 미리보기 링크 + 결속 텍스트 ("연결됐다" 느낌) — v0.3.8bf: 결속은 *작은 신호*. 중앙 대형 배너 제거.
-  //   링크가 주인공 / 텍스트는 도발 영웅 위 작은 라벨만. DEV 강조 모드에서만 중앙 배너로 크게.
-  fxTimeout(() => {
-    drawTauntLinkPreview(marked, tauntor);
-    showActionLabel(tauntor, "도발 결속", "taunt");   // 유닛 위 작은 플로팅 라벨 (느낌표 빼서 더 잔잔하게)
-    if (document.body.classList.contains("fx-debug-strong")) showInterveneBanner("도발 결속!");
-  }, 130);
-  pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b>의 표식에 결속했다 — 도발 결속! (기습 시 함께 나눠 받는다)`, "taunt");
-  liveTauntTrace(`결속 예약: ${tauntor.name} ⇄ ${marked.name} (_markGuardUid 박힘)`, true);
+  // v0.3.8bf→bt: 예약 연출의 최종 폴리시 — 유키 결: "암살자 축2의 예약은 [결속]이라는 강한 이름을
+  //   전면에 내세우지 않는다. 텍스트 없음 / 얇은 청록 점선 / '나야, 너 보고 있어.'"
+  //   사슬 미리보기(drawTauntLinkPreview)·"도발 결속" 라벨 제거 — 예약 중임은 보호 예고선
+  //   (taunt-watch-line, 다음 tick에 자동 표시)이 조용히 말한다. 강한 [결속] 아이덴티티는
+  //   성벽 계열의 미래 후보로 남긴다 (drawTauntLinkPreview 함수는 구조 보존 — DEV 재현 전용).
+  //   피드는 새 예약 1회만, 이름 없는 조용한 정보 문장으로. (계기판 bindOkCount/[BIND_OK]/DEV 진단 용어는 유지)
+  if (!_isRefresh) {
+    if (document.body.classList.contains("fx-debug-strong")) {
+      fxTimeout(() => { drawTauntLinkPreview(marked, tauntor); showInterveneBanner("도발 결속!"); }, 130);  // DEV 강조 모드 한정
+    }
+    pushEvent(`<b>${tauntor.name}</b>이(가) <b>${marked.name}</b>을(를) 조용히 지켜봅니다 — 기습이 오면 끼어든다`, "info");
+  }
+  liveTauntTrace(`결속 ${_isRefresh ? "갱신" : "예약"}: ${tauntor.name} ⇄ ${marked.name} (_markGuardUid 박힘)`, true);
   updateLiveTauntBindPanel(marked.name, tauntor.name);   // v0.3.8bf: 결속 상태 ON 표시 (피해 없음 — 예약만)
+  console.log("[BIND_OK]", tauntor.name, "⇄", marked.name, "(armed:", marked._markArmed, ")");  // v0.3.8bl: 일반런 진단(콘솔만)
+  // v0.3.8bm [QA 계기판 — 유키 승인]: [BIND_OK]를 콘솔 너머 숫자로. 누락값은 0으로 안전 처리.
+  if (runState._themeAssassinStats) {
+    runState._themeAssassinStats.bindOkCount = (runState._themeAssassinStats.bindOkCount || 0) + 1;
+  }
   return true;
+}
+
+// v0.3.8bk [결속 창 넓힘 — 유키 결 A: "도발 상태 살아있는 동안 새 표식 걸리면 즉시 자동 결속"]:
+//   bind 후크는 이벤트 시점(도발 행동/표식 부여)에만 돌았다 → 타이밍 창이 좁아 결속 자주 누락 → 분산 드묾.
+//   이 함수는 *아직 결속 안 된 살아있는 표식 대상*이 있고 *살아있는 도발 유닛*이 있으면 결속을 성립시킨다.
+//   매 적 행동 직후 + armed 전환 루프에서 호출 → "도발을 챙겨두면 사냥감 지정에 대응된다"는 자세가 실제로 작동.
+function ensureTauntBindForMarked() {
+  if (runState._cloneObserveMode) return false;
+  // 살아있는 도발 유닛 (latest 우선 — 기존 규칙 일관)
+  const tauntor = getActiveTauntor();
+  if (!tauntor || !tauntor.alive) return false;
+  // 아직 결속 안 됐거나, 결속 guard가 죽은 표식 대상 (자기 자신 제외)
+  const needBind = runState.units.find(u => {
+    if (!(u.alive && u._marked > 0 && u.uid !== tauntor.uid)) return false;
+    if (!u._markGuardLinked) return true;                       // 결속 자체가 없음
+    const g = runState.units.find(x => x.uid === u._markGuardUid);
+    return !(g && g.alive);                                     // 결속 guard가 죽음 → 재결속 가능
+  });
+  if (!needBind) return false;
+  return bindTauntGuardToMarked(tauntor);   // 표식 대상 자동 탐색 + 결속 (링크/라벨 포함)
 }
 
 // v0.3.8bh [디버그 UI 격리 — 유키 결: "일반 플레이에선 디버그 숨기고 손맛 연출만 남긴다"]:
@@ -9692,6 +9944,82 @@ function bindTauntGuardToMarked(tauntor) {
 function _isDevDebugContext() {
   return (typeof DEV_MODE_ENABLED !== "undefined" && DEV_MODE_ENABLED)
       && !!(runState && runState.devTest);
+}
+
+// v0.3.8bn [QA 인프라 — 유키 결: result:"OBSERVE" / reason:"observe_end" / runSource:"dev_observe"]:
+//   DEV 한정 관측 종료 — 단일 스테이지 관측 뒤 전멸/완주를 기다리지 않고 발자취 JSON을 건진다.
+//   기존 finalizeRunResult → showResult → saveFootprint 경로 그대로 재사용 (새 저장 경로 X).
+//   OBSERVE는 승/패가 아니다 — 루다의 승률/실패 분류 통계에서 result로 즉시 거를 수 있게 분리.
+function devObserveEnd() {
+  if (!_isDevDebugContext()) return;          // 일반런 차단 (버튼 숨김 + 함수 이중 안전)
+  if (runState.runEnded) return;              // 이미 끝난 런 중복 방지
+  if (runState.devTest) runState.devTest.observeEnd = true;   // → runSource "dev_observe"
+  pushEvent("▸ 관측 종료 — 발자취를 저장합니다 (OBSERVE)", "system");
+  finalizeRunResult("OBSERVE", "observe_end");
+}
+
+// v0.3.8bq [DEV 손맛 최소화 모드]: 디버그 패널만 접는다 (손맛 연출은 항상). 일반런엔 버튼 자체가 없다.
+function toggleDevPanels() {
+  if (!_isDevDebugContext()) return;
+  const hidden = document.body.classList.toggle("dev-panels-hidden");
+  const btn = document.getElementById("btn-dev-panels");
+  if (btn) btn.textContent = hidden ? "👁" : "🙈";
+  pushEvent(hidden ? "▸ [DEV] 디버그 패널 접음 — 손맛 검증 모드" : "▸ [DEV] 디버그 패널 폄", "system");
+}
+
+// v0.3.8bs [보호 예고선 — 유키 결: "예약은 약하게"]: 유효한 결속 예약이 살아있는 동안만,
+//   도발 영웅 → 표식 대상에게 아주 연한 숨결 선을 유지한다. "너를 보고 있어. 여차하면 도와줄게."
+//   노출 3조건 (전부 충족 시에만): ① 표식 생존(_marked>0) ② 결속 예약 성립(_markGuardLinked)
+//   ③ guard 생존. 조건이 깨지면(기습 소비/간파/사망) 다음 tick에 즉시 사라진다.
+//   사건이 아니라 정보 — 1쌍만, 최약 톤, 매듭/앵커 링 없음. 기능/수치 무관(순수 표시).
+function findTauntWatchPair() {
+  if (!runState || !runState.units) return null;
+  if (runState._cloneObserveMode || runState._fxReplayLock) return null;
+  const marked = runState.units.find(u =>
+    u.alive && u._marked > 0 && u._markGuardLinked && u._markGuardUid);
+  if (!marked) return null;
+  const guard = runState.units.find(x => x.uid === marked._markGuardUid);
+  if (!guard || !guard.alive || guard.uid === marked.uid) return null;
+  return { marked, guard };
+}
+function updateTauntWatchLine() {
+  const svg = document.getElementById("battle-svg");
+  if (!svg) return;
+  const old = svg.querySelector("#taunt-watch-line");
+  const pair = battleState.running ? findTauntWatchPair() : null;
+  if (!pair) { if (old) old.remove(); return; }
+  const a = getTauntLinkAnchor(pair.marked, pair.guard);
+  const b = getTauntLinkAnchor(pair.guard, pair.marked);
+  if (!a || !b) { if (old) old.remove(); return; }
+  const mx = (a.x + b.x) / 2;
+  const dist = Math.hypot(b.x - a.x, b.y - a.y);
+  const bow = Math.max(Math.min(dist * 0.14, 20), 8);   // 사슬(0.18/28)보다 낮은 아치 — 더 조용한 선
+  const ctrlY = (a.y + b.y) / 2 - bow;
+  const d = `M ${a.x} ${a.y} Q ${mx} ${ctrlY} ${b.x} ${b.y}`;
+  if (old) { old.setAttribute("d", d); return; }        // 갱신만 — 매 tick 재생성 X (숨결 애니 보존)
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  line.setAttribute("id", "taunt-watch-line");
+  line.setAttribute("class", "taunt-watch-line");
+  line.setAttribute("d", d);
+  svg.insertBefore(line, svg.firstChild);               // 가장 뒤 레이어 — 행동선/링크가 항상 위
+}
+
+// v0.3.8bs [방패 충돌 — 유키 결: "발동은 강하게 / 검이 방패에 튕기는 느낌"]:
+//   분산 발동 순간 도발 영웅에서 충돌 링이 퍼지고 portrait가 한 번 번쩍인다 (0.45s 한 박자).
+//   transform은 자체 링 요소에만 — 아바타 scale 보존 결 유지 (portrait는 filter만).
+function showShieldClash(tauntor) {
+  if (!tauntor) return;
+  const tEl = document.querySelector(`[data-uid="${tauntor.uid}"]`);
+  if (!tEl) return;
+  const portrait = tEl.querySelector(".unit-portrait") || tEl;
+  portrait.classList.remove("split-clash-flash");
+  void portrait.offsetWidth;                            // 연속 분산 시 플래시 재시작 보장
+  portrait.classList.add("split-clash-flash");
+  setTimeout(() => portrait.classList.remove("split-clash-flash"), 450);
+  const ring = document.createElement("div");
+  ring.className = "split-clash-ring";
+  portrait.appendChild(ring);
+  setTimeout(() => ring.remove(), 480);
 }
 
 // v0.3.8au: DEV 실시간 분산 카운터 갱신 — "기능이 실제로 도는가"를 화면으로 (확인 전용).
@@ -9734,8 +10062,13 @@ function showSplitDamage(target, amount) {
 }
 function showTauntInterveneText(tauntor, text) {
   const t = text || "분산!";
-  if (tauntor) showActionLabel(tauntor, t, "taunt");
-  showInterveneBanner(t);
+  // v0.3.8br [위계 분리]: 분산은 전용 위계 — split 라벨(흰-청록, 보호됨) + split 배너(핫코어) +
+  //   방패 순간 반응(showTauntShield — az부터 정의만 있던 미사용 연출을 분산의 자리로 재사용).
+  // v0.3.8bs [유키 결: "발동은 강하게"]: 방패 충돌(확장 링 + portrait 플래시) 추가 — "검이 방패에 튕겼다".
+  if (tauntor) showActionLabel(tauntor, t, "split");
+  showInterveneBanner(t, "split");
+  if (tauntor) showTauntShield(tauntor);
+  if (tauntor && typeof showShieldClash === "function") showShieldClash(tauntor);
 }
 function showTauntShield(tauntor) {
   if (!tauntor) return;
@@ -10071,12 +10404,9 @@ function _assassinApplyMark(actor) {
   }
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(actor, "은신", "debuff"), 240);
   pushEvent(`<b>${actor.name}</b>가 표식을 남기고 그림자 속으로 숨었다 — 은신`, "debuff");
-  // v0.3.8ay: 표식이 걸리는 순간 이미 살아있는 도발 영웅이 있으면 즉시 결속 (그 한 박자에 연결).
-  //   순서가 "도발 먼저 → 표식"일 때도 결속이 누락되지 않게.
-  const _existingTauntor = getActiveTauntor();
-  if (_existingTauntor && _existingTauntor.uid !== target.uid) {
-    bindTauntGuardToMarked(_existingTauntor);
-  }
+  // v0.3.8ay→bl: 표식이 걸리는 순간 살아있는 도발 영웅이 있으면 즉시 결속 (그 한 박자에 연결).
+  //   getActiveTauntor 단발 대신 ensureTauntBindForMarked로 — 결속 안 된 표식을 견고하게 따라잡는다.
+  ensureTauntBindForMarked();
 }
 
 function _nagaAbsorbPoison(actor) {
@@ -10181,6 +10511,9 @@ function executeAction(actor) {
   let actionType;
   if (actor.side === "enemy") {
     actionType = "enemy_attack";
+    // v0.3.8bk [결속 창 넓힘 — 유키 결 A]: 적이 행동할 때마다, 살아있는 도발 유닛이 있고 아직 결속 안 된
+    //   표식 대상이 있으면 즉시 자동 결속. "도발을 챙겨두면 사냥감 지정에 대응된다"는 자세가 실제로 작동.
+    ensureTauntBindForMarked();
     // v0.3.8bb: 분신 소환 — cloneSummon>0이고 아직 안 썼으면 첫 행동에 "분신!" (그림자 분신 N기). 1회.
     // v0.3.8bg: 분신 소환 — 실험 플래그 ON일 때만. 플래그 OFF면 일반런 분신 비활성화(컷, 구조 보존).
     if (ENABLE_CLONE_EXPERIMENT && actor.cloneSummon > 0 && !actor._cloneSummoned) {
@@ -10200,6 +10533,8 @@ function executeAction(actor) {
           pushEvent(`<b>${actor.name}</b>의 조준이 <b>${u.name}</b>에게 고정됐다 — 기습 준비`, "debuff");
         }
       });
+      // v0.3.8bk: 조준 완료(armed) 시점에도 결속 보장 — 기습 직전 마지막 창. 도발 챙겼으면 분산으로 이어진다.
+      ensureTauntBindForMarked();
       runState.units.forEach(u => {
         if (u.alive && u._marked > 0) u._marked -= 1;
         if (u._marked <= 0) { u._markSourceUid = null; u._markArmed = false; u._markGuardUid = null; u._markGuardName = null; u._markGuardLinked = false; }
@@ -12797,7 +13132,12 @@ window.debugFxCount = function() {
    FX의 cleanup용 setTimeout을 이 헬퍼로 감싸면 battleState.fxTimers에 등록 →
    전투가 짧게 끝나도(x6) 예약 콜백이 다음 전투로 넘어가 실행되지 않는다.
    기존 setTimeout을 전부 바꾸지 않고, 무거운 FX(파동/펄스)부터 점진 전환 (욕심 안 내기). */
-function fxTimeout(fn, ms) {
+function fxTimeout(fn, ms, opts) {
+  // v0.3.8bq [계기판↔연출 정합 — 유키 결: "계기판과 화면이 같은 말을 하게"]:
+  //   protect:true 타이머는 fxTimers 레지스트리에 안 올림 → clearTrackedFxTimers(전투 종료 청소)가 못 끊는다.
+  //   용도: 분산처럼 count가 이미 올라간 사건의 연출+피해 적용 (끊기면 계기판만 참이 되는 거짓 화면).
+  //   안전: 보호 타이머는 ≤300ms 단발만 쓴다 — 종료 연출(800ms) 안에서 끝나 다음 전투로 안 샌다.
+  if (opts && opts.protect) return setTimeout(fn, ms);
   if (!battleState.fxTimers) battleState.fxTimers = [];
   const id = setTimeout(() => {
     // 실행 시 레지스트리에서 자기 제거 (배열 무한 증가 방지)
@@ -13086,11 +13426,25 @@ function onStageClear() {
   }
 
   if (phase === "growth") {
+    // v0.3.8bo [QA 조성 고정 — 유키 결]: lockComposition 런은 성장 선택 없이 진행 (판독 변수 고정).
+    if (runState.devTest && runState.devTest.lockComposition) {
+      pushEvent("▸ [QA] 조성 고정 — 성장 선택 건너뜀", "system");
+      proceedToNextStage();
+      return;
+    }
     showGrowth();
     return;
   }
 
   if (phase === "fusion") {
+    // v0.3.8bo [QA 조성 고정 — 유키 결: "A-1 스모크는 4인 고정성 우선"]: lockComposition 런은
+    //   합체 화면을 건너뛴다. 루다 관측 — S8 합체에서 전사+신관→선봉 소실로 도발이 수문장 하나만
+    //   남아 split 판독이 오염됐다. 조성이 곧 비교 기준군이므로 깨지는 선택지를 아예 안 띄운다.
+    if (runState.devTest && runState.devTest.lockComposition) {
+      pushEvent("▸ [QA] 조성 고정 — 합체 선택 건너뜀 (A-1 유지)", "system");
+      proceedToNextStage();
+      return;
+    }
     // v0.3.7.3: 유키 PD 진단 결 — fusion phase에서 *항상 dump 박음*
     // 1) 콘솔 — 유닛 dump + 합체 분석
     const dump = dumpUnits();
@@ -13122,6 +13476,11 @@ function onStageClear() {
   }
 
   if (phase === "recruit") {
+    // v0.3.8bo [QA 조성 고정]: lockComposition 런은 영입도 건너뜀 (4인 고정 — legacy 경로까지 닫음).
+    if (runState.devTest && runState.devTest.lockComposition) {
+      proceedToNextStage();
+      return;
+    }
     // v0.3.3 → v0.3.8: S10 영입은 이제 S9에서 당겨왔으므로,
     //   여기 도달 시 이미 4인이면 그냥 통과. (legacy 안전망 — 3인이면 여전히 영입)
     runState.pendingFourthMember = false;
@@ -13137,7 +13496,7 @@ function onStageClear() {
   //   S10을 4인으로 맞이하게 해서 "3인 체크문"을 "첫 4인 확인전"으로 바꾼다.
   if (phase === "prep" && stageNum === 9) {
     runState.pendingFourthMember = false;
-    if (runState.units.length < 4) {
+    if (runState.units.length < 4 && !(runState.devTest && runState.devTest.lockComposition)) {
       pushEvent("▸ 새 동료 합류 준비 — 4인 파티로 STAGE 10 진입", "system");
       showFourthMember();
     } else {
@@ -13863,18 +14222,19 @@ function showResult() {
   const effectiveResult = snap ? snap.result : runState.result;
   const effectiveStage  = snap ? snap.stageFinal : runState.stage;
   const isWin = effectiveResult === "win";
+  const isObserve = effectiveResult === "OBSERVE";   // v0.3.8bn: 관측 종료 — 승/패 아님
   debugResult("showResult called", {
     effectiveResult, effectiveStage,
     runStateResult: runState.result, runStateStage: runState.stage,
     hasSnapshot: !!snap, token: runState.battleToken, runEnded: runState.runEnded,
   });
 
-  document.getElementById("result-status").textContent = isWin ? "▸ VICTORY" : "▸ DEFEAT";
-  document.getElementById("result-status").className = `result-status ${isWin ? "win" : "lose"}`;
+  document.getElementById("result-status").textContent = isWin ? "▸ VICTORY" : (isObserve ? "▸ OBSERVE" : "▸ DEFEAT");
+  document.getElementById("result-status").className = `result-status ${isWin ? "win" : (isObserve ? "observe" : "lose")}`;
   document.getElementById("result-title").textContent = isWin
     ? "25스테이지 완주 — 관측장의 끝"
-    : `STAGE ${effectiveStage}에서 패배`;
-  document.getElementById("result-title").className = `result-title ${isWin ? "win" : "lose"}`;
+    : (isObserve ? `STAGE ${effectiveStage} 관측 종료 — 발자취 저장됨` : `STAGE ${effectiveStage}에서 패배`);
+  document.getElementById("result-title").className = `result-title ${isWin ? "win" : (isObserve ? "observe" : "lose")}`;
   // v0.3.8al6 STEP3: 결과 화면에 테마/장면 컨텍스트 — "어느 길의 어느 장면" (나라님 결)
   const _tc = (typeof _themeContext === "function") ? _themeContext() : { themeName: "" };
   const _finalStage = (typeof getStageForTheme === "function") ? getStageForTheme(effectiveStage, runState.themeId) : null;
@@ -13882,7 +14242,9 @@ function showResult() {
   const _themeTag = _tc.themeName ? `[${_tc.themeName}] ` : "";
   document.getElementById("result-subtitle").textContent = isWin
     ? `${_themeTag}내 선택의 누적이 끝까지 박혔어.`
-    : `${_themeTag}S${effectiveStage}${_stageNameTxt} 도달 — 다음엔 다른 선택으로.`;
+    : (isObserve
+       ? `${_themeTag}S${effectiveStage}${_stageNameTxt} 관측 런 — 계기판 숫자만 가져간다.`
+       : `${_themeTag}S${effectiveStage}${_stageNameTxt} 도달 — 다음엔 다른 선택으로.`);
 
   // 요약
   const summary = document.getElementById("result-summary");
@@ -14242,7 +14604,10 @@ function _themeContext() {
   const theme = (typeof THEMES !== "undefined" && THEMES[themeId]) ? THEMES[themeId] : null;
   // 런 출처: devTest 있으면 dev_jump, 아니면 일반런
   const dev = runState.devTest;
-  const runSource = dev ? (dev.source === "dev_mode" ? "dev_jump" : (dev.source || "dev_jump")) : "normal_run";
+  const runSource = dev
+    ? (dev.observeEnd ? "dev_observe"   // v0.3.8bn: 관측 종료 런 — 점프 런과도 구분 (루다 필터용)
+       : (dev.source === "dev_mode" ? "dev_jump" : (dev.source || "dev_jump")))
+    : "normal_run";
   const startStage = dev && dev.startStage ? dev.startStage : 1;
   const isThemeRun = themeId !== "beginner";
   const themeRouteLabel = `${theme ? theme.name : themeId} 테마 ${runSource === "normal_run" ? "일반런" : "DEV런"}`;
@@ -14259,7 +14624,9 @@ function _themeContext() {
 function createFootprintFromRun() {
   if (!runState.runStats || !runState.runStats.perUnit) return null;
 
-  const result = runState.result === "win" ? "CLEAR" : "DEFEAT";
+  // v0.3.8bn: OBSERVE(관측 종료)는 승도 패도 아니다 — DEFEAT로 적으면 루다 실패 분류가 오염된다.
+  const result = runState.result === "win" ? "CLEAR"
+               : (runState.result === "OBSERVE" ? "OBSERVE" : "DEFEAT");
   const stageReached = runState.stage;
 
   // perUnit에서 결 모음
@@ -14431,6 +14798,7 @@ function createFootprintFromRun() {
     version: (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : null,
     ..._themeContext(),   // themeId / themeName / runSource / startStage / isThemeRun / themeRouteLabel
     result,
+    resultReason: (runState.resultSnapshot && runState.resultSnapshot.reason) || null,   // v0.3.8bo [QA]: observe_end / party_wipe / stage25_boss_clear — 루다 필터용
     stageReached,
     stageFinal: stageReached,
     finalStageName: (function() {
@@ -14653,7 +15021,8 @@ function renderFootprints() {
 
   const cardsHTML = list.map(fp => {
     const isClear = fp.result === "CLEAR";
-    const cls = isClear ? "is-clear" : "is-defeat";
+    const isObserve = fp.result === "OBSERVE";   // v0.3.8bn: 관측 런 — 패배색 금지 (거짓 표시 X)
+    const cls = isClear ? "is-clear" : (isObserve ? "is-observe" : "is-defeat");
     const dateStr = fmtDate(fp.ts);
 
     const finalPartyText = (fp.finalParty || []).map(u => {
@@ -14791,6 +15160,36 @@ function buildBalanceExportPayload() {
       "hydra_observation_log",
       "crush_trait_separate_from_execute",
       "phase_transition_common_framework",
+      // v0.3.8bm [유키 결: features가 오래된 세계선을 말하지 않게 — 수동 갱신]
+      "assassin_tracker_reveal",
+      "assassin_taunt_bind_window_strengthen",
+      "assassin_bind_ok_metric",
+      "assassin_taunt_split_metric",
+      "assassin_clone_flag_isolated",
+      "dev_debug_context_guard",
+      "build_badge_cache_tools",
+      // v0.3.8bn [QA 인프라 패치]
+      "qa_a1_bind_preset",
+      "dev_observe_end_button",
+      // v0.3.8bo [QA 인프라 패치 2]
+      "dev_observe_button_relocate",
+      "qa_a1_lock_composition",
+      "footprint_result_reason",
+      // v0.3.8bp [QA C군 비교군]
+      "qa_c1_guard_preset",
+      // v0.3.8bq [연출↔계기판 정합 패치]
+      "split_fx_protected_timing",
+      "intervene_banner_ally_side",
+      "dev_panel_minimize_toggle",
+      // v0.3.8br [분산 시각 위계 패치]
+      "split_visual_hierarchy",
+      // v0.3.8bs [축2 연출 폴리시 — 예약은 약하게, 발동은 강하게]
+      "taunt_watch_line",
+      "split_shield_clash",
+      "bind_refresh_fx_quiet",
+      // v0.3.8bt [예약=조용한 정보 / B군]
+      "axis2_reserve_quiet_language",
+      "qa_b1_tracker_preset",
     ],
     devStageTestBuild: (typeof DEV_STAGE_TEST !== "undefined" && DEV_STAGE_TEST) || false,
   };
@@ -15674,6 +16073,11 @@ function showActionLabel(unit, text, kind = "default") {
   if (!el) return;
   // v0.3.7.15: 중복 라벨 방지 — 같은 유닛에 이미 라벨이 박혀있으면 제거 후 새로 박음
   //   "한 행동에 대표 라벨 하나만"
+  // v0.3.8br [분산 라벨 보호]: C군은 적 행동마다 재결속이 돌아 "도발 결속" 라벨이 직후의 "분산!"을
+  //   지우고 있었다 (분산이 결속에 묻힌 코드 원인). 분산(split) 라벨이 살아있는 동안:
+  //   ① 다른 라벨이 분산을 지우지 못하고 ② 새 라벨은 양보한다 (분산 = 그 순간의 대표 라벨).
+  const _protSplit = el.querySelector(".action-label-split");
+  if (_protSplit && kind !== "split") return;
   el.querySelectorAll(".action-label").forEach(l => l.remove());
   const label = document.createElement("div");
   label.className = `action-label action-label-${kind}`;
@@ -15683,7 +16087,7 @@ function showActionLabel(unit, text, kind = "default") {
   const shift = laneTextShiftPx(unit);
   if (shift !== 0) label.style.left = `calc(50% + ${shift}px)`;
   el.appendChild(label);
-  const duration = kind === "taunt" ? 2000 : 1600;
+  const duration = kind === "taunt" ? 2000 : (kind === "split" ? 1800 : 1600);   // v0.3.8br: split 전용 수명
   setTimeout(() => label.remove(), duration);
 }
 
@@ -17004,9 +17408,12 @@ const CODEX_ENTRIES = [
   // v0.3.8al7 검수 장치: 타이틀 버전 표시를 BUILD_VERSION으로 자동 채움 (하드코딩 거짓 제거).
   //   나라님이 타이틀에서 "지금 보는 게 최신 빌드인지" 즉시 확인 (캐시 문제 진단).
   (function _fillTitleVersion() {
+    const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?";
+    // v0.3.8bj: 고정 배지 — 항상 보이게 (타이틀/전투 무관). 캐시 진단의 단일 진실.
+    const badge = document.getElementById("build-badge");
+    if (badge) badge.textContent = ver;
     const el = document.getElementById("title-version");
     if (!el) return;
-    const ver = (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : "?";
     const unlocked = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL)
       ? " · all unlocked" : "";
     el.textContent = `MK.II — ${ver}${unlocked}`;
