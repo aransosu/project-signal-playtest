@@ -5320,6 +5320,7 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
             <button class="dev-btn" onclick="startMatrixPoison1B()">▶ Poison 9런 (1B)</button>
             <button class="dev-btn" onclick="startMatrixTroll1C()">▶ Troll 9런 (1C)</button>
             <button class="dev-btn primary" onclick="startMatrixCi(5)">🌡 4테마 체온계 (60런)</button>
+            <button class="dev-btn primary" onclick="startMatrixCl(1)">🌱 성장 체온계 +8 (12런 구조확인)</button>
             <button class="dev-btn" onclick="matrixCopySummary()">그룹 요약 복사</button>
             <button class="dev-btn" onclick="stopMatrixMvp('수동 중단')">■ 중단</button>
             <button class="dev-btn" onclick="matrixCopyToClipboard()">JSON 복사</button>
@@ -6138,7 +6139,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ci-theme-matrix-thermometer";
+const BUILD_VERSION = "v0.3.8cl-theme-thermometer-growth";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6809,6 +6810,62 @@ const DEV_STAGE_PRESETS = {
     choicePolicy:"lock_composition",
     traitLevels: { bravery: 12, snipe: 12, heal: 12, blessing: 12, guard: 12, rogue: 12 },
     party:[ {kind:"fusion",id:"dragoon",lvl:12}, {kind:"fusion",id:"rogue",lvl:12}, {kind:"fusion",id:"cleric",lvl:12}, {kind:"fusion",id:"wall",lvl:12} ] },
+
+  // v0.3.8cl [성장 반영형 체온계 — 유키 결: "균등 traitLevel 8 / 합체 재현 아니라 도달값 근사"]:
+  //   ci 12그룹 party 구조 그대로 + traitLevels 균등 8 주입(재료 기본직 id까지). ci(합격칸)는 불변 — 옆에 박는다.
+  //   ★psn_dragoon만 effective inherited 4 (rogue가 fusion이라 traitLevels[rogue] 미반영 — Matrix 직접경로).
+  //   유키 결: 우회/수술 금지, 제외 금지 — growthException 메타로 정직 표기하고 루다가 가중 해석.
+  //   growth 메타는 각 프리셋에 박아 row까지 흐른다(_collectRow가 meta.* 적재). lockComposition 유지.
+  mx_cl_nov_baseline: { label:"성장체온계 초보 ① 기준선 (전사/도적/신관/궁수) +8", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_cl_nov_diverse: { label:"성장체온계 초보 ② 다양직 (마도/선봉/치유궁/바드) +8", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, disrupt:8, heal:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"arcanist",lvl:2}, {kind:"fusion",id:"vanguard",lvl:2}, {kind:"fusion",id:"chainheal",lvl:2}, {kind:"fusion",id:"bard",lvl:2} ] },
+  mx_cl_nov_nohealing: { label:"성장체온계 초보 ③ 노힐 (전사/궁수/교란꾼/도적) +8", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ bravery:8, disrupt:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"disrupt"}, {kind:"fusion",id:"rogue",lvl:2} ] },
+  mx_cl_psn_cleanser: { label:"성장체온계 중독 ① 정화사 (정화사/신관/궁수/전사) +8", startStage:8, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, disrupt:8, heal:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"purifier",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_cl_psn_nocleanse: { label:"성장체온계 중독 ② 정화사 無 (사제/전사/궁수/도적) +8", startStage:8, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ bravery:8, heal:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"trait",id:"heal"}, {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"fusion",id:"rogue",lvl:2} ] },
+  mx_cl_psn_dragoon: { label:"성장체온계 중독 ③ 용창 (용창/신관/사제/전사) +8 ★예외", startStage:8, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, heal:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    growthException:true, growthExceptionReason:"dragoon_second_tier_inheritance_material_fusion_level_not_traitLevel", growthLevelEffective:4,
+    growthNote:"11 groups use uniform traitLevel 8. psn_dragoon has dragoon effective inherited level 4 due current Matrix direct fusion path; kept intentionally and marked for weighted interpretation.",
+    party:[ {kind:"fusion",id:"dragoon",lvl:4}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"heal"}, {kind:"trait",id:"bravery"} ] },
+  mx_cl_asn_tracker: { label:"성장체온계 암살 ① 추적자 (추적자/도적/신관/전사) +8", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, disrupt:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"tracker",lvl:3}, {kind:"fusion",id:"rogue",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"bravery"} ] },
+  mx_cl_asn_guard: { label:"성장체온계 암살 ② 수문장 (수문장/신관/궁수/전사) +8", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, guard:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"gatekeeper",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_cl_asn_nodef: { label:"성장체온계 암살 ③ 방어직 無 (전사/도적/신관/궁수) +8", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_cl_trl_trapper: { label:"성장체온계 트롤 ① 덫꾼 (덫꾼/신관/궁수/전사) +8", startStage:8, themeId:"troll", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, disrupt:8, guard:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"trapper",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_cl_trl_rogue: { label:"성장체온계 트롤 ② 도적 (덫꾼 無 / 도적/신관/궁수/전사) +8", startStage:8, themeId:"troll", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"rogue",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_cl_trl_defense: { label:"성장체온계 트롤 ③ 방어/힐 (수호자/사제/신관/전사) +8", startStage:8, themeId:"troll", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, guard:8, heal:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"trait",id:"guard"}, {kind:"trait",id:"heal"}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"bravery"} ] },
 };
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -10179,6 +10236,7 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
 
 // v0.3.8at: 도발 개입 중앙 배너 — "확실히 보이는" 한 박자 (전장 중앙).
 function showInterveneBanner(text, kind) {
+  if (isMatrixLightRender()) return;
   const bf = document.getElementById("battlefield");
   if (!bf) return;
   const banner = document.createElement("div");
@@ -10194,6 +10252,7 @@ function showInterveneBanner(text, kind) {
 //   사슬은 흐르고(dashoffset), 중앙에서 한 번 맥동한다(별도 원). 실전·DEV재현 공용 틀.
 //   battle-svg viewBox 좌표계에 path + circle을 직접 그린다 (transform 미사용 — 아바타 scale 보존).
 function drawTauntLink(marked, tauntor, opts = {}) {
+  if (isMatrixLightRender()) return true;   // 링크 연출만 스킵 — split/bind 계측은 별도 줄(statsBump)이라 무손상
   const svg = document.getElementById("battle-svg");
   if (!svg) return false;
   syncBattleSvg();
@@ -10567,6 +10626,33 @@ function startMatrixCi(reps) {
   startMatrixMvp(r, plan);
 }
 
+// v0.3.8cl [성장 반영형 체온계 — 유키 결: "균등 traitLevel 8 / 12그룹×1런으로 천장 이동 먼저 확인"]:
+//   ci plan과 같은 그룹 메타 + presetKey만 mx_cl_*. 프리셋이 traitLevels:8 + growth 메타를 들고 있어 row까지 흐름.
+//   바로 60런 금지 — startMatrixCl(1)이 기본 (12그룹×1런 구조/천장 확인용). reps는 루다 판독 후 문제 그룹만.
+const MATRIX_CL_PLAN = MATRIX_CI_PLAN.map(p => Object.assign({}, p, {
+  presetKey: p.presetKey.replace(/^mx_ci_/, "mx_cl_"),
+}));
+function startMatrixCl(reps) {
+  const r = reps || 1;   // ★유키 실행정책: 기본 1런 (12그룹×1=12런). 바로 60런 금지.
+  const plan = MATRIX_CL_PLAN.map(p => Object.assign({}, p, { samplePhase: "theme_thermometer_2_growth" }));
+  startMatrixMvp(r, plan);
+}
+
+// v0.3.8ck [summary depth — 유키 결: "전투 새 계측 늘리지 말고 summary 집계만 / 불확실하면 unknown"]:
+//   row.firstDeathJob(직업명)을 직업 정의의 role(front/back)로 안전 매핑. 매칭 실패 시 "unknown".
+//   전투 데이터/계측 0 — 이름→기본배치 파생만 (finalParty엔 lane이 없어 억지 추정 금지).
+function _matrixJobFrontBack(jobName) {
+  if (!jobName) return "unknown";
+  // 직업 메타맵(JOB_META류) 또는 TRAITS에서 name 일치 항목의 role을 읽는다
+  try {
+    if (typeof TRAITS !== "undefined" && Array.isArray(TRAITS)) {
+      const t = TRAITS.find(x => x && x.name === jobName);
+      if (t && (t.role === "front" || t.role === "back")) return t.role;
+    }
+  } catch (e) {}
+  return "unknown";   // 2차 직업·매칭 실패는 정직하게 unknown (억지 추정 금지)
+}
+
 // v0.3.8ci [그룹 요약 export — 루다 수기 합산 축소]: themeGroup별로 자동 집계.
 //   5런 clearRate는 표시하되 판정 문구는 "체온계 5런 — 극단 탐지용". 5런으로 밸런스 확정 안 함.
 function _matrixBuildSummary(rows) {
@@ -10580,6 +10666,13 @@ function _matrixBuildSummary(rows) {
       excludedKeyJobs: row.excludedKeyJobs || null, samplePhase: row.samplePhase || null,
       totalRuns: 0, clearCount: 0, defeatCount: 0, errorCount: 0,
       _reached: [], _ticks: [], resultReasonCounts: {}, validityTagCounts: {},
+      // v0.3.8ck [summary depth — additive]: firstDeath/wipe 분포 집계 그릇
+      _firstDeathStages: [], firstDeathStageCounts: {},
+      _wipeStages: [], wipeStageCounts: {},
+      firstDeathJobCounts: {}, firstDeathFrontBackCounts: { front: 0, back: 0, unknown: 0 },
+      // v0.3.8cl [성장 천장 이동 지표 — additive]: S15/S20/S25 도달 카운트 + growth 메타(그룹 대표값)
+      reachedS15Count: 0, reachedS20Count: 0, reachedS25Count: 0,
+      _growth: null,
     };
     const g = groups[key];
     g.totalRuns++;
@@ -10593,6 +10686,35 @@ function _matrixBuildSummary(rows) {
     (row.validityTags && row.validityTags.length ? row.validityTags : ["VALID"]).forEach(t => {
       g.validityTagCounts[t] = (g.validityTagCounts[t] || 0) + 1;
     });
+    // v0.3.8ck [summary depth — additive]: firstDeathStage / wipeStage / job / frontBack 분포
+    if (typeof row.firstDeathStage === "number") {
+      g._firstDeathStages.push(row.firstDeathStage);
+      const k = String(row.firstDeathStage);
+      g.firstDeathStageCounts[k] = (g.firstDeathStageCounts[k] || 0) + 1;
+    }
+    if (typeof row.wipeStage === "number") {
+      g._wipeStages.push(row.wipeStage);
+      const k = String(row.wipeStage);
+      g.wipeStageCounts[k] = (g.wipeStageCounts[k] || 0) + 1;
+    }
+    if (row.firstDeathJob) {
+      g.firstDeathJobCounts[row.firstDeathJob] = (g.firstDeathJobCounts[row.firstDeathJob] || 0) + 1;
+      const fb = _matrixJobFrontBack(row.firstDeathJob);
+      g.firstDeathFrontBackCounts[fb] = (g.firstDeathFrontBackCounts[fb] || 0) + 1;
+    }
+    // v0.3.8cl [성장 천장 이동 — additive]: S15/20/25 도달 카운트 + growth 메타 보존(그룹 대표)
+    if (row.reachedS15 === true) g.reachedS15Count++;
+    if (row.reachedS20 === true) g.reachedS20Count++;
+    if (row.reachedS25 === true) g.reachedS25Count++;
+    if (!g._growth && (row.growthModel || row.growthLevel != null || row.growthException)) {
+      g._growth = {
+        growthModel: row.growthModel || null, growthLevel: (row.growthLevel != null ? row.growthLevel : null),
+        growthDistribution: row.growthDistribution || null, growthException: !!row.growthException,
+        growthExceptionReason: row.growthExceptionReason || null,
+        growthLevelEffective: (row.growthLevelEffective != null ? row.growthLevelEffective : null),
+        growthNote: row.growthNote || null,
+      };
+    }
   });
   const avg = a => a.length ? Math.round((a.reduce((s,x)=>s+x,0)/a.length)*100)/100 : null;
   return Object.values(groups).map(g => {
@@ -10605,6 +10727,24 @@ function _matrixBuildSummary(rows) {
       resultReasonCounts: g.resultReasonCounts, avgLastBattleTicks: avg(g._ticks),
       validityTagCounts: g.validityTagCounts, keyJobPresence: g.keyJobPresence, excludedKeyJobs: g.excludedKeyJobs,
       samplePhase: g.samplePhase,
+      // v0.3.8ck [summary depth — additive optional 필드. 데이터 없으면 null/0 안전]
+      firstDeathStage: {
+        min: g._firstDeathStages.length ? Math.min(...g._firstDeathStages) : null,
+        avg: avg(g._firstDeathStages),
+        max: g._firstDeathStages.length ? Math.max(...g._firstDeathStages) : null,
+        counts: g.firstDeathStageCounts,
+      },
+      wipeStage: {
+        min: g._wipeStages.length ? Math.min(...g._wipeStages) : null,
+        avg: avg(g._wipeStages),
+        max: g._wipeStages.length ? Math.max(...g._wipeStages) : null,
+        counts: g.wipeStageCounts,
+      },
+      firstDeathJobCounts: g.firstDeathJobCounts,
+      firstDeathFrontBackCounts: g.firstDeathFrontBackCounts,
+      // v0.3.8cl [성장 천장 이동 — additive optional. ci(growth 없음)는 growth:null, 도달카운트만]
+      reachedS15Count: g.reachedS15Count, reachedS20Count: g.reachedS20Count, reachedS25Count: g.reachedS25Count,
+      growth: g._growth || null,
       verdictNote: "체온계 5런 — 극단 탐지용 (밸런스 확정 아님; 성공률 판정은 10런+)",
     };
     return out;
@@ -10717,6 +10857,18 @@ function _matrixCollectRow() {
       excludedKeyJobs: meta.excludedKeyJobs || null,
       matrixBatchId: _matrix.matrixId,
       samplePhase: meta.samplePhase || null,
+      // v0.3.8cl [성장 메타 — 프리셋(DEV_STAGE_PRESETS)에서 읽어 additive 적재. ci(growth 없음)는 전부 null/누락 안전]
+      growthModel: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthModel) || null,
+      growthLevel: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthLevel != null) ? DEV_STAGE_PRESETS[meta.presetKey].growthLevel : null,
+      growthDistribution: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthDistribution) || null,
+      growthException: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthException) || false,
+      growthExceptionReason: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthExceptionReason) || null,
+      growthLevelEffective: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthLevelEffective != null) ? DEV_STAGE_PRESETS[meta.presetKey].growthLevelEffective : null,
+      growthNote: (DEV_STAGE_PRESETS[meta.presetKey] && DEV_STAGE_PRESETS[meta.presetKey].growthNote) || null,
+      // v0.3.8cl [천장 이동 지표 — row의 reachedStage에서 파생. 새 계측 0]
+      reachedS15: (typeof reached === "number") ? reached >= 15 : null,
+      reachedS20: (typeof reached === "number") ? reached >= 20 : null,
+      reachedS25: (typeof reached === "number") ? reached >= 25 : null,
       // v0.3.8ci [유효성 태그 — 기본 VALID, ERROR면 RUN_INVALID]: x1/성능 오염은 손맛 단계에서 부여
       runValidity: _matrix.errInfo ? "RUN_INVALID" : "VALID",
       validityTags: _matrix.errInfo ? ["RUN_INVALID"] : [],
@@ -17023,7 +17175,20 @@ function laneTextShiftPx(unit) {
   return Math.round(ratio * MAX_SHIFT);
 }
 
+// v0.3.8cj [matrix_run 전용 무연출/경량 렌더 가드 — 유키 결: "보는 전투가 아니라 재는 전투다"]:
+//   matrix_run(망원경) 중에는 일회성 전투 FX(floating 숫자/행동 라벨/상태 텍스트/배너/결속 링크)를
+//   매 틱 그릴 필요가 없다. 일반 플레이/normal_run/x1 손맛 연출은 절대 건드리지 않는다.
+//   조건: _matrix.active(러너 가동) AND runState.devTest.source === "matrix_run".
+//   ★상태 전환(applyPhaseTransition의 _phaseKey/_traitLabel/아바타)은 연출이 아니라 동작이므로
+//     이 가드를 박지 않는다 — row/result 무변경 보장. introText 라벨만 showActionLabel 경유로 스킵된다.
+function isMatrixLightRender() {
+  return !!(typeof _matrix !== "undefined" && _matrix && _matrix.active
+    && typeof runState !== "undefined" && runState && runState.devTest
+    && runState.devTest.source === "matrix_run");
+}
+
 function showFloat(unit, text, kind) {
+  if (isMatrixLightRender()) return;
   const el = document.querySelector(`[data-uid="${unit.uid}"] .unit-portrait`);
   if (!el) return;
   const float = document.createElement("div");
@@ -17040,6 +17205,7 @@ function showFloat(unit, text, kind) {
 /* ---------- 행동 라벨 (유닛 위 텍스트) ---------- */
 
 function showActionLabel(unit, text, kind = "default") {
+  if (isMatrixLightRender()) return;
   const el = document.querySelector(`[data-uid="${unit.uid}"] .unit-portrait`);
   if (!el) return;
   // v0.3.7.15: 중복 라벨 방지 — 같은 유닛에 이미 라벨이 박혀있으면 제거 후 새로 박음
@@ -17090,6 +17256,7 @@ function showActionText(actor, label, opts = {}) {
 //   서로 겹치지 않게 짧은 시간차(80~120ms) + 세로 오프셋 박힘
 //   "주르륵 올라가는" 결
 function showResultText(target, amount, type, opts = {}) {
+  if (isMatrixLightRender()) return;
   if (!target || !target.uid) return;
   // 큐에 즉시 enqueue (실제 DOM 생성은 _emitResultText에서)
   _enqueueResultText(target, { amount, type, opts });
@@ -17227,6 +17394,7 @@ function _emitResultText(target, payload, seq = 0) {
 // 상태 레인 — 짧게 짚어주는 상태 키워드 (적용 순간만)
 //   kind: "poisoned" | "slowed" | "bound" | "rhythm" | "shield"
 function showStatusText(target, label, opts = {}) {
+  if (isMatrixLightRender()) return;
   if (!target || !target.uid) return;
   const el = document.querySelector(`[data-uid="${target.uid}"] .unit-portrait`);
   if (!el) return;
