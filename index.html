@@ -9,7 +9,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Project Signal Mk.II v0.3.8al13-assassin-theme-mark</title>
+<title>Project Signal Mk.II</title>
+<!-- v0.3.8cb: <title>은 _fillTitleVersion()이 BUILD_VERSION으로 갱신 — 하드코딩 버전 금지 (거짓 표시 방지) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -28,7 +29,7 @@
      · 두 직업 모두 status "구현"
    - v0.3.4 결: 1차 직업 개성 ① 성벽 + 정화사 + 독 몬스터 검증 환경
      · 성벽: 보호 대상 지정 + 피해 50% 가로채기 (한 명 대신 맞는 벽)
-     · 정화사: 중독 제거 + 추가 회복 (사제 + 유격수)
+     · 정화사: 중독 제거 + 추가 회복 (사제 + 교란꾼)
      · 독 몬스터: goblin_poison (11~15 stage만 등장, 35% 중독)
      · 정화사 우선도: 중독 → 남은 턴 긴 순 → HP 낮은 순
    - v0.3.3 결: 4인 파티 유지 규칙 박기
@@ -115,10 +116,10 @@
   /* Mk.II — 1차 합체 미구현 직업 색 (도감용) */
   --job-warden: #c08a4a;          /* 워든 — 전사 청동 */
   --job-hunter: #8fa860;          /* 파수궁 — 사냥 녹 */
-  --job-paladin: #f0e4a8;         /* 성휘 — 성광 */
+  --job-paladin: #f0e4a8;         /* 성기사 — 성광 */
   --job-vanguard: #ff9a4a;        /* 선봉 — 돌격 주황 */
   --job-binder: #d8c8a8;          /* 금제 — 빛 사슬 */
-  --job-chainheal: #6fc8a0;       /* 치원 — 회복 녹 */
+  --job-chainheal: #6fc8a0;       /* 치유궁 — 회복 녹 */
   --job-purifier: #a8e0c8;        /* 정화 — 정화 청록 */
   --job-arcanist: #8a6dc4;        /* 마도 — 마법 보라 */
   --job-gatekeeper: #b89050;      /* v0.3.8 수문장 — 강철 황동 */
@@ -5270,12 +5271,11 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
       <div class="codex-title-wrap">
         <div class="codex-tag">CODEX</div>
         <h2>영웅 도감</h2>
-        <p>21명의 직업과 그 결.</p>
+        <p>선택의 누적이 전투의 언어가 된다.</p>
       </div>
     </div>
 
-    <div class="codex-summary" id="codex-summary"></div>
-
+    <!-- v0.3.8cb: 개발 현황판(TOTAL/구현/예정) 제거 — 도감은 정식 직업 소개 페이지 (유키 결) -->
     <div class="codex-tiers" id="codex-tiers"></div>
   </section>
 
@@ -5624,7 +5624,7 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
      heal    → 사제 (단일 치유)
      blessing→ 신관 (광역 가호)
      snipe   → 궁수 (후열 저격)
-     disrupt → 유격수 (교란/속도 저하)
+     disrupt → 교란꾼 (교란/속도 저하)
    표시 이름만 v0.3.0 신규 정체성으로 재정렬.
 */
 
@@ -5634,7 +5634,7 @@ const BASE_JOBS = {
   heal:     { id: "heal",     name: "사제",   role: "back",  color: "var(--job-heal)",     colorDark: "var(--job-heal-dark)",     legacyBaseJob: "priest"  },
   blessing: { id: "blessing", name: "신관",   role: "back",  color: "var(--job-blessing)", colorDark: "var(--job-blessing-dark)", legacyBaseJob: "priest"  },
   snipe:    { id: "snipe",    name: "궁수",   role: "back",  color: "var(--job-snipe)",    colorDark: "var(--job-snipe-dark)",    legacyBaseJob: "archer"  },
-  disrupt:  { id: "disrupt",  name: "유격수", role: "back",  color: "var(--job-disrupt)",  colorDark: "var(--job-disrupt-dark)",  legacyBaseJob: "archer"  },
+  disrupt:  { id: "disrupt",  name: "교란꾼", role: "back",  color: "var(--job-disrupt)",  colorDark: "var(--job-disrupt-dark)",  legacyBaseJob: "archer"  },  // v0.3.8cb: 표시명 "유격수" → "교란꾼" (내부 id disrupt 유지)
 };
 
 /* v0.2 호환을 위한 alias: legacy baseJob 키(warrior/priest/archer)로 들어오는 곳을 위해 */
@@ -5653,7 +5653,7 @@ const LEGACY_BASE_JOBS = {
      치유  → 사제
      가호  → 신관
      저격  → 궁수
-     교란  → 유격수
+     교란  → 교란꾼
    코드 id는 v0.2 결 그대로 유지 (호환성).
    각 항목은 baseJob 필드를 자기 자신(id)으로 가짐.
    v0.2 호환: legacyBaseJob 필드로 시각/아바타 fallback 유지.
@@ -5712,7 +5712,7 @@ const TRAITS = [
   },
   {
     id: "disrupt",
-    name: "유격수",
+    name: "교란꾼",
     baseJob: "disrupt",
     legacyBaseJob: "archer",
     role: "back",
@@ -5858,7 +5858,7 @@ const FUSIONS = [
   },
 
   /* v0.3.7.7: 1차 직업 ③④ — 워든 + 파수궁 박힘
-     - 워든: 전사 + 유격수 → 위험한 적 1명 끊는 전열 제어
+     - 워든: 전사 + 교란꾼 → 위험한 적 1명 끊는 전열 제어
      - 파수궁: 수호자 + 궁수 → 후열 견제 + 약한 아군 보호
      바드/도적과 결 차이:
        바드: 적 2명 넓게 감속 (광역 템포 조율)
@@ -5871,7 +5871,7 @@ const FUSIONS = [
     id: "warden",
     name: "워든",
     role: "front",
-    requires: ["bravery", "disrupt"],     // 전사 + 유격수
+    requires: ["bravery", "disrupt"],     // 전사 + 교란꾼
     inherits: [
       { from: "bravery", ratio: 0.7 },
       { from: "disrupt", ratio: 0.7 }
@@ -5900,15 +5900,15 @@ const FUSIONS = [
     leadsTo: []
   },
 
-  /* v0.3.7.8: 1차 직업 ⑤⑥ — 선봉 + 치원 박힘 (남은 1차 직업 완성)
+  /* v0.3.7.8: 1차 직업 ⑤⑥ — 선봉 + 치유궁 박힘 (남은 1차 직업 완성)
      - 선봉: 전사 + 신관 → 전열 공격 + 소량 회복 (전선 유지형)
-     - 치원: 사제 + 궁수 → 조건부 회복/공격 (상황 전환형)
+     - 치유궁: 사제 + 궁수 → 조건부 회복/공격 (상황 전환형)
      성기사/사제/신관과 결 차이:
        성기사: 자기 유지 + 자기 보호막
        사제: 직접 회복 중심
        신관: 광역 회복
        선봉: 전열 공격하며 소량 회복 (자기보다 파티 지탱)
-       치원: 위험 시 회복 / 여유 시 후열 사격 (상황 전환)
+       치유궁: 위험 시 회복 / 여유 시 후열 사격 (상황 전환)
   */
   {
     id: "vanguard",
@@ -5928,7 +5928,7 @@ const FUSIONS = [
   },
   {
     id: "chainheal",
-    name: "치원",
+    name: "치유궁",                        // v0.3.8cb: 표시명 "치원" → "치유궁" (내부 id chainheal 유지)
     role: "back",
     requires: ["heal", "snipe"],          // 사제 + 궁수
     inherits: [
@@ -5946,7 +5946,7 @@ const FUSIONS = [
   /* ===== v0.3.8: 신규 1차 직업 3종 — 파티플레이 역할군 빈칸 채우기 =====
      수문장: 전사 + 수호자 → 후반 도발 탱커 (내 뒤는 못 지나간다)
      성직자: 사제 + 신관   → 2명 집중 치유 (무너지는 두 축 붙잡기)
-     추적자: 궁수 + 유격수 → 집중→저격 선제 제거 (위험한 후열 고체력)
+     추적자: 궁수 + 교란꾼 → 집중→저격 선제 제거 (위험한 후열 고체력)
   */
   {
     id: "gatekeeper",
@@ -5984,7 +5984,7 @@ const FUSIONS = [
     id: "tracker",
     name: "추적자",
     role: "back",
-    requires: ["snipe", "disrupt"],       // 궁수 + 유격수
+    requires: ["snipe", "disrupt"],       // 궁수 + 교란꾼
     inherits: [
       { from: "snipe",   ratio: 0.7 },
       { from: "disrupt", ratio: 0.7 }
@@ -6028,7 +6028,7 @@ const FUSIONS = [
   },
 
   /* v0.3.7.11: 2차 직업 ②③ — 현자 + 성황 박힘 (예비 2차 직업 자리)
-     - 현자: 마도 + 유격수 → 차징 중 아군 게이지 가속 + 광역 마법
+     - 현자: 마도 + 교란꾼 → 차징 중 아군 게이지 가속 + 광역 마법
        마도의 2단 행동 결을 진화시킴 (집중하는 동안 아군 템포까지 조율)
      - 성황: 선봉 + 수호자 → 전열 공격 + 2명 회복 + 위기 시 파티 보호막
        선봉의 전선 유지 결을 진화시킴 (위기 반응 결 추가)
@@ -6039,7 +6039,7 @@ const FUSIONS = [
     name: "현자",
     role: "back",
     tier: "secondary",
-    requires: ["arcanist", "disrupt"],          // 마도(1차) + 유격수(기본)
+    requires: ["arcanist", "disrupt"],          // 마도(1차) + 교란꾼(기본)
     inherits: [
       { from: "arcanist", ratio: 0.7 },
       { from: "disrupt",  ratio: 0.7 }
@@ -6136,7 +6136,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ca-frame-meter";
+const BUILD_VERSION = "v0.3.8ch-dragoon-recharge-fix";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6209,6 +6209,41 @@ const DEV_MODE_MENU = [
     { presetKey: "qa_a1_bind", desc: "★QA 스모크 — A-1(전사/수문장/추적자/신관) S8 / 계기판 0순위" },
     { presetKey: "qa_c1_guard", desc: "★QA C군 — 전사/수문장/신관/바드 (추적자 無) S8 / 분산 무대" },
     { presetKey: "qa_b1_tracker", desc: "★QA B군 — 추적자/도적/덫꾼/신관 (도발 無) S8" },
+  ]},
+  // v0.3.8cc [기준직 6종 검수 — 유키 결]: roleStats 계측 점등용 (승패 무관 / beginner 격리)
+  { section: "📏 기준직 6종 검수", items: [
+    { presetKey: "qa_base_roles_smoke",   desc: "① 전사/수호자/사제/궁수 — 전열·방패·단일힐·단일딜 기준" },
+    { presetKey: "qa_base_roles_support", desc: "② 전사/신관/궁수/교란꾼 — 광역 안정·제어 기준" },
+    { presetKey: "qa_base_roles_control", desc: "③ 수호자/사제/신관/교란꾼 — 저딜 장기전 (힐 분리 판독)" },
+  ]},
+  // v0.3.8cd [1차 일반직/하이브리드 10종 검수 — 유키 결]: 테마 해답직·2차 제외
+  { section: "🧪 1차 일반직 검수", items: [
+    { presetKey: "qa_t1_attack",    desc: "① 도적/마도/궁수/사제 — 처형·광역·기준딜·단일힐" },
+    { presetKey: "qa_t1_frontline", desc: "② 선봉/성기사/성직자/궁수 — 딜+소힐·하이브리드·다중힐" },
+    { presetKey: "qa_t1_control",   desc: "③ 바드/워든/파수궁/금제 — 게이지컷·제압·보복·봉인" },
+    { presetKey: "qa_t1_chainheal", desc: "④ 치유궁/사제/궁수/전사 — 하이브리드 비교" },
+  ]},
+  // v0.3.8ce [테마 해답직 5종 검수 — 유키 결]: 각자 홈구장 테마에서 roleStats↔themeStats 정합
+  { section: "🧭 테마 해답직 검수", items: [
+    { presetKey: "qa_th_trapper",    desc: "① 트롤/덫꾼 — 독→재생억제 (regenSuppress 정합)" },
+    { presetKey: "qa_th_purifier",   desc: "② 중독/정화사 — cleanse (themePoison 정합)" },
+    { presetKey: "qa_th_tracker",    desc: "③ 암살자/추적자 — 간파·표식흐트림 (제거의 길)" },
+    { presetKey: "qa_th_gatekeeper", desc: "④ 암살자/수문장 — 결속·분산 (흡수의 길)" },
+    { presetKey: "qa_th_wall",       desc: "⑤ 성벽 — 가로채기 보호 (함께 버티기)" },
+  ]},
+  // v0.3.8cf [2차 직업 3종 검수 — 유키 결]: 24직업 계측 정렬 마지막 큰 덩어리
+  { section: "🌟 2차 직업 검수", items: [
+    { presetKey: "qa_t2_dragoon",   desc: "① 용창 — 전열 다수 관통 폭발" },
+    { presetKey: "qa_t2_sage",      desc: "② 현자 — 광역+조율 (마도 상위)" },
+    { presetKey: "qa_t2_sovereign", desc: "③ 성황 — 성역 위기 보호 (최상위 보호자)" },
+  ]},
+  // v0.3.8cg [판독 보강 검수 — 유키 결]: 심판이 못 보는 자리·프리셋 때문에 못 본 자리를 연다
+  { section: "🔍 판독 보강 검수", items: [
+    { presetKey: "qa_read_binder_metrics",       desc: "① 금제 계측 — 묶은 적 출력·전가 점등" },
+    { presetKey: "qa_read_patronguard_revenge",  desc: "② 파수궁 보복 공정 (바드·워든 無)" },
+    { presetKey: "qa_read_dragoon_pierce_solo",  desc: "③ 용창 관통 (궁수 분리 — 귀속 명확)" },
+    { presetKey: "qa_read_sovereign_fair_crisis",desc: "④ 성황 공정 위기전 (즉전멸 아님)" },
+    { presetKey: "qa_read_wall_survival",        desc: "⑤ 성벽 생존기여 (가로채기 누적)" },
   ]},
 ];
 
@@ -6466,6 +6501,207 @@ const DEV_STAGE_PRESETS = {
              { kind: "trait", id: "blessing" } ],            // 신관 — 후열 (표식 대상 후보)
   },
   // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8cg [판독 보강 검수 — 유키 결: "심판이 못 보는 자리·프리셋 때문에 못 본 자리를 연다"]:
+  //   밸런스 아님. 금제 계측 점등 / 파수궁 보복 공정 무대 / 용창 궁수 분리 / 성황 공정 위기전.
+  qa_read_binder_metrics: {
+    label: "판독 ① 금제 계측 — 금제/수호자/사제/전사", startStage: 10, themeId: "beginner",
+    purpose: "금제 boundTargetDamageOutput/redirectedDamage 점등 (적이 때려야 묶임·전가 발생)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, guard: 3, heal: 3, arcanist: 3, disrupt: 3 },
+    party: [ { kind: "fusion", id: "binder", lvl: 3 },   // 금제 — 봉인/전가
+             { kind: "trait",  id: "guard" },            // 수호자 — 버티며 적 행동 유도
+             { kind: "trait",  id: "heal" },             // 사제
+             { kind: "trait",  id: "bravery" } ],        // 전사
+  },
+  qa_read_patronguard_revenge: {
+    label: "판독 ② 파수궁 보복 — 파수궁/궁수/사제/전사 (바드·워든 無)", startStage: 10, themeId: "beginner",
+    purpose: "파수궁 revengeCount/revengeDamage 점등 (적이 보호 대상 때려야 보복 — 게이지컷 제외)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 3, guard: 3 },
+    party: [ { kind: "fusion", id: "hunter", lvl: 3 },   // 파수궁 — 보호막+보복
+             { kind: "trait",  id: "snipe" },            // 궁수
+             { kind: "trait",  id: "heal" },             // 사제
+             { kind: "trait",  id: "bravery" } ],        // 전사 (보호 대상 후보)
+  },
+  qa_read_dragoon_pierce_solo: {
+    label: "판독 ③ 용창 관통 (궁수 분리) — 용창/신관/사제/전사", startStage: 10, themeId: "poison",
+    purpose: "용창 관통 귀속 분리 — 후열 단일딜러(궁수) 제외, pierce 결과가 용창만의 것", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, heal: 3, blessing: 3, arcanist: 4, disrupt: 4 },
+    party: [ { kind: "fusion", id: "dragoon", lvl: 4 },  // 용창 — 관통 (유일 딜러)
+             { kind: "trait",  id: "blessing" },         // 신관
+             { kind: "trait",  id: "heal" },             // 사제
+             { kind: "trait",  id: "bravery" } ],        // 전사
+  },
+  qa_read_sovereign_fair_crisis: {
+    label: "판독 ④ 성황 공정 위기전 — 성황/사제/궁수/전사", startStage: 20, themeId: "beginner",
+    purpose: "성황 성역이 발동하되 즉전멸 아닌 공정 위기전 (sanctuaryNegate + 회복/보호 관측 시간 확보)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 3, guard: 2 },
+    party: [ { kind: "fusion", id: "sovereign", lvl: 3 }, // 성황 — 성역
+             { kind: "trait",  id: "heal" },              // 사제 (성황 + 사제 = 무너지지 않게)
+             { kind: "trait",  id: "snipe" },             // 궁수
+             { kind: "trait",  id: "bravery" } ],         // 전사
+  },
+  qa_read_wall_survival: {
+    label: "판독 ⑤ 성벽 생존기여 — 성벽/사제/궁수/전사", startStage: 20, themeId: "beginner",
+    purpose: "성벽 redirectedDamage/protectionTriggerCount 누적 (장기 보호 생존기여 판독)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 3, guard: 3 },
+    party: [ { kind: "fusion", id: "wall", lvl: 3 },     // 성벽 — 가로채기 보호
+             { kind: "trait",  id: "heal" },
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8cf [2차 직업 3종 계측 스모크 — 유키 결: "2차 직업답게 계기판에서 자기 말을 하는가"]:
+  //   계측 점등·승패 무관. 2차는 계승(traitLevels) 재현이 핵심 — 재료 레벨 과급으로 2차다운 강도 복제.
+  qa_t2_dragoon: {
+    label: "2차 ① 용창 관통 — 용창/신관/궁수/전사", startStage: 10, themeId: "poison",
+    purpose: "용창 pierceHitCount/pierceDamageTotal — 전열 다수 관통 폭발감", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 4, snipe: 4, blessing: 3, arcanist: 4, disrupt: 4 },
+    party: [ { kind: "fusion", id: "dragoon", lvl: 4 }, // 용창 (마도+교란꾼 계열 계승)
+             { kind: "trait",  id: "blessing" },
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  qa_t2_sage: {
+    label: "2차 ② 현자 조율 — 현자/사제/궁수/전사", startStage: 10, themeId: "beginner",
+    purpose: "현자 aoeCast/aoeHit/chargeCount — 마도 상위 조율 (적 지연은 아군가속형이라 0이 진실)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 4, snipe: 4, heal: 3, arcanist: 4, disrupt: 4 },
+    party: [ { kind: "fusion", id: "sage", lvl: 4 },    // 현자 (마도+교란꾼 계승)
+             { kind: "trait",  id: "heal" },
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  qa_t2_sovereign: {
+    label: "2차 ③ 성황 성역 — 성황/궁수/사제/전사", startStage: 20, themeId: "assassin",
+    purpose: "성황 sanctuaryNegateCount/shieldGenerated/healingDone — 위기전(S20) 최상위 보호자", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 2, guard: 3 },
+    party: [ { kind: "fusion", id: "sovereign", lvl: 3 }, // 성황 (선봉+수호자 계승)
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "heal" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8ce [테마 해답직 5종 계측 스모크 — 유키 결: "홈구장에서 자기 말을 하는가"]:
+  //   각 해답직을 자기 홈구장 테마에 세워 roleStats↔themeStats 정합 확인. 승패 무관·계측 점등.
+  qa_th_trapper: {
+    label: "해답직 ① 트롤/덫꾼 — 덫꾼/신관/궁수/전사", startStage: 10, themeId: "troll",
+    purpose: "덫꾼 독→재생억제 (poisonStackApplied / regenSuppress ↔ themeTroll 정합)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, blessing: 2, trapper: 3 },
+    party: [ { kind: "fusion", id: "trapper", lvl: 3 },  // 덫꾼 — 트롤 해답
+             { kind: "trait",  id: "blessing" },         // 신관
+             { kind: "trait",  id: "snipe" },            // 궁수
+             { kind: "trait",  id: "bravery" } ],        // 전사
+  },
+  qa_th_purifier: {
+    label: "해답직 ② 중독/정화사 — 정화사/신관/궁수/전사", startStage: 10, themeId: "poison",
+    purpose: "정화사 cleanseCount ↔ themePoison 정합 / 회복+막", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, blessing: 2, purifier: 3 },
+    party: [ { kind: "fusion", id: "purifier", lvl: 3 }, // 정화사 — 중독 해답
+             { kind: "trait",  id: "blessing" },
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  qa_th_tracker: {
+    label: "해답직 ③ 암살자 제거의 길 — 추적자/도적/신관/전사", startStage: 10, themeId: "assassin",
+    purpose: "추적자 trackerReveal/markInterrupted ↔ themeAssassin 정합 (간파로 기습 감소)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, blessing: 2, snipe: 3, disrupt: 2 },
+    party: [ { kind: "fusion", id: "tracker", lvl: 3 },  // 추적자 — 간파
+             { kind: "fusion", id: "rogue", lvl: 3 },    // 도적 — 처형 딜러
+             { kind: "trait",  id: "blessing" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  qa_th_gatekeeper: {
+    label: "해답직 ④ 암살자 흡수의 길 — 수문장/신관/궁수/전사", startStage: 10, themeId: "assassin",
+    purpose: "수문장 bindOk/tauntSplit/splitDamage ↔ themeAssassin 정합 (대신 받아줬다)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, guard: 3, snipe: 3, blessing: 2 },
+    party: [ { kind: "fusion", id: "gatekeeper", lvl: 3 }, // 수문장 — 도발 결속/분산
+             { kind: "trait",  id: "blessing" },
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "bravery" } ],          // 전사 — 표식 대상 후보(도발축)
+  },
+  qa_th_wall: {
+    label: "해답직 ⑤ 장기 보호/성벽 — 성벽/사제/궁수/전사", startStage: 10, themeId: "assassin",
+    purpose: "성벽 redirectedDamage/protectionTrigger 계측 가능 여부 (수문장과 다른 함께 버티기)", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 2, guard: 3 },
+    party: [ { kind: "fusion", id: "wall", lvl: 3 },     // 성벽 — 가로채기 보호
+             { kind: "trait",  id: "heal" },
+             { kind: "trait",  id: "snipe" },
+             { kind: "trait",  id: "bravery" } ],
+  },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8cd [1차 일반직/하이브리드 10종 계측 스모크 — 유키 결]:
+  //   목적 = 계측 점등. 테마 해답직 5종·2차 3종 제외. beginner S8 / 조성 고정 / traitLevels 2~3.
+  //   합체직은 fusion으로 박되 재료 traitLevels로 강도 재현(lvl 함정 주의 — 진짜 레버는 traitLevels).
+  qa_t1_attack: {
+    label: "1차 스모크 ① 공격/광역/처형 — 도적/마도/궁수/사제", startStage: 8, themeId: "beginner",
+    purpose: "도적 처형 / 마도 광역 / 궁수 기준딜 / 사제 단일힐", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, arcanist: 3, heal: 2, guard: 2 },
+    party: [ { kind: "fusion", id: "rogue", lvl: 3 },     // 도적 — 처형
+             { kind: "fusion", id: "arcanist", lvl: 3 },  // 마도 — 광역
+             { kind: "trait",  id: "snipe" },             // 궁수 — 기준딜
+             { kind: "trait",  id: "heal" } ],            // 사제 — 단일힐 기준
+  },
+  qa_t1_frontline: {
+    label: "1차 스모크 ② 전열/하이브리드 — 선봉/성기사/성직자/궁수", startStage: 8, themeId: "beginner",
+    purpose: "선봉 딜+소힐 / 성기사 딜+자힐+막 / 성직자 다중힐 / 궁수 기준딜", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 3, blessing: 2, guard: 2 },
+    party: [ { kind: "fusion", id: "vanguard", lvl: 3 },  // 선봉 — 딜+소힐
+             { kind: "fusion", id: "paladin", lvl: 3 },   // 성기사 — 하이브리드
+             { kind: "fusion", id: "cleric", lvl: 3 },    // 성직자 — 다중힐
+             { kind: "trait",  id: "snipe" } ],           // 궁수 — 기준딜
+  },
+  qa_t1_control: {
+    label: "1차 스모크 ③ 제어/보호/봉인 — 바드/워든/파수궁/금제", startStage: 8, themeId: "beginner",
+    purpose: "바드 게이지컷 / 워든 위협제압 / 파수궁 보호+보복 / 금제 봉인", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, guard: 3, snipe: 3, disrupt: 2, arcanist: 2 },
+    party: [ { kind: "fusion", id: "bard", lvl: 3 },      // 바드 — 게이지 조율 (delayedGaugeAmount)
+             { kind: "fusion", id: "warden", lvl: 3 },    // 워든 — 위협 제압
+             { kind: "fusion", id: "hunter", lvl: 3 },    // 파수궁 — 보호+보복
+             { kind: "fusion", id: "binder", lvl: 3 } ],  // 금제 — 봉인
+  },
+  qa_t1_chainheal: {
+    label: "1차 스모크 ④ 치유궁 비교 — 치유궁/사제/궁수/전사", startStage: 8, themeId: "beginner",
+    purpose: "치유궁이 사제(힐)/궁수(딜) 사이 하이브리드로 읽히는지", type: "qa_smoke", lockComposition: true,
+    traitLevels: { bravery: 3, snipe: 3, heal: 3 },
+    party: [ { kind: "fusion", id: "chainheal", lvl: 3 }, // 치유궁 — 딜+힐 하이브리드
+             { kind: "trait",  id: "heal" },              // 사제 — 힐 기준
+             { kind: "trait",  id: "snipe" },             // 궁수 — 딜 기준
+             { kind: "trait",  id: "bravery" } ],         // 전사 — 전열 유지
+  },
+  // ───────────────────────────────────────────────────────────────────────
+  // v0.3.8cc [기준직 6종 계측 스모크 — 유키 결: "기준직이 계기판에서 기준으로 읽히는가"]:
+  //   목적 = 승패가 아니라 *계측 점등*. 기준직 6종(trait)만으로 roleStats byActor/byJob 판독.
+  //   beginner 테마(격리) S8 / 조성 고정 / traitLevels 2 균등 (생존용 최소 — 밸런스 판정 아님).
+  //   카나리아(mx_canary_win)는 불가침 — 회귀용 그대로 (유키 B안).
+  qa_base_roles_smoke: {
+    label: "기준직 스모크 ① — 전사/수호자/사제/궁수", startStage: 8, themeId: "beginner",
+    purpose: "기준직 계측 점등 — 전사 dd·dt / 수호자 dt·sg·sa / 사제 hd·eh·oh / 궁수 dd·kc", type: "qa_smoke",
+    lockComposition: true,
+    traitLevels: { bravery: 2, guard: 2, heal: 2, snipe: 2 },
+    party: [ { kind: "trait", id: "bravery" },   // 전사 — 전열 기준 (맞고 때림)
+             { kind: "trait", id: "guard" },     // 수호자 — 방패 기준 (보호막 생성/흡수)
+             { kind: "trait", id: "heal" },      // 사제 — 단일 회복 기준
+             { kind: "trait", id: "snipe" } ],   // 궁수 — 후열 단일딜 기준
+  },
+  qa_base_roles_support: {
+    label: "기준직 스모크 ② — 전사/신관/궁수/교란꾼", startStage: 8, themeId: "beginner",
+    purpose: "기준직 계측 점등 — 신관 hd·eh·oh(광역=overheal 점등) / 교란꾼 dd·delayCount", type: "qa_smoke",
+    lockComposition: true,
+    traitLevels: { bravery: 2, blessing: 2, snipe: 2, disrupt: 2 },
+    party: [ { kind: "trait", id: "bravery" },   // 전사 — 전열 유지
+             { kind: "trait", id: "blessing" },  // 신관 — 광역 안정 기준
+             { kind: "trait", id: "snipe" },     // 궁수 — 딜 기준
+             { kind: "trait", id: "disrupt" } ], // 교란꾼 — 제어 기준 (감속 횟수)
+  },
+  qa_base_roles_control: {
+    label: "기준직 스모크 ③ — 수호자/사제/신관/교란꾼", startStage: 8, themeId: "beginner",
+    purpose: "기준직 계측 점등 — 저딜 조합 장기전 (사제/신관 분리 판독 + 수호자 흡수 누적)", type: "qa_smoke",
+    lockComposition: true,
+    traitLevels: { guard: 2, heal: 2, blessing: 2, disrupt: 2 },
+    party: [ { kind: "trait", id: "guard" },     // 수호자
+             { kind: "trait", id: "heal" },      // 사제
+             { kind: "trait", id: "blessing" },  // 신관
+             { kind: "trait", id: "disrupt" } ], // 교란꾼
+  },
+  // ───────────────────────────────────────────────────────────────────────
   // v0.3.8bu [QA Matrix Runner MVP — 유키 결: "나라님의 시간은 주회에 쓰지 않는다"]:
   //   매트릭스 전용 프리셋 6종 (beginner/assassin × bal/key/fail). DEV 메뉴 비노출(러너 전용).
   //   전부 S1 시작 + lockComposition(조성 고정 — 우선순위: 고정성>재현성>적재>일반런 유사).
@@ -6473,7 +6709,7 @@ const DEV_STAGE_PRESETS = {
   // v0.3.8bu→bv [QA Matrix Phase 1A — 유키 확정 사양]: 프리셋 6종.
   //   nov(beginner) 3종 = S1 / asn 3종 = S8. 전부 lockComposition(조성 고정 우선 — 유키 정책 C).
   //   렌 확정 직업 (회신 1): 표준딜1 = 궁수(snipe — 기본 직업 중 원거리 단일딜의 표준형) /
-  //   nov_fail = 딜4 노힐(전사/궁수/유격수/도적) / asn_fail = 정답 부재(힐은 있되 도발·추적자 없음).
+  //   nov_fail = 딜4 노힐(전사/궁수/교란꾼/도적) / asn_fail = 정답 부재(힐은 있되 도발·추적자 없음).
   //   nov_key는 nov_bal과 *완전 동일* — A/A 테스트 (같은 조건에서 Runner 결과 요동 측정용 분리 코드).
   mx_nov_bal: { label:"MX nov bal", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix",
     choicePolicy:"lock_composition",
@@ -7593,7 +7829,7 @@ function backToTraitSelect() {
 }
 
 /* ============================================================
-   영웅 도감 — 21개 직업 보기
+   영웅 도감 — 24직업 정식 도감 (v0.3.8cb: 개발 현황판 → 직업 소개 페이지)
    ============================================================ */
 
 function openCodex() {
@@ -7602,16 +7838,8 @@ function openCodex() {
 }
 
 function renderCodex() {
-  // 요약 통계
-  const summary = document.getElementById("codex-summary");
-  const total = CODEX_ENTRIES.length;
-  const impl = CODEX_ENTRIES.filter(e => e.status === "구현").length;
-  const planned = total - impl;
-  summary.innerHTML = `
-    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">TOTAL</div></div>
-    <div class="stat"><div class="stat-num" style="color: var(--good);">${impl}</div><div class="stat-label">구현</div></div>
-    <div class="stat"><div class="stat-num" style="color: var(--text-faint);">${planned}</div><div class="stat-label">예정</div></div>
-  `;
+  // v0.3.8cb: TOTAL/구현/예정 요약 통계 제거 — 24직업은 작품의 정식 구성 (유키 결).
+  //   개발 상태는 유저 정보가 아니다. 도감 첫 화면 = 직업 소개.
 
   // 단계별 섹션
   const tiers = document.getElementById("codex-tiers");
@@ -7632,16 +7860,13 @@ function renderCodex() {
 }
 
 function renderCodexCard(entry) {
-  const statusClass = entry.status === "구현" ? "s-impl"
-                   : entry.status === "v1.0" ? "s-v1" : "s-unimpl";
-  const cardClass = entry.status === "구현" ? ""
-                  : entry.status === "v1.0" ? "endgame" : "unimpl";
+  // v0.3.8cb: 구현 상태 배지(s-impl/s-v1/s-unimpl) 노출 제거 — 24직업 전부 정식 구성.
+  //   entry.status 데이터 필드와 CSS 클래스는 보존 (저장 호환/구조 보존 — 화면 노출만 끔).
   const posClass = entry.role === "front" ? "front" : "back";
   const posLabel = entry.role === "front" ? "전열" : "후열";
   return `
-    <div class="codex-card ${cardClass}" onclick="openCodexDetail('${entry.id}')">
+    <div class="codex-card" onclick="openCodexDetail('${entry.id}')">
       <span class="codex-card-pos ${posClass}">${posLabel}</span>
-      <span class="codex-card-status ${statusClass}">${entry.status}</span>
       <div class="codex-card-avatar">
         ${avatarBattleSVG(entry.id)}
       </div>
@@ -7754,8 +7979,7 @@ function openCodexDetail(entryId) {
   const entry = CODEX_ENTRIES.find(e => e.id === entryId);
   if (!entry) return;
   const tier = CODEX_TIERS.find(t => t.id === entry.tier);
-  const statusClass = entry.status === "구현" ? "s-impl"
-                   : entry.status === "v1.0" ? "s-v1" : "s-unimpl";
+  // v0.3.8cb: 개발 상태(statusClass) 표시 제거 — 도감 상세도 최종 직업 언어로 (유키 결)
   const card = document.getElementById("codex-detail-card");
 
   card.innerHTML = `
@@ -7828,11 +8052,6 @@ function openCodexDetail(entryId) {
 
       return actionHTML + tagHTML + statHTML + growthHTML + fusionInfoHTML;
     })()}
-
-    <div class="codex-detail-status ${statusClass}">
-      ${entry.status === "구현" ? "▸ 현재 플레이 가능" :
-        entry.status === "v1.0" ? "▸ v1.0 종착지" : "▸ 효과 미구현 (예정)"}
-    </div>
   `;
 
   document.getElementById("codex-detail").classList.add("active");
@@ -8104,7 +8323,7 @@ const AVATAR_PARTS = {
     <rect x="30" y="40" width="5" height="8" fill="${AVATAR_FG}"/>
   `,
   paladin: `
-    <!-- 성휘: 용맹 + 치유 = 빛나는 성기사 -->
+    <!-- 성기사: 용맹 + 치유 = 빛나는 성기사 -->
     <!-- 큰 후광 -->
     <circle cx="28" cy="14" r="9" fill="none" stroke="#f0e4a8" stroke-width="1.4" opacity="0.7"/>
     <circle cx="28" cy="14" r="9" fill="#f0e4a8" opacity="0.15"/>
@@ -8173,7 +8392,7 @@ const AVATAR_PARTS = {
     <rect x="30" y="40" width="5" height="8" fill="${AVATAR_FG}"/>
   `,
   chainheal: `
-    <!-- 치원: 치유 + 저격 = 연쇄 회복 원호 -->
+    <!-- 치유궁: 치유 + 저격 = 연쇄 회복 원호 -->
     <!-- 후광 (작음) -->
     <circle cx="28" cy="14" r="8" fill="none" stroke="#5ddba8" stroke-width="1" opacity="0.6"/>
     <!-- 작은 활 + 회복 화살 -->
@@ -8347,7 +8566,7 @@ const AVATAR_PARTS = {
     <path d="M 22.5 13 Q 22.5 7 28 6 Q 33.5 7 33.5 13" fill="${AVATAR_FG}"/>
   `,
   tracker: `
-    <!-- 추적자: 궁수 + 유격수 = 선제 저격수. 스코프/조준 -->
+    <!-- 추적자: 궁수 + 교란꾼 = 선제 저격수. 스코프/조준 -->
     <!-- 긴 저격 활/석궁 (대각선) -->
     <line x1="6" y1="44" x2="40" y2="12" stroke="#6a4a6a" stroke-width="2.4" stroke-linecap="round"/>
     <path d="M 4 40 Q 8 44 12 44" stroke="#8a5a9a" stroke-width="2" fill="none" stroke-linecap="round"/>
@@ -8723,7 +8942,7 @@ function currentPhaseLabel() {
   return s ? s.phase : null;
 }
 
-/* 지연 콜백(마도/현자 파동, 유격수 교란 등 setTimeout 안의 dealDamage)이
+/* 지연 콜백(마도/현자 파동, 교란꾼 교란 등 setTimeout 안의 dealDamage)이
    "죽은 전투의 잔재"인지 판단하는 공통 가드.
 
    stale 조건 (하나라도 참이면 stale):
@@ -9556,6 +9775,42 @@ function ensureRunStatsForUnit(u) {
     poisonDamageTaken: 0,   // 아군이 적 독으로 받은 피해
     statusDamageTaken: 0,   // 기타 상태 피해
     fissureDamageTaken: 0,  // v0.3.8al8: 전장 균열로 추가로 받은 피해 (최종피해엔 포함, 별도 집계)
+    // v0.3.8cb [roleStats 그릇 — 유키 결: "각 직업이 자기 역할을 했는지 읽을 수 있는 그릇"]
+    //   기존 카운터와 의미 중복 없이, 빠진 축만 추가. 적재는 buildRoleStatsFromRun이 발자취/Matrix로.
+    damageTaken: 0,          // 받은 피해 총량 (overkill 제외 — 실제 깎인 만큼)
+    healAttempted: 0,        // 회복 시도 총량 (roleStats.healingDone — overheal 포함)
+    overhealAmount: 0,       // 넘친 회복 (healAttempted - 실회복)
+    delayCount: 0,           // 적 박자를 늦춘 횟수 (교란꾼 감속 / 바드 감속 / 워든 제압)
+    delayedGaugeAmount: 0,   // 즉시 깎은 게이지 총량 (바드 -30 / 워든 -40 — 교란꾼은 속도감소형이라 0)
+    cleanseCount: 0,         // 정화 시전 성공 횟수 (per-actor — 런 전체는 _themePoisonStats)
+    trackerRevealCount: 0,   // 은신 간파 횟수 (per-actor — 런 전체는 _themeAssassinStats)
+    bindOkCount: 0,          // 도발 결속 성립 횟수 (도발 영웅 귀속)
+    tauntSplitCount: 0,      // 칼끝 분산 발동 횟수 (도발 영웅 귀속)
+    // v0.3.8cd [roleStats — 1차 일반직/하이브리드 특수 계측] (단일 자리·정직 측정만)
+    revengeCount: 0,         // 파수궁 지원사격(보복) 발동 횟수
+    revengeDamage: 0,        // 보복 피해(시도값 — 실착탄은 damageDealt에 포함)
+    debuffAppliedCount: 0,   // 금제 신규 봉인 지정 횟수
+    chargeCount: 0,          // 마도 차징 횟수
+    aoeCastCount: 0,         // 마도 파동 시전 횟수
+    aoeHitCount: 0,          // 마도 파동이 적중한 총 타격 수 (targetsHitPerCast = aoeHitCount/aoeCastCount)
+    multiHealCount: 0,       // 한 행동에서 2명+ 회복한 횟수 (성직자 다중힐)
+    healCastCount: 0,        // 회복을 1명+ 수행한 행동 수 (성직자 — targetsHealedPerAction 분모)
+    healTargetsTotal: 0,     // 회복 대상 연인원 (성직자 — targetsHealedPerAction 분자)
+    // v0.3.8ce [roleStats — 테마 해답직 5종 특수 계측] (단일 자리·정직 측정만)
+    poisonStackApplied: 0,   // 독 부여 횟수 (덫꾼/도적 — 시전자 귀속)
+    regenSuppressCount: 0,   // 내 독이 트롤 재생을 꺾은 횟수 (덫꾼 귀속 — 런 전체는 _themeTrollStats)
+    regenSuppressAmount: 0,  // 내 독이 말린 재생량 총합 (덫꾼 귀속)
+    markInterruptedCount: 0, // 색적으로 표식을 흐트러뜨린 횟수 (추적자 귀속 — 런 전체는 _themeAssassinStats)
+    splitDamage: 0,          // 도발 분산으로 대신 받은 피해 총합 (수문장/도발 영웅 귀속)
+    redirectedDamage: 0,     // 성벽 가로채기로 막아낸 피해 총합 (성벽 귀속)
+    protectionTriggerCount: 0, // 성벽 가로채기 발동 횟수 (성벽 귀속)
+    // v0.3.8cf [roleStats — 2차 직업 3종 특수 계측] (단일 자리·정직 측정만)
+    pierceHitCount: 0,       // 용창 관통(추가타) 적중 횟수
+    pierceDamageTotal: 0,    // 용창 관통 피해 총합
+    pierceActionCount: 0,    // 용창 관통 행동 수 (pierceTargetsPerAction = pierceHitCount/pierceActionCount)
+    sanctuaryNegateCount: 0, // 성황 성역 발동 횟수 (sanctuaryPreventedDamage는 METER_MISSING)
+    // v0.3.8cg [roleStats — 판독 보강] (정확히 계산되는 것만 — 추정은 METER_MISSING 유지)
+    boundTargetDamageOutput: 0, // 금제: 내가 묶은 적이 실제로 낸 피해 총량 (심판이 "묶인 적이 약해졌나" 판독)
   };
 }
 
@@ -9605,7 +9860,7 @@ function loadStage(stageNum, enemiesOverride) {
   const enemyList = (enemiesOverride && enemiesOverride.length) ? enemiesOverride : stage.enemies;
   runState.enemies = enemyList.map(tplId => makeEnemyUnit(tplId));
   // v0.3.8al10: front4+back1 무대 — stage.visualBack 수만큼 뒤 마리를 시각적 후열로 (행동은 전열 유지).
-  //   "나가가 우글우글"의 압박 유지 + 후열 단독 나가를 견제하는 직업(용창/궁수/유격수) 무대.
+  //   "나가가 우글우글"의 압박 유지 + 후열 단독 나가를 견제하는 직업(용창/궁수/교란꾼) 무대.
   if (stage && stage.visualBack && stage.visualBack > 0) {
     const n = Math.min(stage.visualBack, runState.enemies.length - 1);  // 최소 1마리는 전열에 남김
     for (let k = 0; k < n; k++) {
@@ -9874,6 +10129,8 @@ function splitMarkedStrikeByTaunt(actor, marked, tauntor, totalDmg) {
     runState._themeAssassinStats.tauntSplitCount += 1;
     runState._themeAssassinStats.tauntSplitDamageShared += tauntShare;  // v0.3.8au: 도발이 나눠 받은 총 피해(진실 확인)
   }
+  statsBump(tauntor.uid, "tauntSplitCount", 1);   // v0.3.8cb [roleStats]: 도발 영웅 귀속 — "대신 받아줬다"의 숫자판
+  statsBump(tauntor.uid, "splitDamage", tauntShare);  // v0.3.8ce [roleStats]: 수문장이 대신 받은 피해
   liveTauntTrace("LIVE_TAUNT_SPLIT_COUNT_INCREMENTED ✓");
   // v0.3.8au [TAUNT_SPLIT_DEBUG] — 기능이 실제 발동했는지 콘솔+로그로 명시 (확인 전용).
   console.log("[TAUNT_SPLIT_DEBUG]", {
@@ -10018,6 +10275,7 @@ function bindTauntGuardToMarked(tauntor) {
   if (runState._themeAssassinStats) {
     runState._themeAssassinStats.bindOkCount = (runState._themeAssassinStats.bindOkCount || 0) + 1;
   }
+  statsBump(tauntor.uid, "bindOkCount", 1);   // v0.3.8cb [roleStats]: 도발 영웅 귀속 — 누가 지켰는가
   return true;
 }
 
@@ -10359,6 +10617,7 @@ function _matrixCollectRow() {
       themeAssassin: t.themeAssassin || null,
       themePoison: t.themePoison || null,           // 자리만 (MVP 비대상 — 유키 결)
       themeTroll: t.themeTroll || null,             // 자리만
+      roleStats: (fp && fp.roleStats) || null,      // v0.3.8cb [roleStats]: 발자취와 같은 그릇 — 루다가 행에서 바로 읽는다
       elapsedMs: Date.now() - _matrix.runStartTs,
     };
   } catch (e) {
@@ -10700,6 +10959,8 @@ function runDevTauntSplitReplayForce() {
       runState._themeAssassinStats.tauntSplitCount += 1;
       runState._themeAssassinStats.tauntSplitDamageShared += tauntShare;
     }
+    statsBump(tauntor.uid, "tauntSplitCount", 1);   // v0.3.8cb [roleStats]: 런 전체 카운터(기존 결정)와 같은 진실 유지 — DEV 재현도 동일 귀속
+    statsBump(tauntor.uid, "splitDamage", tauntShare);  // v0.3.8ce [roleStats]
     console.log("[TAUNT_SPLIT_DEBUG]", {
       source: enemy.name, markedTarget: marked.name, tauntor: tauntor.name,
       totalDamage: TOTAL, markedShare: markShare, tauntShare: tauntShare,
@@ -11071,7 +11332,7 @@ function getReactionKind(actor, actionType) {
     if (t === "poison_anti_heal") return "debuff";
     if (t === "speed_control")    return "haste";
     if (t === "turn_def_up")      return "shield";
-    if (t === "holy_sustain")     return "taunt";   // 성휘 = 앞으로 한 발 (빛의 전사)
+    if (t === "holy_sustain")     return "taunt";   // 성기사 = 앞으로 한 발 (빛의 전사)
     if (t === "arcane_chain")     return "heal";    // 마도 = 부드럽게 떠오름 (마법 시전)
     if (t === "gate_taunt")       return "taunt";   // v0.3.8 수문장 = 도발
     if (t === "dual_heal")        return "heal";    // v0.3.8 성직자 = 치유
@@ -11202,6 +11463,10 @@ function actDebuff(actor) {
       if (!target.alive) return;
       dealDamage(actor, target, dmg);
       target.spd = Math.max(40, Math.floor(target.spd * 0.7));  // 속도 -30%
+      // v0.3.8cc [roleStats — 기준직]: 교란꾼 본체 계측. 감속 적용 1회 = delayCount +1.
+      //   교란꾼은 *속도 감소형*(게이지 즉시컷 아님) — delayedGaugeAmount는 0이 코드 진실.
+      //   속도→게이지 환산치는 측정이 아니라 추정이라 박지 않는다 (거짓 계기판 금지).
+      statsBump(actor.uid, "delayCount", 1);
       drawLine(actor, target, "debuff");
     }, i * 80);
   });
@@ -11305,6 +11570,7 @@ function actFusion(actor) {
       if (target.alive) {
         target.poisoned = Math.max(target.poisoned || 0, 3);
         target._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자 — 자해 tick을 시전자 딜로 귀속
+        statsBump(actor.uid, "poisonStackApplied", 1);   // v0.3.8ce [roleStats]: 도적 단일 독 (덫꾼 넓은 독과 대조)
         pushEvent(`<b>${actor.name}</b> ${isExecution ? "처형" : "독칼"} → ${target.name} (${dmg}${isExecution ? "!" : ""}) 중독`, "attack");
       }
       break;
@@ -11354,6 +11620,7 @@ function actFusion(actor) {
           // v0.3.6: 중독 지속 3턴 → 2턴 (덫꾼이 너무 빠르게 독 바다 만드는 자리 조정)
           t.poisoned = Math.max(t.poisoned || 0, 2);
           t._poisonSourceUid = actor.uid;   // v0.3.8ac: 독 시전자 (덫꾼)
+          statsBump(actor.uid, "poisonStackApplied", 1);   // v0.3.8ce [roleStats]: 덫꾼 독 부여 (넓은 커버리지)
           drawLine(actor, t, "debuff");
         }, 150 + i * 100);
       });
@@ -11387,6 +11654,10 @@ function actFusion(actor) {
         // (a) 즉시 현재 게이지 30 깎음 (0 미만 안 됨)
         t.gauge = Math.max(0, t.gauge - 30);
         const gaugeAfter = Math.round(t.gauge);
+        // v0.3.8cc [정정]: 이 자리는 *바드* 감속이다 (cb 주석이 "교란꾼"으로 잘못 적힘 — 계측 자체는 유효).
+        //   교란꾼 본체 계측은 actDebuff에 있다. delayedGaugeAmount = 즉시 깎은 게이지(바드 -30/워든 -40)만.
+        statsBump(actor.uid, "delayCount", 1);
+        statsBump(actor.uid, "delayedGaugeAmount", gaugeBefore - gaugeAfter);
         // (b) 2턴 slow — speedMul 0.7 (게이지 fill rate 30% 감소)
         t._speedMul = 0.7;
         t._slowedTurns = 2;
@@ -11465,6 +11736,8 @@ function actFusion(actor) {
       const targetWasAlive = target.alive;
       dealDamage(actor, target, dmg, { isCritical: isRhythmBuffed });
       drawLine(actor, target, "attack");
+      statsBump(actor.uid, "pierceActionCount", 1);   // v0.3.8cf [roleStats]: 용창 관통 행동 1회
+      let pierceKilled = false;   // v0.3.8ch [정합성]: 이번 행동의 관통 처치 여부 (지역 — 잔류 없음)
 
       // 관통: 뒤에 적이 있으면 동일 피해
       // (target이 front였으면 back 후열, 그 외엔 다른 살아있는 적 중 하나)
@@ -11477,15 +11750,22 @@ function actFusion(actor) {
           const backScore = (e) => (e.role === "ranged" || e.role === "caster" || e._visualBack) ? 1 : 0;
           return backScore(b) - backScore(a);
         })[0];
+        const piercedWasAlive = piercedTarget.alive;   // v0.3.8ch [정합성]: 관통 처치도 재돌격 조건에 포함
         dealDamage(actor, piercedTarget, dmg);
+        statsBump(actor.uid, "pierceHitCount", 1);              // v0.3.8cf [roleStats]: 관통 추가타 적중
+        statsBump(actor.uid, "pierceDamageTotal", Math.min(dmg, piercedTarget.maxHp));  // 관통 피해(근사)
         drawLine(actor, piercedTarget, "attack");
         pushEvent(`<b>${actor.name}</b> 관통 — ${target.name} → ${piercedTarget.name}`, "attack");
+        pierceKilled = (piercedWasAlive && !piercedTarget.alive);   // v0.3.8ch: 관통으로 처치했는가
       } else {
         pushEvent(`<b>${actor.name}</b> 찌른다 — ${target.name}`, "attack");
       }
 
       // 처치 시 행동력 100% 회복 — 연속 행동 자리
-      if (targetWasAlive && !target.alive) {
+      // v0.3.8ch [언어-동작 정합성, 유키 A안]: 메인 처치 OR 관통 추가타 처치 → 재돌격.
+      //   도감/태그("처치 시 재돌격 / 연속 행동")와 일치. OR이라 한 행동 2킬도 재돌격 1회·gauge=100 동일.
+      const mainKilled = (targetWasAlive && !target.alive);
+      if (mainKilled || pierceKilled) {
         actor.gauge = 100;
         showActionLabel(actor, "재돌격!", "attack");
         pushEvent(`<b>${actor.name}</b> 적을 끊고 다시 자세를 잡는다 — 행동력 회복`, "attack");
@@ -11621,6 +11901,7 @@ function actFusion(actor) {
         pushEvent(`<b>${actor.name}</b>가 <b>${target.name}</b>의 ${cleansed.join("·")}을 씻어냈다 — 회복 +${healAmt} · 보호막 ◇${shieldAmt}`, "heal");
         // v0.3.8by [Phase 1B — 유키 A안]: 정화 시전 성공 1회당 +1 (개수 합산 아님 — "정화에 화력을 지불할 가치" 판독용)
         if (runState._themePoisonStats) runState._themePoisonStats.cleanseCount += 1;
+        statsBump(actor.uid, "cleanseCount", 1);   // v0.3.8cb [roleStats]: per-actor — 같은 사건, 같은 숫자
       } else {
         // v0.3.8: 상태이상 없음 — 약공격이 아니라 사제처럼 HP 최저 아군 단일 치유
         const woundedAllies = runState.units.filter(u =>
@@ -11692,6 +11973,7 @@ function actFusion(actor) {
         if (candidates.length > 0) {
           const protectee = candidates[0];
           protectee.shield += 12;
+          if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", 12);   // v0.3.8cd [roleStats]: 누락 계측 연결 (수치 무변경)
           drawLine(actor, protectee, "shield");
           reactReceive(protectee, "shield");
           actor._shieldCooldown = 3;
@@ -11730,6 +12012,7 @@ function actFusion(actor) {
           activeBind = aliveEnemies[0];
           actor._bindingTargetUid = activeBind.uid;
           actor._bindingTurns = 2;
+          statsBump(actor.uid, "debuffAppliedCount", 1);   // v0.3.8cd [roleStats]: 금제 신규 봉인 지정
           showActionLabel(actor, "금제!", "shield");
           drawLine(actor, activeBind, "binder_link");
           pushEvent(`<b>${actor.name}</b> 금제 — <b>${activeBind.name}</b>을(를) 묶는다`, "system");
@@ -11757,6 +12040,7 @@ function actFusion(actor) {
             enemyTarget.atk = Math.floor(enemyTarget._atkOriginal * 0.6);
           }
           enemyTarget._atkSealStacks = 2;  // 2턴 갱신
+          enemyTarget._sealedByUid = actor.uid;   // v0.3.8cg [roleStats]: 묶은 금제 귀속 (계측 전용 — 효과 무변경)
           pushEvent(`<b>${enemyTarget.name}</b> 공격력 약화 (-40%, 2턴)`, "debuff");
         }
       }
@@ -11764,7 +12048,7 @@ function actFusion(actor) {
     }
 
     /* ─── 워든 (v0.3.7.7 박힘): 위험한 적 1명 끊는 전열 제어 ───
-       조합: 전사 + 유격수
+       조합: 전사 + 교란꾼
        의도: 곧 행동할 위험한 적 1명을 강하게 끊는다.
          - 바드: 적 2명 넓게 감속 (광역 템포 조율)
          - 워든: 위험한 1명 강하게 끊음 (포인트 끊기)
@@ -11794,6 +12078,9 @@ function actFusion(actor) {
         const gaugeBefore = Math.round(target.gauge);
         target.gauge = Math.max(0, target.gauge - 40);
         const gaugeAfter = Math.round(target.gauge);
+        // v0.3.8cb [roleStats]: 게이지 지연 계측 — 워든 제압도 같은 축 (교란꾼 감속과 동일 정의)
+        statsBump(actor.uid, "delayCount", 1);
+        statsBump(actor.uid, "delayedGaugeAmount", gaugeBefore - gaugeAfter);
         reactReceive(target, "debuff");
         pushEvent(
           `<b>${actor.name}</b> → <b>${target.name}</b> 제압 (${dmg}) · 게이지 ${gaugeBefore} → ${gaugeAfter}`,
@@ -11852,7 +12139,7 @@ function actFusion(actor) {
          - 성기사: 자기 유지 + 자기 보호막
          - 사제: 단일 직접 회복
          - 신관: 광역 회복
-         - 치원: 후열 공격 + 단일 회복 (하이브리드)
+         - 치유궁: 후열 공격 + 단일 회복 (하이브리드)
          - 선봉: 전열 공격 + 2명 소량 회복 (팀 전선 유지 결)
        동작:
          1) 전열 적 우선 공격 (atk × 1.0)
@@ -11900,13 +12187,13 @@ function actFusion(actor) {
       break;
     }
 
-    /* ─── 치원 (v0.3.7.8 박힘, v0.3.7.10 진화): 공격 + 회복 동시 (하이브리드) ───
+    /* ─── 치유궁 (v0.3.7.8 박힘, v0.3.7.10 진화): 공격 + 회복 동시 (하이브리드) ───
        조합: 사제 + 궁수
        의도: 후열에서 원호사격을 하며 동시에 아군을 치료하는 "치유 원호가".
          - 사제: 회복 중심 (단일 회복 강함)
          - 궁수: 후열 공격 중심 (피해 강함)
          - 파수궁: 후열 공격 + 보호막
-         - 치원: 후열 공격 + 회복 동시 수행 (총효율은 높지만 각 전문성은 낮음)
+         - 치유궁: 후열 공격 + 회복 동시 수행 (총효율은 높지만 각 전문성은 낮음)
        동작:
          한 행동에 동시에:
            1) 후열 적 우선 공격 (atk × 0.7 — 궁수의 70%)
@@ -12034,23 +12321,30 @@ function actFusion(actor) {
         const healTargets = aliveAllies.slice(0, Math.min(2, aliveAllies.length));
         const healAmount = Math.floor(actor.atk * 0.7 + 6);
         let anyHealed = false;
+        let _healedThisAction = 0;   // v0.3.8cd [roleStats]: 성직자 다중힐 계측
         healTargets.forEach(ally => {
           if (ally.hp < ally.maxHp) {
             doHeal(actor, ally, healAmount);
             drawLine(actor, ally, "heal");
             pushEvent(`<b>${actor.name}</b> 치유 — <b>${ally.name}</b> +${healAmount}`, "heal");
             anyHealed = true;
+            _healedThisAction++;
           } else {
             drawLine(actor, ally, "heal");
           }
         });
+        if (_healedThisAction > 0) {
+          statsBump(actor.uid, "healCastCount", 1);
+          statsBump(actor.uid, "healTargetsTotal", _healedThisAction);
+          if (_healedThisAction >= 2) statsBump(actor.uid, "multiHealCount", 1);
+        }
         if (!anyHealed) pushEvent(`<b>${actor.name}</b> — 파티 모두 든든하다`, "system");
       }
       break;
     }
 
     /* ─── v0.3.8 추적자 (mark_snipe): 집중 → 저격 선제 제거 ───
-       조합: 궁수 + 유격수
+       조합: 궁수 + 교란꾼
        의도: 위험한 후열 고체력 대상을 미리 조준해 제거. 도적(처형=마무리)과 반대.
        2단 행동 (마도 _arcaneCharged 패턴 + _aimTarget):
          행동 1 (집중): _aiming=true, _aimTarget=uid 기억.
@@ -12129,6 +12423,7 @@ function actFusion(actor) {
       if (!actor._arcaneCharged) {
         // ─── 행동 1: 차징 ───
         actor._arcaneCharged = true;
+        statsBump(actor.uid, "chargeCount", 1);   // v0.3.8cd [roleStats]: 마도 차징 횟수
         showActionLabel(actor, "집중…", "control");
         // 시각: 캐릭터 glow (charging 클래스 박음)
         const el = document.querySelector(`[data-uid="${actor.uid}"]`);
@@ -12147,6 +12442,7 @@ function actFusion(actor) {
       // 전장 중앙 기준 원형 파동 — 적 전체에게 광역 피해
       // dealDamage는 약간씩 시차로 박아 시각 결 박힘
       const pulseDmg = Math.floor(actor.atk * 1.4);
+      statsBump(actor.uid, "aoeCastCount", 1);   // v0.3.8cd [roleStats]: 마도 파동 시전 1회
       // v0.3.8n: 지연 파동타 — 예약 시점 토큰 캡처. fire 때 죽은 전투면 조용히 무시.
       const _tokArcane = runState.battleToken;
       aliveEnemies.forEach((t, i) => {
@@ -12154,6 +12450,7 @@ function actFusion(actor) {
           if (isStaleBattleCallback(_tokArcane, "arcanist_wave")) return;
           if (!t.alive) return;
           dealDamage(actor, t, pulseDmg);
+          statsBump(actor.uid, "aoeHitCount", 1);   // v0.3.8cd [roleStats]: 파동 적중 1타
         }, 120 + i * 80);
       });
 
@@ -12165,7 +12462,7 @@ function actFusion(actor) {
     }
 
     /* ─── 현자 (v0.3.7.11 박힘): 2단 행동 + 아군 템포 가속 (마도의 진화) ───
-       조합: 마도 + 유격수
+       조합: 마도 + 교란꾼
        의도: 마도의 2단 행동 결에 *아군 템포 보조*가 더해짐. 상위호환 X, "더 깊은 결".
          - 마도: 차징 → 광역 파동 (전장만 쓸어버림)
          - 현자: 차징 중 아군 게이지 가속 + 차징 후 광역 마법 (아군까지 챙긴다)
@@ -12181,6 +12478,7 @@ function actFusion(actor) {
       if (!actor._arcaneCharged) {
         // ─── 행동 1: 집중 + 아군 게이지 보조 ───
         actor._arcaneCharged = true;
+        statsBump(actor.uid, "chargeCount", 1);   // v0.3.8cf [roleStats]: 현자 차징
         showActionLabel(actor, "현자의 집중…", "control");
         const el = document.querySelector(`[data-uid="${actor.uid}"]`);
         if (el) el.classList.add("arcane-charging");
@@ -12217,6 +12515,7 @@ function actFusion(actor) {
 
       // 광역 피해 — 마도(×1.4)보다 살짝 큼 (×1.5)
       const pulseDmg = Math.floor(actor.atk * 1.5);
+      statsBump(actor.uid, "aoeCastCount", 1);   // v0.3.8cf [roleStats]: 현자 파동 시전
       // v0.3.8n: 지연 파동타 — 예약 시점 토큰 캡처. fire 때 죽은 전투면 조용히 무시.
       const _tokSage = runState.battleToken;
       aliveEnemies.forEach((t, i) => {
@@ -12224,6 +12523,7 @@ function actFusion(actor) {
           if (isStaleBattleCallback(_tokSage, "sage_wave")) return;
           if (!t.alive) return;
           dealDamage(actor, t, pulseDmg);
+          statsBump(actor.uid, "aoeHitCount", 1);   // v0.3.8cf [roleStats]: 현자 파동 적중
         }, 120 + i * 80);
       });
 
@@ -12287,6 +12587,7 @@ function actFusion(actor) {
         });
         // v0.3.7.23: 파티 전체 보호막 부여 — 인원 × 양만큼 누적
         if (actor.side === "ally") statsBump(actor.uid, "shieldGiven", shieldAmount * aliveAllies.length);
+        statsBump(actor.uid, "sanctuaryNegateCount", 1);   // v0.3.8cf [roleStats]: 성역 발동 (preventedDamage는 METER_MISSING)
         actor._sanctuaryCooldown = 3;     // 자기 턴 기준 3턴 쿨다운
         pushEvent(`<b>${actor.name}</b> 성역 발동 — 파티 전체 ◇${shieldAmount}`, "system");
       }
@@ -13008,6 +13309,11 @@ function applyTrollRegenSuppression(actor, healAmt) {
     runState._themeTrollStats.regenSuppressCount += 1;
     runState._themeTrollStats.regenSuppressAmount += suppressed;
   }
+  // v0.3.8ce [roleStats]: 재생 억제를 독 시전자(덫꾼)에게 귀속 — themeTroll과 같은 말
+  if (actor._poisonSourceUid) {
+    statsBump(actor._poisonSourceUid, "regenSuppressCount", 1);
+    statsBump(actor._poisonSourceUid, "regenSuppressAmount", suppressed);
+  }
   return { heal: finalHeal, suppressed, blocked: (finalHeal <= 0) };
 }
 // 재생 억제 표시 — 회복이 조금이라도 들어가면 "재생 봉쇄", 진짜 0이면 "재생 실패" (거짓 표시 금지).
@@ -13111,6 +13417,9 @@ function dealDamage(actor, target, amount, opts = {}) {
       // 보호선 반짝
       drawLine(protector, target, "shield");
       pushEvent(`<b>${protector.name}</b> 성벽 — <b>${target.name}</b>의 피해를 절반 막아낸다`, "shield");
+      // v0.3.8ce [roleStats]: 성벽이 막아낸 피해(절반) + 발동 횟수 귀속
+      statsBump(protector.uid, "redirectedDamage", halfRaw);
+      statsBump(protector.uid, "protectionTriggerCount", 1);
       // 각자 자기 def로 받음 (재귀 없이 직접)
       dealDamage(actor, protector, halfRaw, { ...opts, skipWallIntercept: true });
       dealDamage(actor, target,    targetRaw, { ...opts, skipWallIntercept: true });
@@ -13135,6 +13444,7 @@ function dealDamage(actor, target, amount, opts = {}) {
       pushEvent(`<b>${target.name}</b> 금제 — <b>${linkedEnemy.name}</b>이(가) 30%를 대신 받는다`, "shield");
       // 금제(원래 대상)와 연결 적 각자 처리 (재귀 없이 직접)
       // v0.3.7.16: linkedEnemy로 가는 피해는 reflect 결 (반격 처치 분기)
+      statsBump(target.uid, "redirectedDamage", transferRaw);   // v0.3.8cg [roleStats]: 금제가 전가한 피해(정확값)
       dealDamage(actor, target,      remainRaw,   { ...opts, skipBinderIntercept: true });
       dealDamage(actor, linkedEnemy, transferRaw, { ...opts, skipBinderIntercept: true, reason: "reflect" });
       return;
@@ -13200,6 +13510,7 @@ function dealDamage(actor, target, amount, opts = {}) {
         showActionLabel(target, "간파!", "attack");
         pushEvent(`<b>${actor.name}</b>가 숨어든 <b>${target.name}</b>을(를) 색적해 간파했다 — 은신 해제`, "death");
         if (runState._themeAssassinStats) runState._themeAssassinStats.trackerRevealCount += 1;
+        statsBump(actor.uid, "trackerRevealCount", 1);   // v0.3.8cb [roleStats]: per-actor — 같은 사건, 같은 숫자
         // v0.3.8ap: 색적된 owner가 건 표식도 함께 흐트러진다 (사냥꾼을 자르면 조준선이 풀린다).
         let _markCleared = false;
         runState.units.forEach(u => {
@@ -13213,6 +13524,7 @@ function dealDamage(actor, target, amount, opts = {}) {
         if (_markCleared) {
           pushEvent(`사냥꾼을 잃은 표식이 흐트러졌다`, "info");
           if (runState._themeAssassinStats) runState._themeAssassinStats.markInterruptedCount += 1;
+          statsBump(actor.uid, "markInterruptedCount", 1);   // v0.3.8ce [roleStats]: 추적자 귀속 — 같은 말
         }
       } else {
         showActionLabel(target, "은신 해제", "info");
@@ -13297,6 +13609,16 @@ function dealDamage(actor, target, amount, opts = {}) {
       if (opts.isCritical) statsBump(actor.uid, "criticals", 1);
       if (opts.isExecute)  statsBump(actor.uid, "executes",  1);
     }
+    // v0.3.8cg [roleStats]: 묶인 적(금제 대상)이 실제로 낸 피해를 묶은 금제에 귀속.
+    //   statsBump은 perUnit에 없는 uid면 조용히 무시 — 죽은/교체된 금제도 안전.
+    if (actor && actor.side === "enemy" && actor._sealedByUid && actor._atkSealStacks > 0) {
+      statsBump(actor._sealedByUid, "boundTargetDamageOutput", Math.min(dmg, hpBeforeDamage));
+    }
+    // v0.3.8cb [roleStats]: 아군 피격 귀속 — damageDealt와 같은 기준(overkill 제외).
+    //   statsBump는 perUnit에 없는 uid(적)를 조용히 무시하므로 가드 불필요.
+    if (target && target.side === "ally") {
+      statsBump(target.uid, "damageTaken", Math.min(dmg, hpBeforeDamage));
+    }
   } else if (target.shield <= 0) {
     // 데미지 0 (예: 보호막 흡수 100%) — 약한 흔들림
     if (target.alive) shakeUnit(target, "mild");
@@ -13312,6 +13634,8 @@ function dealDamage(actor, target, amount, opts = {}) {
     const guardian = runState.units.find(u => u.uid === target._guardianUid && u.alive);
     if (guardian && guardian.uid !== target.uid && guardian.fusionId === "hunter") {
       const counterDmg = Math.floor(guardian.atk * 0.6);   // 검증용 보수값
+      statsBump(guardian.uid, "revengeCount", 1);              // v0.3.8cd [roleStats]: 파수궁 보복 발동
+      statsBump(guardian.uid, "revengeDamage", counterDmg);    //   시도값(실착탄은 아래 dealDamage가 damageDealt에 반영)
       showActionLabel(guardian, "지원사격!", "attack");
       drawLine(guardian, actor, "attack");
       pushEvent(`<b>${guardian.name}</b> 지원사격 — <b>${actor.name}</b>에게 반격 (${counterDmg})`, "attack");
@@ -13643,6 +13967,12 @@ function doHeal(actor, target, amount) {
   const before = target.hp;
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const healed = target.hp - before;
+  // v0.3.8cb [roleStats]: 회복 시도/낭비 계측 — healDone(실회복) 의미는 기존 그대로.
+  //   healAttempted = 시도 총량 / overhealAmount = 넘친 양. "사제가 일했는데 회복이 0인가, 일 자체가 없었나"를 가른다.
+  if (actor && actor.side === "ally" && amount > 0) {
+    statsBump(actor.uid, "healAttempted", amount);
+    if (amount > healed) statsBump(actor.uid, "overhealAmount", amount - healed);
+  }
   if (healed > 0) {
     // v0.3.7.15: 시전자=대상이면 self 결 (행동 라벨과 위치 겹침 회피)
     const isSelf = (actor && target && actor.uid === target.uid);
@@ -15040,6 +15370,79 @@ function _themeContext() {
   };
 }
 
+/* ---------- v0.3.8cb [roleStats 그릇 — 유키 결] ----------
+   "발자취 / Matrix row에서 각 직업이 자기 역할을 했는지 읽을 수 있는 그릇."
+   - 원천은 runState.runStats.perUnit 하나 (계기판 단일 진실 — 별도 집계 경로 안 만듦).
+   - 필드 정의 (정직 표기):
+       healingDone      = 회복 시도 총량 (healAttempted — overheal 포함)
+       effectiveHealing = 실제 채운 회복 (기존 healDone과 같은 수)
+       overhealAmount   = healingDone - effectiveHealing
+       damageTaken      = 받은 피해 (overkill 제외 — damageDealt와 같은 기준)
+       shieldGenerated/shieldAbsorbed = 기존 shieldGiven/shieldBlocked의 export 명
+       killCount        = 기존 kills / poisonDamageDealt = 기존 poisonDamage
+   - byJob은 byActor의 합 (같은 직업 여러 기 = 합산). 새 판정 없음 — 그릇만.
+*/
+function buildRoleStatsFromRun() {
+  const perUnit = (runState && runState.runStats && runState.runStats.perUnit) || {};
+  const byActor = {}, byJob = {};
+  Object.values(perUnit).forEach(u => {
+    const e = {
+      jobId: u.jobId || null,
+      jobName: u.name || null,
+      damageDealt: u.damageDealt || 0,
+      healingDone: u.healAttempted || 0,
+      effectiveHealing: u.healDone || 0,
+      overhealAmount: u.overhealAmount || 0,
+      shieldGenerated: u.shieldGiven || 0,
+      shieldAbsorbed: u.shieldBlocked || 0,
+      damageTaken: u.damageTaken || 0,
+      killCount: u.kills || 0,
+      delayCount: u.delayCount || 0,
+      delayedGaugeAmount: u.delayedGaugeAmount || 0,
+      poisonDamageDealt: u.poisonDamage || 0,
+      cleanseCount: u.cleanseCount || 0,
+      trackerRevealCount: u.trackerRevealCount || 0,
+      bindOkCount: u.bindOkCount || 0,
+      tauntSplitCount: u.tauntSplitCount || 0,
+      // v0.3.8cd: 1차 일반직/하이브리드 특수 계측 (기존 카운터 노출 + cd 신규)
+      executeCount: u.executes || 0,              // 도적 처형 횟수 (기존 executes 노출)
+      executeDamage: u.executeDamage || 0,        // 도적 처형 피해 (기존)
+      chargeCount: u.chargeCount || 0,            // 마도 차징
+      aoeCastCount: u.aoeCastCount || 0,          // 마도 파동 시전
+      aoeHitCount: u.aoeHitCount || 0,            // 마도 파동 적중 타격
+      multiHealCount: u.multiHealCount || 0,      // 성직자 2명+ 회복 행동
+      healCastCount: u.healCastCount || 0,        // 성직자 회복 행동 수
+      healTargetsTotal: u.healTargetsTotal || 0,  // 성직자 회복 연인원
+      revengeCount: u.revengeCount || 0,          // 파수궁 보복 발동
+      revengeDamage: u.revengeDamage || 0,        // 파수궁 보복 피해(시도)
+      debuffAppliedCount: u.debuffAppliedCount || 0, // 금제 봉인 지정
+      reflectDamage: u.reflectDamage || 0,        // 금제/성벽 가로채기 반사 (기존 필드)
+      // v0.3.8ce: 테마 해답직 5종 특수 계측
+      poisonStackApplied: u.poisonStackApplied || 0,     // 덫꾼/도적 독 부여 횟수
+      regenSuppressCount: u.regenSuppressCount || 0,     // 덫꾼: 내 독이 트롤 재생 꺾은 횟수
+      regenSuppressAmount: u.regenSuppressAmount || 0,   // 덫꾼: 말린 재생량
+      markInterruptedCount: u.markInterruptedCount || 0, // 추적자: 표식 흐트러뜨림
+      splitDamage: u.splitDamage || 0,                   // 수문장: 대신 받은 분산 피해
+      redirectedDamage: u.redirectedDamage || 0,         // 성벽: 가로채기로 막아낸 피해
+      protectionTriggerCount: u.protectionTriggerCount || 0, // 성벽: 가로채기 발동 횟수
+      // v0.3.8cf: 2차 직업 3종 특수 계측
+      pierceHitCount: u.pierceHitCount || 0,             // 용창 관통 적중
+      pierceDamageTotal: u.pierceDamageTotal || 0,       // 용창 관통 피해
+      pierceActionCount: u.pierceActionCount || 0,       // 용창 관통 행동 (pierceTargetsPerAction 분모)
+      sanctuaryNegateCount: u.sanctuaryNegateCount || 0, // 성황 성역 발동
+      boundTargetDamageOutput: u.boundTargetDamageOutput || 0, // 금제: 묶은 적 실제 출력
+    };
+    byActor[u.uid] = e;
+    const jid = e.jobId || "unknown";
+    if (!byJob[jid]) byJob[jid] = { jobName: e.jobName };
+    const agg = byJob[jid];
+    Object.keys(e).forEach(k => {
+      if (typeof e[k] === "number") agg[k] = (agg[k] || 0) + e[k];
+    });
+  });
+  return { byActor, byJob };
+}
+
 function createFootprintFromRun() {
   if (!runState.runStats || !runState.runStats.perUnit) return null;
 
@@ -15245,6 +15648,8 @@ function createFootprintFromRun() {
     summary,
     // v0.3.7.26: export용 분석 결
     unitStats,
+    // v0.3.8cb [roleStats]: 역할 계측 그릇 — byActor/byJob (루다 판독용, 원천은 perUnit 단일 진실)
+    roleStats: buildRoleStatsFromRun(),
     // v0.3.7.29: pacing 분석 — 스테이지별 기록
     stageHistory: (runState.stageHistory || []).slice(),
     // v0.3.7.29: "왜 강해졌는가?" 분석용 — 강화 누적
@@ -17190,7 +17595,7 @@ function drawLine(actor, target, kind, opts = {}) {
     endMarker.setAttribute("stroke-width", "1.4");
     duration = 520;
   } else if (kind === "holy_attack") {
-    // 성휘 공격선: 황금빛 (v0.3.7.13: 얇게)
+    // 성기사 공격선: 황금빛 (v0.3.7.13: 얇게)
     color = "#f0e4a8"; glow = "rgba(240,228,168,0.6)";
     path.setAttribute("stroke", color);
     path.setAttribute("stroke-width", "1.4");
@@ -17733,7 +18138,7 @@ const CODEX_ENTRIES = [
     combo: "—", role_desc: "후열 핵심 적을 잘라낸다",
     flavor: "위협적인 후열을 가장 먼저 끊는 원거리 점사형.",
     tags: ["딜", "처치"], status: "구현" },
-  { id: "disrupt",  name: "유격수", tier: "tier1", base: "기본 직업", role: "back",
+  { id: "disrupt",  name: "교란꾼", tier: "tier1", base: "기본 직업", role: "back",
     combo: "—", role_desc: "적의 행동 흐름을 흔든다",
     flavor: "적의 속도를 떨어뜨리고 진형을 깨는 견제형 원거리.",
     tags: ["디버프", "교란"], status: "구현" },
@@ -17743,16 +18148,16 @@ const CODEX_ENTRIES = [
     combo: "전사 + 궁수", role_desc: "핵심 대상을 빠르게 끊는다",
     flavor: "위험한 후열에 직접 침투해 치명타로 마무리한다.",
     tags: ["치명타", "처치"], status: "구현" },
-  { id: "warden",   name: "워든", tier: "tier2", base: "전사+유격수", role: "front",
-    combo: "전사 + 유격수", role_desc: "위험한 적의 턴을 끊는다",
+  { id: "warden",   name: "워든", tier: "tier2", base: "전사+교란꾼", role: "front",
+    combo: "전사 + 교란꾼", role_desc: "위험한 적의 턴을 끊는다",
     flavor: "곧 행동할 위협을 잡아 끌어내리는 감시자.",
     tags: ["제압", "게이지 견제"], status: "구현" },
   { id: "hunter",   name: "파수궁", tier: "tier2", base: "수호자+궁수", role: "back",
     combo: "수호자 + 궁수", role_desc: "후열을 견제하며 약한 아군을 지킨다",
     flavor: "활을 들었지만 시선은 아군에게도 향한다. 후열을 끊고 우리 편을 감싼다.",
     tags: ["보호막", "후열 견제"], status: "구현" },
-  { id: "trapper",  name: "덫꾼", tier: "tier2", base: "수호자+유격수", role: "back",
-    combo: "수호자 + 유격수", role_desc: "재생·회복형 적을 카운터",
+  { id: "trapper",  name: "덫꾼", tier: "tier2", base: "수호자+교란꾼", role: "back",
+    combo: "수호자 + 교란꾼", role_desc: "재생·회복형 적을 카운터",
     flavor: "독과 덫으로 적의 회복을 차단한다.",
     tags: ["중독", "회복차단"], status: "구현" },
   { id: "paladin",  name: "성기사", tier: "tier2", base: "전사 + 사제", role: "front",
@@ -17771,20 +18176,20 @@ const CODEX_ENTRIES = [
     combo: "수호자 + 신관", role_desc: "한 명을 대신 맞는 벽",
     flavor: "지정한 아군이 받을 피해의 절반을 자기 몸으로 받는다. 든든하다.",
     tags: ["보호", "가로채기"], status: "구현" },
-  { id: "chainheal",name: "치원", tier: "tier2", base: "사제+궁수", role: "back",
+  { id: "chainheal",name: "치유궁", tier: "tier2", base: "사제+궁수", role: "back",
     combo: "사제 + 궁수", role_desc: "후열을 쏘면서 동시에 아군을 살린다",
     flavor: "활을 당기는 손과 약병을 든 손이 같이 움직인다. 한 박자에 적을 쏘고 아군을 어루만진다.",
     tags: ["후열 공격", "동시 치유"], status: "구현" },
-  { id: "purifier", name: "정화사", tier: "tier2", base: "사제 + 유격수", role: "back",
-    combo: "사제 + 유격수", role_desc: "중독을 거두고 빛으로 채운다",
+  { id: "purifier", name: "정화사", tier: "tier2", base: "사제 + 교란꾼", role: "back",
+    combo: "사제 + 교란꾼", role_desc: "중독을 거두고 빛으로 채운다",
     flavor: "독에 잠긴 아군 위에 손을 얹는다. 한 번 떨치면 빛이 흐른다.",
     tags: ["정화", "회복"], status: "구현" },
   { id: "arcanist", name: "마도", tier: "tier2", base: "신관+궁수", role: "back",
     combo: "신관 + 궁수", role_desc: "마법 공격으로 후열을 친다",
     flavor: "별의 힘으로 적의 후열을 꿰뚫는다.",
     tags: ["마법", "광역"], status: "구현" },
-  { id: "bard",     name: "바드", tier: "tier2", base: "신관+유격수", role: "back",
-    combo: "신관 + 유격수", role_desc: "속도 우위를 만든다",
+  { id: "bard",     name: "바드", tier: "tier2", base: "신관+교란꾼", role: "back",
+    combo: "신관 + 교란꾼", role_desc: "속도 우위를 만든다",
     flavor: "노래로 아군을 가속하고 적을 느리게 한다.",
     tags: ["가속", "속도조절"], status: "구현" },
   { id: "gatekeeper", name: "수문장", tier: "tier2", base: "전사+수호자", role: "front",
@@ -17795,8 +18200,8 @@ const CODEX_ENTRIES = [
     combo: "사제 + 신관", role_desc: "무너지는 두 축을 동시에 붙잡는다",
     flavor: "한 명만 살리지 않는다. 가장 위태로운 두 사람에게 동시에 손을 내미는 숙련 치유자.",
     tags: ["2인 집중 치유", "전문 힐러"], status: "구현" },
-  { id: "tracker",  name: "추적자", tier: "tier2", base: "궁수+유격수", role: "back",
-    combo: "궁수 + 유격수", role_desc: "가장 위험한 적을 먼저 제거한다",
+  { id: "tracker",  name: "추적자", tier: "tier2", base: "궁수+교란꾼", role: "back",
+    combo: "궁수 + 교란꾼", role_desc: "가장 위험한 적을 먼저 제거한다",
     flavor: "스코프 너머로 후열의 핵심을 먼저 찍는다. 도적이 마무리라면, 추적자는 시작을 끊는다.",
     tags: ["집중→저격", "선제 제거", "고체력 대상"], status: "구현" },
 
@@ -17805,8 +18210,8 @@ const CODEX_ENTRIES = [
     combo: "도적 + 궁수", role_desc: "전열을 찌르며 후열까지 꿰뚫는다",
     flavor: "한 번 박힌 창은 두 명을 꿰뚫는다. 적을 끊으면 다시 자세를 잡는다.",
     tags: ["관통", "처형", "연속 행동"], status: "구현" },
-  { id: "sage",     name: "현자", tier: "tier3", base: "마도+유격수", role: "back",
-    combo: "마도 + 유격수", role_desc: "집중하며 아군 박자를 앞당기고 전장을 쓸어버린다",
+  { id: "sage",     name: "현자", tier: "tier3", base: "마도+교란꾼", role: "back",
+    combo: "마도 + 교란꾼", role_desc: "집중하며 아군 박자를 앞당기고 전장을 쓸어버린다",
     flavor: "지팡이는 천천히 들리지만, 그 동안 아군의 발은 빨라진다. 발동될 땐 전장이 흔들린다.",
     tags: ["광역 마법", "아군 가속"], status: "구현" },
   { id: "sovereign",name: "성황", tier: "tier3", base: "선봉+수호자", role: "front",
@@ -17878,6 +18283,8 @@ const CODEX_ENTRIES = [
     // v0.3.8bj: 고정 배지 — 항상 보이게 (타이틀/전투 무관). 캐시 진단의 단일 진실.
     const badge = document.getElementById("build-badge");
     if (badge) badge.textContent = ver;
+    // v0.3.8cb: <title>도 같은 단일 진실(BUILD_VERSION)을 읽는다 — al13 하드코딩 잔재 정리
+    document.title = "Project Signal Mk.II " + ver;
     const el = document.getElementById("title-version");
     if (!el) return;
     const unlocked = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL)
