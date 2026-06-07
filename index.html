@@ -6142,7 +6142,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8cp-matrix-assassin-readout";
+const BUILD_VERSION = "v0.3.8cq-assassin-mark-target-meter";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -9828,6 +9828,10 @@ function initRunFromParty() {
     cloneSummonCount: 0,      // v0.3.8bb: 분신 소환 발동 횟수
     cloneRevealCount: 0,      // v0.3.8bb: 추적자가 분신을 간파한 횟수
     cloneDestroyedCount: 0,   // v0.3.8bb: 분신이 소멸한 총 횟수(간파+일반)
+    // v0.3.8cq [markTarget 계측 — 유키 결: "수치/로직 0, 표식 대상 기록만"]:
+    //   표식 부여 시 대상의 job/frontBack을 런 누적. 사망 대조는 _wasMarked 플래그 + footprint에서.
+    markTargetJobCounts: {},      // 표식이 어느 직업에 갔나 (job명: count)
+    markTargetFrontBackCounts: { front: 0, back: 0, unknown: 0 },  // 표식 대상의 전후열
   };
   // v0.3.8o: 시간 관측 초기화 — 매 런 새로. 이전 런 시간이 다음 런에 섞이지 않게.
   //   (replayRun / 같은 파티로 다시 / 새 작전 모두 initRunFromParty를 거치므로 단일 자리)
@@ -10725,6 +10729,9 @@ function _matrixBuildSummary(rows) {
       // v0.3.8cp [themeAssassin 집계 그릇 — additive]: 표식/기습/결속/분산/색적 total/avg/max
       _assassin: { mark: [], markedStrike: [], stealth: [], tauntSplit: [], bindOk: [], splitShared: [], reveal: [], interrupted: [], cloneSummon: [], cloneReveal: [], cloneDestroyed: [] },
       _assassinAny: false,
+      // v0.3.8cq [markTarget-firstDeath 관계 집계 — additive]
+      firstDeathMarkedCount: 0, firstDeathNotMarkedCount: 0, firstDeathMarkedUnknownCount: 0,
+      _markTargetJobMerged: {}, _markTargetFBMerged: { front: 0, back: 0, unknown: 0 },
     };
     const g = groups[key];
     g.totalRuns++;
@@ -10794,7 +10801,16 @@ function _matrixBuildSummary(rows) {
       g._assassin.cloneReveal.push(a.cloneRevealCount || 0);
       g._assassin.cloneDestroyed.push(a.cloneDestroyedCount || 0);
       if ((a.markCount||0)+(a.markedStrikeCount||0)+(a.tauntSplitCount||0)+(a.trackerRevealCount||0) > 0) g._assassinAny = true;
+      // v0.3.8cq [markTarget 병합 — 그룹 단위로 표식 분포 합산]
+      const mtj = a.markTargetJobCounts || {};
+      Object.keys(mtj).forEach(job => { g._markTargetJobMerged[job] = (g._markTargetJobMerged[job] || 0) + mtj[job]; });
+      const mtf = a.markTargetFrontBackCounts || {};
+      ["front","back","unknown"].forEach(k => { g._markTargetFBMerged[k] += (mtf[k] || 0); });
     }
+    // v0.3.8cq [firstDeathMarked 집계 — 첫 사망자가 표식 대상이었나]
+    if (row.firstDeathMarked === true) g.firstDeathMarkedCount++;
+    else if (row.firstDeathMarked === false) g.firstDeathNotMarkedCount++;
+    else if (row.firstDeathMarked === null && row.firstDeathJob) g.firstDeathMarkedUnknownCount++;
   });
   const avg = a => a.length ? Math.round((a.reduce((s,x)=>s+x,0)/a.length)*100)/100 : null;
   const _sum = a => a.length ? a.reduce((s,x)=>s+x,0) : 0;                     // v0.3.8cn
@@ -10861,6 +10877,15 @@ function _matrixBuildSummary(rows) {
         cloneSummonCount:       { total: _sum(g._assassin.cloneSummon),  avg: avg(g._assassin.cloneSummon),  max: _max(g._assassin.cloneSummon) },
         cloneRevealCount:       { total: _sum(g._assassin.cloneReveal),  avg: avg(g._assassin.cloneReveal),  max: _max(g._assassin.cloneReveal) },
         cloneDestroyedCount:    { total: _sum(g._assassin.cloneDestroyed),avg: avg(g._assassin.cloneDestroyed),max: _max(g._assassin.cloneDestroyed) },
+        // v0.3.8cq [markTarget 분포 + 표식-첫사망 관계 — additive]
+        markTargetJobCounts: g._markTargetJobMerged,
+        markTargetFrontBackCounts: g._markTargetFBMerged,
+      },
+      // v0.3.8cq [표식-첫사망 관계 집계 — 핵심 질문: 첫 사망자가 표식 대상이었나]
+      firstDeathMarked: {
+        markedCount: g.firstDeathMarkedCount,
+        notMarkedCount: g.firstDeathNotMarkedCount,
+        unknownCount: g.firstDeathMarkedUnknownCount,
       },
       verdictNote: "체온계 5런 — 극단 탐지용 (밸런스 확정 아님; 성공률 판정은 10런+)",
     };
@@ -11011,6 +11036,11 @@ function _matrixCollectRow() {
       survivors: party.filter(p => p.alive).map(p => p.name),
       firstDeathStage: firstDeath ? firstDeath.diedAt : null,
       firstDeathJob: firstDeath ? firstDeath.name : null,
+      // v0.3.8cq [표식-첫사망 관계 — 계측 대조. firstDeath는 finalParty 멤버라 wasMarked/role 보유]
+      firstDeathMarked: firstDeath ? !!firstDeath.wasMarked : null,
+      firstDeathMarkedJob: (firstDeath && firstDeath.wasMarked) ? firstDeath.name : null,
+      firstDeathMarkedFrontBack: (firstDeath && firstDeath.wasMarked)
+        ? ((firstDeath.role === "front" || firstDeath.role === "back") ? firstDeath.role : "unknown") : null,
       totals: {
         damageDealt: t.damageDealt != null ? t.damageDealt : null,
         healDone: t.healDone != null ? t.healDone : null,
@@ -11033,6 +11063,9 @@ function _matrixCollectRow() {
           cloneSummonCount: a.cloneSummonCount || 0,
           cloneRevealCount: a.cloneRevealCount || 0,
           cloneDestroyedCount: a.cloneDestroyedCount || 0,
+          // v0.3.8cq [markTarget — 표식이 누구에게 갔나]
+          markTargetJobCounts: a.markTargetJobCounts || {},
+          markTargetFrontBackCounts: a.markTargetFrontBackCounts || { front: 0, back: 0, unknown: 0 },
         };
       })(),
       // v0.3.8cn [themePoison 배선 — 유키 결: "신규 계측 0 / 이미 있는 _themePoisonStats를 row로 끌어옴"]:
@@ -11482,6 +11515,12 @@ function _assassinApplyMark(actor) {
   if (runState._themeAssassinStats) {
     runState._themeAssassinStats.markCount += 1;
     runState._themeAssassinStats.stealthCount += 1;
+    // v0.3.8cq [markTarget 계측 — 로직 0]: 이미 정해진 target의 job/frontBack만 기록. 표식 결정엔 영향 없음.
+    const _S = runState._themeAssassinStats;
+    _S.markTargetJobCounts[target.name] = (_S.markTargetJobCounts[target.name] || 0) + 1;
+    const _fb = (target.role === "front" || target.role === "back") ? target.role : "unknown";
+    _S.markTargetFrontBackCounts[_fb] = (_S.markTargetFrontBackCounts[_fb] || 0) + 1;
+    target._wasMarked = true;   // 계측 전용 플래그 — 전투 로직은 읽지 않음. footprint가 사망 대조에 씀.
   }
   if (typeof showActionLabel === "function") fxTimeout(() => showActionLabel(actor, "은신", "debuff"), 240);
   pushEvent(`<b>${actor.name}</b>가 표식을 남기고 그림자 속으로 숨었다 — 은신`, "debuff");
@@ -15920,6 +15959,9 @@ function createFootprintFromRun() {
       name: u.name,
       alive: isAlive,
       diedAt,
+      // v0.3.8cq [markTarget 계측 — 사망 대조용]: 이 유닛이 표식을 받은 적 있나 + 전후열. 전투 로직 0.
+      wasMarked: !!u._wasMarked,
+      role: (u.role === "front" || u.role === "back") ? u.role : null,
     };
   });
 
