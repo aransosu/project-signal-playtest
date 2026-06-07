@@ -6142,7 +6142,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8co-poison-sector-thermometer";
+const BUILD_VERSION = "v0.3.8cp-matrix-assassin-readout";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -10689,6 +10689,12 @@ function _matrixJobFrontBack(jobName) {
       const t = TRAITS.find(x => x && x.name === jobName);
       if (t && (t.role === "front" || t.role === "back")) return t.role;
     }
+    // v0.3.8cp [FUSIONS 매핑 — 유키 결: "2차직(수문장=front/추적자=back)도 찾되 role 추정 금지"]:
+    //   수문장/추적자 등 2차직은 FUSIONS에 name+role이 있다. role이 있을 때만 사용, 없으면 unknown 유지.
+    if (typeof FUSIONS !== "undefined" && Array.isArray(FUSIONS)) {
+      const f = FUSIONS.find(x => x && x.name === jobName);
+      if (f && (f.role === "front" || f.role === "back")) return f.role;
+    }
   } catch (e) {}
   return "unknown";   // 2차 직업·매칭 실패는 정직하게 unknown (억지 추정 금지)
 }
@@ -10716,6 +10722,9 @@ function _matrixBuildSummary(rows) {
       // v0.3.8cn [themePoison 집계 그릇 — additive]: cleanse/poisonDeath 필수 + 흡수 계열 total/avg/max
       _poison: { cleanse: [], poisonDeath: [], bonusDmg: [], absStacks: [], absHeal: [], absShield: [], absBuff: [] },
       _poisonAny: false,
+      // v0.3.8cp [themeAssassin 집계 그릇 — additive]: 표식/기습/결속/분산/색적 total/avg/max
+      _assassin: { mark: [], markedStrike: [], stealth: [], tauntSplit: [], bindOk: [], splitShared: [], reveal: [], interrupted: [], cloneSummon: [], cloneReveal: [], cloneDestroyed: [] },
+      _assassinAny: false,
     };
     const g = groups[key];
     g.totalRuns++;
@@ -10770,6 +10779,22 @@ function _matrixBuildSummary(rows) {
       g._poison.absBuff.push(p.poisonAbsorbBuffCount || 0);
       if ((p.cleanseCount||0)+(p.poisonDeathCount||0)+(p.poisonBonusDamageDealt||0)+(p.poisonAbsorbStacks||0) > 0) g._poisonAny = true;
     }
+    // v0.3.8cp [themeAssassin 집계 — additive]: row.themeAssassin이 있으면 누적 (비암살 런은 전부 0이라 무해)
+    if (row.themeAssassin) {
+      const a = row.themeAssassin;
+      g._assassin.mark.push(a.markCount || 0);
+      g._assassin.markedStrike.push(a.markedStrikeCount || 0);
+      g._assassin.stealth.push(a.stealthCount || 0);
+      g._assassin.tauntSplit.push(a.tauntSplitCount || 0);
+      g._assassin.bindOk.push(a.bindOkCount || 0);
+      g._assassin.splitShared.push(a.tauntSplitDamageShared || 0);
+      g._assassin.reveal.push(a.trackerRevealCount || 0);
+      g._assassin.interrupted.push(a.markInterruptedCount || 0);
+      g._assassin.cloneSummon.push(a.cloneSummonCount || 0);
+      g._assassin.cloneReveal.push(a.cloneRevealCount || 0);
+      g._assassin.cloneDestroyed.push(a.cloneDestroyedCount || 0);
+      if ((a.markCount||0)+(a.markedStrikeCount||0)+(a.tauntSplitCount||0)+(a.trackerRevealCount||0) > 0) g._assassinAny = true;
+    }
   });
   const avg = a => a.length ? Math.round((a.reduce((s,x)=>s+x,0)/a.length)*100)/100 : null;
   const _sum = a => a.length ? a.reduce((s,x)=>s+x,0) : 0;                     // v0.3.8cn
@@ -10821,6 +10846,21 @@ function _matrixBuildSummary(rows) {
         poisonAbsorbHeal:       { total: _sum(g._poison.absHeal),   avg: avg(g._poison.absHeal),   max: _max(g._poison.absHeal) },
         poisonAbsorbShield:     { total: _sum(g._poison.absShield), avg: avg(g._poison.absShield), max: _max(g._poison.absShield) },
         poisonAbsorbBuffCount:  { total: _sum(g._poison.absBuff),   avg: avg(g._poison.absBuff),   max: _max(g._poison.absBuff) },
+      },
+      // v0.3.8cp [themeAssassin 집계 — additive optional. 비암살 그룹은 전부 0(assassinObserved:false)]
+      themeAssassin: {
+        assassinObserved: g._assassinAny,
+        markCount:              { total: _sum(g._assassin.mark),         avg: avg(g._assassin.mark),         max: _max(g._assassin.mark) },
+        markedStrikeCount:      { total: _sum(g._assassin.markedStrike), avg: avg(g._assassin.markedStrike), max: _max(g._assassin.markedStrike) },
+        stealthCount:           { total: _sum(g._assassin.stealth),      avg: avg(g._assassin.stealth),      max: _max(g._assassin.stealth) },
+        tauntSplitCount:        { total: _sum(g._assassin.tauntSplit),   avg: avg(g._assassin.tauntSplit),   max: _max(g._assassin.tauntSplit) },
+        bindOkCount:            { total: _sum(g._assassin.bindOk),       avg: avg(g._assassin.bindOk),       max: _max(g._assassin.bindOk) },
+        tauntSplitDamageShared: { total: _sum(g._assassin.splitShared),  avg: avg(g._assassin.splitShared),  max: _max(g._assassin.splitShared) },
+        trackerRevealCount:     { total: _sum(g._assassin.reveal),       avg: avg(g._assassin.reveal),       max: _max(g._assassin.reveal) },
+        markInterruptedCount:   { total: _sum(g._assassin.interrupted),  avg: avg(g._assassin.interrupted),  max: _max(g._assassin.interrupted) },
+        cloneSummonCount:       { total: _sum(g._assassin.cloneSummon),  avg: avg(g._assassin.cloneSummon),  max: _max(g._assassin.cloneSummon) },
+        cloneRevealCount:       { total: _sum(g._assassin.cloneReveal),  avg: avg(g._assassin.cloneReveal),  max: _max(g._assassin.cloneReveal) },
+        cloneDestroyedCount:    { total: _sum(g._assassin.cloneDestroyed),avg: avg(g._assassin.cloneDestroyed),max: _max(g._assassin.cloneDestroyed) },
       },
       verdictNote: "체온계 5런 — 극단 탐지용 (밸런스 확정 아님; 성공률 판정은 10런+)",
     };
@@ -10976,7 +11016,25 @@ function _matrixCollectRow() {
         healDone: t.healDone != null ? t.healDone : null,
         shieldBlocked: t.shieldBlocked != null ? t.shieldBlocked : null,
       },
-      themeAssassin: t.themeAssassin || null,
+      // v0.3.8cp [themeAssassin 배선 — 유키 결: "이미 footprint.totals에 담기는 값을 row/summary로"]:
+      //   신규 전투 계측 0 — _themeAssassinStats(footprint.totals.themeAssassin)를 row가 실값으로 읽음.
+      //   비암살 런은 0 폴백(정직). 명칭은 실제 코드 필드명 그대로.
+      themeAssassin: (function(){
+        const a = t.themeAssassin || {};
+        return {
+          markCount: a.markCount || 0,
+          markedStrikeCount: a.markedStrikeCount || 0,
+          stealthCount: a.stealthCount || 0,
+          tauntSplitCount: a.tauntSplitCount || 0,
+          bindOkCount: a.bindOkCount || 0,
+          tauntSplitDamageShared: a.tauntSplitDamageShared || 0,
+          trackerRevealCount: a.trackerRevealCount || 0,
+          markInterruptedCount: a.markInterruptedCount || 0,
+          cloneSummonCount: a.cloneSummonCount || 0,
+          cloneRevealCount: a.cloneRevealCount || 0,
+          cloneDestroyedCount: a.cloneDestroyedCount || 0,
+        };
+      })(),
       // v0.3.8cn [themePoison 배선 — 유키 결: "신규 계측 0 / 이미 있는 _themePoisonStats를 row로 끌어옴"]:
       //   footprint.totals.themePoison(=_themePoisonStats 스냅샷)을 실값으로 배선. 비중독 런은 0 폴백(정직).
       //   전투 로직 0 — 이미 계측된 값을 Matrix row가 읽기만 함.
