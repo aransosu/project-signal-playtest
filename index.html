@@ -5321,6 +5321,9 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
             <button class="dev-btn" onclick="startMatrixTroll1C()">▶ Troll 9런 (1C)</button>
             <button class="dev-btn primary" onclick="startMatrixCi(5)">🌡 4테마 체온계 (60런)</button>
             <button class="dev-btn primary" onclick="startMatrixCl(1)">🌱 성장 체온계 +8 (12런 구조확인)</button>
+            <button class="dev-btn" onclick="startMatrixClGroup(['asn_guard'],5)">🗡 암살 수문장 압축 5런</button>
+            <button class="dev-btn" onclick="startMatrixClGroup(['asn_tracker'],3)">🎯 암살 추적자 압축 3런</button>
+            <button class="dev-btn" onclick="startMatrixCo(3)">🧪 중독 구간 체온계 S10~20 (6런)</button>
             <button class="dev-btn" onclick="matrixCopySummary()">그룹 요약 복사</button>
             <button class="dev-btn" onclick="stopMatrixMvp('수동 중단')">■ 중단</button>
             <button class="dev-btn" onclick="matrixCopyToClipboard()">JSON 복사</button>
@@ -6139,7 +6142,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8cl-theme-thermometer-growth";
+const BUILD_VERSION = "v0.3.8co-poison-sector-thermometer";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6866,6 +6869,19 @@ const DEV_STAGE_PRESETS = {
     traitLevels:{ blessing:8, bravery:8, guard:8, heal:8 },
     growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
     party:[ {kind:"trait",id:"guard"}, {kind:"trait",id:"heal"}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"bravery"} ] },
+
+  // v0.3.8co [중독 구간 종료형 — 유키 결 A안: "S10~S20만 잘라 정화사 해답성 / S25 보스 제외"]:
+  //   startStage:10 → endStage:20 도달 시 onStageClear 게이트가 poison_sector_clear로 종료(보스 안 감).
+  //   traitLevels 8 균등(cl과 동일 성장값). psn_dragoon은 1차 제외(effective 4 섞임 방지 — 유키 결).
+  //   normal_run 불변 — endStage는 matrix_run plan meta에서만 작동.
+  mx_co_psn_sector_cleanser: { label:"중독구간 ① 정화사 있음 (정화사/신관/궁수/전사) S10~20 +8", startStage:10, endStage:20, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ blessing:8, bravery:8, disrupt:8, heal:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"fusion",id:"purifier",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_co_psn_sector_nocleanse: { label:"중독구간 ② 정화사 無 (사제/전사/궁수/도적) S10~20 +8", startStage:10, endStage:20, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    traitLevels:{ bravery:8, heal:8, snipe:8 },
+    growthDistribution:"uniform", growthLevel:8, growthModel:"representative_traitLevels",
+    party:[ {kind:"trait",id:"heal"}, {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"fusion",id:"rogue",lvl:2} ] },
 };
 
 // stage → 적 HP/ATK 곱하는 배율 (속도/방어 X)
@@ -10638,6 +10654,30 @@ function startMatrixCl(reps) {
   startMatrixMvp(r, plan);
 }
 
+// v0.3.8cm [압축 검증 — 유키 결: "기존 cl 기계 재사용 / 문제 그룹만 / 프리셋·수치 무변경"]:
+//   MATRIX_CL_PLAN에서 themeGroup만 골라 reps만 다르게. cl 프리셋(traitLevel 8) 그대로, summary depth 그대로.
+//   전체 60런 금지 — 압축은 문제 그룹만 본다 (asn_guard 5 / asn_tracker 3).
+function startMatrixClGroup(groupIds, reps) {
+  const ids = Array.isArray(groupIds) ? groupIds : [groupIds];
+  const plan = MATRIX_CL_PLAN
+    .filter(p => ids.includes(p.themeGroup))
+    .map(p => Object.assign({}, p, { samplePhase: "theme_thermometer_2_growth" }));
+  if (!plan.length) { _matrixStatus(`압축 대상 그룹 없음: ${ids.join(",")}`); return; }
+  startMatrixMvp(reps || 1, plan);
+}
+
+// v0.3.8co [중독 구간 종료형 plan — 유키 결: "2그룹×3런 구조확인 / psn_dragoon 제외"]:
+//   정화사 있음/없음 2그룹. endStage:20은 프리셋에 박혀 devTest로 전달돼 onStageClear 게이트가 종료.
+const MATRIX_CO_PLAN = [
+  { presetKey:"mx_co_psn_sector_cleanser",  presetCode:"psn_sector_cleanser",  themeId:"poison", themeGroup:"psn_sector_cleanser",  groupLabel:"중독구간 / 정화사 있음", groupPurpose:"정화사 해답성 기준 (S10~20)",       keyJobPresence:_KJP({purifier:true}), excludedKeyJobs:[] },
+  { presetKey:"mx_co_psn_sector_nocleanse", presetCode:"psn_sector_nocleanse", themeId:"poison", themeGroup:"psn_sector_nocleanse", groupLabel:"중독구간 / 정화사 無",   groupPurpose:"정화사 없이 독 붕괴 발생? (S10~20)", keyJobPresence:_KJP(),                excludedKeyJobs:["purifier"] },
+];
+function startMatrixCo(reps) {
+  const r = reps || 3;   // ★유키 실행규모: 2그룹×3런=6런 구조확인. 바로 큰 런 금지.
+  const plan = MATRIX_CO_PLAN.map(p => Object.assign({}, p, { samplePhase: "poison_sector_thermometer_1" }));
+  startMatrixMvp(r, plan);
+}
+
 // v0.3.8ck [summary depth — 유키 결: "전투 새 계측 늘리지 말고 summary 집계만 / 불확실하면 unknown"]:
 //   row.firstDeathJob(직업명)을 직업 정의의 role(front/back)로 안전 매핑. 매칭 실패 시 "unknown".
 //   전투 데이터/계측 0 — 이름→기본배치 파생만 (finalParty엔 lane이 없어 억지 추정 금지).
@@ -10673,6 +10713,9 @@ function _matrixBuildSummary(rows) {
       // v0.3.8cl [성장 천장 이동 지표 — additive]: S15/S20/S25 도달 카운트 + growth 메타(그룹 대표값)
       reachedS15Count: 0, reachedS20Count: 0, reachedS25Count: 0,
       _growth: null,
+      // v0.3.8cn [themePoison 집계 그릇 — additive]: cleanse/poisonDeath 필수 + 흡수 계열 total/avg/max
+      _poison: { cleanse: [], poisonDeath: [], bonusDmg: [], absStacks: [], absHeal: [], absShield: [], absBuff: [] },
+      _poisonAny: false,
     };
     const g = groups[key];
     g.totalRuns++;
@@ -10715,8 +10758,22 @@ function _matrixBuildSummary(rows) {
         growthNote: row.growthNote || null,
       };
     }
+    // v0.3.8cn [themePoison 집계 — additive]: row.themePoison이 있으면 누적 (비중독 런은 전부 0이라 무해)
+    if (row.themePoison) {
+      const p = row.themePoison;
+      g._poison.cleanse.push(p.cleanseCount || 0);
+      g._poison.poisonDeath.push(p.poisonDeathCount || 0);
+      g._poison.bonusDmg.push(p.poisonBonusDamageDealt || 0);
+      g._poison.absStacks.push(p.poisonAbsorbStacks || 0);
+      g._poison.absHeal.push(p.poisonAbsorbHeal || 0);
+      g._poison.absShield.push(p.poisonAbsorbShield || 0);
+      g._poison.absBuff.push(p.poisonAbsorbBuffCount || 0);
+      if ((p.cleanseCount||0)+(p.poisonDeathCount||0)+(p.poisonBonusDamageDealt||0)+(p.poisonAbsorbStacks||0) > 0) g._poisonAny = true;
+    }
   });
   const avg = a => a.length ? Math.round((a.reduce((s,x)=>s+x,0)/a.length)*100)/100 : null;
+  const _sum = a => a.length ? a.reduce((s,x)=>s+x,0) : 0;                     // v0.3.8cn
+  const _max = a => a.length ? Math.max(...a) : 0;                            // v0.3.8cn
   return Object.values(groups).map(g => {
     const out = {
       themeGroup: g.themeGroup, themeId: g.themeId, groupLabel: g.groupLabel, groupPurpose: g.groupPurpose,
@@ -10724,7 +10781,16 @@ function _matrixBuildSummary(rows) {
       clearRate: g.totalRuns ? Math.round((g.clearCount/g.totalRuns)*1000)/1000 : null,
       avgReachedStage: avg(g._reached), minReachedStage: g._reached.length ? Math.min(...g._reached) : null,
       maxReachedStage: g._reached.length ? Math.max(...g._reached) : null,
-      resultReasonCounts: g.resultReasonCounts, avgLastBattleTicks: avg(g._ticks),
+      resultReasonCounts: g.resultReasonCounts,
+      // v0.3.8cm [tick 이름 정직화 — 유키 결 후보A: "계기판이 거짓 이름을 말하지 않게"]:
+      //   _ticks는 실제로 row.runDurationTicks(런 전체 누적 틱)를 집계한다. 옛 이름 avgLastBattleTicks는
+      //   "마지막 전투 한 판 틱"으로 오해를 부른다(루다 6026틱 판독 오염). 정직한 새 필드를 진실로 두고,
+      //   기존 키는 호환용 legacy alias로 같은 값 유지. lastBattleTicks는 row에 미존재 → null 정직.
+      avgRunDurationTicks: avg(g._ticks),
+      tickMetricSource: "runDurationTicks",
+      tickMetricNote: "runDurationTicks = 런 전체(전 스테이지) 누적 tickCount. '마지막 전투 한 판'이 아님. lastBattleTicks는 미계측(null).",
+      avgLastBattleTicks: avg(g._ticks),   // [legacy alias — deprecated] 실제 집계는 runDurationTicks. 읽는 쪽 호환 위해 유지.
+      avgLastBattleTicks_deprecated: true,
       validityTagCounts: g.validityTagCounts, keyJobPresence: g.keyJobPresence, excludedKeyJobs: g.excludedKeyJobs,
       samplePhase: g.samplePhase,
       // v0.3.8ck [summary depth — additive optional 필드. 데이터 없으면 null/0 안전]
@@ -10745,6 +10811,17 @@ function _matrixBuildSummary(rows) {
       // v0.3.8cl [성장 천장 이동 — additive optional. ci(growth 없음)는 growth:null, 도달카운트만]
       reachedS15Count: g.reachedS15Count, reachedS20Count: g.reachedS20Count, reachedS25Count: g.reachedS25Count,
       growth: g._growth || null,
+      // v0.3.8cn [themePoison 집계 — additive optional. 비중독 그룹은 전부 0(poisonObserved:false)]
+      themePoison: {
+        poisonObserved: g._poisonAny,
+        cleanseCount:    { total: _sum(g._poison.cleanse),    avg: avg(g._poison.cleanse),    max: _max(g._poison.cleanse) },
+        poisonDeathCount:{ total: _sum(g._poison.poisonDeath), avg: avg(g._poison.poisonDeath), max: _max(g._poison.poisonDeath) },
+        poisonBonusDamageDealt: { total: _sum(g._poison.bonusDmg), avg: avg(g._poison.bonusDmg), max: _max(g._poison.bonusDmg) },
+        poisonAbsorbStacks:     { total: _sum(g._poison.absStacks), avg: avg(g._poison.absStacks), max: _max(g._poison.absStacks) },
+        poisonAbsorbHeal:       { total: _sum(g._poison.absHeal),   avg: avg(g._poison.absHeal),   max: _max(g._poison.absHeal) },
+        poisonAbsorbShield:     { total: _sum(g._poison.absShield), avg: avg(g._poison.absShield), max: _max(g._poison.absShield) },
+        poisonAbsorbBuffCount:  { total: _sum(g._poison.absBuff),   avg: avg(g._poison.absBuff),   max: _max(g._poison.absBuff) },
+      },
       verdictNote: "체온계 5런 — 극단 탐지용 (밸런스 확정 아님; 성공률 판정은 10런+)",
     };
     return out;
@@ -10795,6 +10872,11 @@ function _matrixNextRun() {
       runState.devTest.matrixId = _matrix.matrixId;
       runState.devTest.seedLike = seedLike;
       runState.devTest.presetCode = meta.presetCode;
+      // v0.3.8co [중독 구간 종료형 게이트 — 유키 결 A안: "endStage는 matrix_run/plan meta에서만"]:
+      //   프리셋에 endStage가 있으면 devTest로 전달. onStageClear가 이걸 읽어 S20 도달 시 구간통과 종료.
+      //   normal_run엔 endStage가 없어 불변. ci/cl/cm/cn 프리셋도 endStage 없으니 영향 0.
+      const _ps = DEV_STAGE_PRESETS[meta.presetKey];
+      runState.devTest.endStage = (_ps && typeof _ps.endStage === "number") ? _ps.endStage : null;
     }
     _matrix.startJobs = runState.units.map(u => u.name);
     setSpeed(12);                                   // DEV x6 — 틱 간격(50ms)은 그대로 (터보틱 금지)
@@ -10895,7 +10977,21 @@ function _matrixCollectRow() {
         shieldBlocked: t.shieldBlocked != null ? t.shieldBlocked : null,
       },
       themeAssassin: t.themeAssassin || null,
-      themePoison: t.themePoison || null,           // 자리만 (MVP 비대상 — 유키 결)
+      // v0.3.8cn [themePoison 배선 — 유키 결: "신규 계측 0 / 이미 있는 _themePoisonStats를 row로 끌어옴"]:
+      //   footprint.totals.themePoison(=_themePoisonStats 스냅샷)을 실값으로 배선. 비중독 런은 0 폴백(정직).
+      //   전투 로직 0 — 이미 계측된 값을 Matrix row가 읽기만 함.
+      themePoison: (function(){
+        const p = t.themePoison || {};
+        return {
+          poisonDeathCount: p.poisonDeathCount || 0,
+          cleanseCount: p.cleanseCount || 0,
+          poisonBonusDamageDealt: p.poisonBonusDamageDealt || 0,
+          poisonAbsorbStacks: p.poisonAbsorbStacks || 0,
+          poisonAbsorbHeal: p.poisonAbsorbHeal || 0,
+          poisonAbsorbShield: p.poisonAbsorbShield || 0,
+          poisonAbsorbBuffCount: p.poisonAbsorbBuffCount || 0,
+        };
+      })(),
       themeTroll: t.themeTroll || null,             // 자리만
       roleStats: (fp && fp.roleStats) || null,      // v0.3.8cb [roleStats]: 발자취와 같은 그릇 — 루다가 행에서 바로 읽는다
       elapsedMs: Date.now() - _matrix.runStartTs,
@@ -14394,6 +14490,16 @@ function onStageClear() {
   const stageNum = runState.stage;
   const stage = STAGES[stageNum - 1];
   const phase = stage ? stage.phase : null;
+
+  // v0.3.8co [중독 구간 종료형 게이트 — 유키 결 A안: "S10~S20 구간만 잘라 정화사 해답성 본다"]:
+  //   matrix_run + plan meta에 endStage가 있고, 그 스테이지를 막 클리어했으면 S25 보스로 안 가고
+  //   "구간통과(poison_sector_clear)"로 종료한다. stage25_boss_clear와 별도 resultReason으로 분리.
+  //   normal_run은 devTest.endStage가 없어 이 분기를 안 탄다 (불변).
+  if (runState.devTest && runState.devTest.source === "matrix_run"
+      && typeof runState.devTest.endStage === "number" && stageNum >= runState.devTest.endStage) {
+    finalizeRunResult("win", "poison_sector_clear");
+    return;
+  }
 
   // v0.3.7.29: 스테이지 종료 history push (pacing 분석용)
   //   v0.3.8: boss(S25)가 최종 → outcome "ending"은 boss에서.
