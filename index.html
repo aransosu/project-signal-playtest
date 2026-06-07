@@ -5319,6 +5319,8 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
             <button class="dev-btn" onclick="startMatrixCanaryWin()">카나리아 1런 (CLEAR 회귀)</button>
             <button class="dev-btn" onclick="startMatrixPoison1B()">▶ Poison 9런 (1B)</button>
             <button class="dev-btn" onclick="startMatrixTroll1C()">▶ Troll 9런 (1C)</button>
+            <button class="dev-btn primary" onclick="startMatrixCi(5)">🌡 4테마 체온계 (60런)</button>
+            <button class="dev-btn" onclick="matrixCopySummary()">그룹 요약 복사</button>
             <button class="dev-btn" onclick="stopMatrixMvp('수동 중단')">■ 중단</button>
             <button class="dev-btn" onclick="matrixCopyToClipboard()">JSON 복사</button>
             <button class="dev-btn" onclick="matrixDownloadJson()">JSON 파일 저장</button>
@@ -6136,7 +6138,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8ch-dragoon-recharge-fix";
+const BUILD_VERSION = "v0.3.8ci-theme-matrix-thermometer";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6771,6 +6773,38 @@ const DEV_STAGE_PRESETS = {
   //   그래서 재료 전부를 12로 과급: dragoon=rogue+snipe / rogue=bravery+snipe / cleric=heal+blessing / wall=guard+blessing.
   //   일반 Matrix 플랜(MATRIX_MVP_PLAN)에 미포함 / DEV 프리셋 메뉴 비노출 — 전용 버튼으로만 1런.
   //   (bw에서 mx_test_win으로 태어나 1A WIN 경로 검증 합격 → bx에서 카나리아로 상비 전환)
+  // ═══════════════════════════════════════════════════════════════════════
+  // v0.3.8ci [4테마 체온계 1차 — 유키 결: "밸런스 아님, 극단만 탐지. 5런은 동전 5닢"]:
+  //   4테마 × 3그룹 = 12그룹. startMatrixCi(5) → 12×5 = 60런. lock_composition.
+  //   초보자 S1 / 중독·암살자·트롤 S8 (기존 mx 테마 시작 관례 유지). 용창 그룹은 ch 이후 빌드 전용.
+  // ── 4-1 초보자 (직업 언어를 배우는 길) ──
+  mx_ci_nov_baseline: { label:"체온계 초보 ① 기준선 (전사/도적/신관/궁수)", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  mx_ci_nov_diverse: { label:"체온계 초보 ② 다양직 (마도/선봉/치유궁/바드)", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"arcanist",lvl:2}, {kind:"fusion",id:"vanguard",lvl:2}, {kind:"fusion",id:"chainheal",lvl:2}, {kind:"fusion",id:"bard",lvl:2} ] },
+  mx_ci_nov_nohealing: { label:"체온계 초보 ③ 노힐 (전사/궁수/교란꾼/도적)", startStage:1, themeId:"beginner", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"disrupt"}, {kind:"fusion",id:"rogue",lvl:2} ] },
+  // ── 4-2 중독 (독을 관리하는 길) ──
+  mx_ci_psn_cleanser: { label:"체온계 중독 ① 정화사 (정화사/신관/궁수/전사)", startStage:8, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"purifier",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_ci_psn_nocleanse: { label:"체온계 중독 ② 정화사 無 (사제/전사/궁수/도적)", startStage:8, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"heal"}, {kind:"trait",id:"bravery"}, {kind:"trait",id:"snipe"}, {kind:"fusion",id:"rogue",lvl:2} ] },
+  mx_ci_psn_dragoon: { label:"체온계 중독 ③ 용창 (용창/신관/사제/전사) — ch+ 전용", startStage:8, themeId:"poison", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"dragoon",lvl:4}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"heal"}, {kind:"trait",id:"bravery"} ] },
+  // ── 4-3 암살자 (숨어든 칼을 읽는 길) ──
+  mx_ci_asn_tracker: { label:"체온계 암살 ① 추적자 (추적자/도적/신관/전사)", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"tracker",lvl:3}, {kind:"fusion",id:"rogue",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"bravery"} ] },
+  mx_ci_asn_guard: { label:"체온계 암살 ② 수문장 (수문장/신관/궁수/전사)", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"gatekeeper",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_ci_asn_nodef: { label:"체온계 암살 ③ 방어직 無 (전사/도적/신관/궁수)", startStage:8, themeId:"assassin", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"bravery"}, {kind:"fusion",id:"rogue",lvl:2}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"} ] },
+  // ── 4-4 트롤 (재생 거구를 말리는 길) — 밸런스축만, 성능축 아님 ──
+  mx_ci_trl_trapper: { label:"체온계 트롤 ① 덫꾼 (덫꾼/신관/궁수/전사)", startStage:8, themeId:"troll", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"trapper",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_ci_trl_rogue: { label:"체온계 트롤 ② 도적 (덫꾼 無 / 도적/신관/궁수/전사)", startStage:8, themeId:"troll", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"fusion",id:"rogue",lvl:3}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"snipe"}, {kind:"trait",id:"bravery"} ] },
+  mx_ci_trl_defense: { label:"체온계 트롤 ③ 방어/힐 (수호자/사제/신관/전사)", startStage:8, themeId:"troll", lockComposition:true, type:"matrix", choicePolicy:"lock_composition",
+    party:[ {kind:"trait",id:"guard"}, {kind:"trait",id:"heal"}, {kind:"trait",id:"blessing"}, {kind:"trait",id:"bravery"} ] },
   mx_canary_win: { label:"MX canary win (상비 — CLEAR 행 회귀 검사)", startStage:24, themeId:"beginner", lockComposition:true, type:"matrix_infra",
     choicePolicy:"lock_composition",
     traitLevels: { bravery: 12, snipe: 12, heal: 12, blessing: 12, guard: 12, rogue: 12 },
@@ -10415,6 +10449,28 @@ const MATRIX_TRL_PLAN = [
   { presetKey: "mx_trl_key",  presetCode: "mx_trl_key",  themeId: "troll" },
   { presetKey: "mx_trl_fail", presetCode: "mx_trl_fail", themeId: "troll" },
 ];
+// v0.3.8ci [4테마 체온계 1차 — 유키 결]: 12그룹 × 5런 = 60런. 기존 1A/1B/1C 플랜 불변.
+//   각 그룹이 themeGroup/groupLabel/groupPurpose/keyJobPresence/excludedKeyJobs 메타를 들고 다님 → row에 적재.
+const _KJP = (o) => Object.assign({ purifier:false, trapper:false, tracker:false, gatekeeper:false, wall:false, dragoon:false }, o || {});
+const MATRIX_CI_PLAN = [
+  // 초보자
+  { presetKey:"mx_ci_nov_baseline",  presetCode:"nov_baseline",  themeId:"beginner", themeGroup:"nov_baseline",  groupLabel:"초보 / 기준선",        groupPurpose:"기준선 상수 파티",            keyJobPresence:_KJP(), excludedKeyJobs:[] },
+  { presetKey:"mx_ci_nov_diverse",   presetCode:"nov_diverse",   themeId:"beginner", themeGroup:"nov_diverse",   groupLabel:"초보 / 다양직",        groupPurpose:"다른 직업 결도 초보에서 작동?", keyJobPresence:_KJP(), excludedKeyJobs:[] },
+  { presetKey:"mx_ci_nov_nohealing", presetCode:"nov_nohealing", themeId:"beginner", themeGroup:"nov_nohealing", groupLabel:"초보 / 노힐",          groupPurpose:"힐 강제성 확인",              keyJobPresence:_KJP(), excludedKeyJobs:["heal","blessing","chainheal"] },
+  // 중독
+  { presetKey:"mx_ci_psn_cleanser",  presetCode:"psn_cleanser",  themeId:"poison",   themeGroup:"psn_cleanser",  groupLabel:"중독 / 정화사 있음",   groupPurpose:"정화사 해답직 기준",          keyJobPresence:_KJP({purifier:true}),  excludedKeyJobs:[] },
+  { presetKey:"mx_ci_psn_nocleanse", presetCode:"psn_nocleanse", themeId:"poison",   themeGroup:"psn_nocleanse", groupLabel:"중독 / 정화사 無",     groupPurpose:"정화사 없이 독 붕괴 발생?",   keyJobPresence:_KJP(),                 excludedKeyJobs:["purifier"] },
+  { presetKey:"mx_ci_psn_dragoon",   presetCode:"psn_dragoon",   themeId:"poison",   themeGroup:"psn_dragoon",   groupLabel:"중독 / 용창",          groupPurpose:"용창 전열 압축 대안 (ch+)",   keyJobPresence:_KJP({dragoon:true}),   excludedKeyJobs:["purifier"] },
+  // 암살자
+  { presetKey:"mx_ci_asn_tracker",   presetCode:"asn_tracker",   themeId:"assassin", themeGroup:"asn_tracker",   groupLabel:"암살 / 추적자",        groupPurpose:"추적자 제거의 길",            keyJobPresence:_KJP({tracker:true}),   excludedKeyJobs:[] },
+  { presetKey:"mx_ci_asn_guard",     presetCode:"asn_guard",     themeId:"assassin", themeGroup:"asn_guard",     groupLabel:"암살 / 수문장",        groupPurpose:"수문장 흡수의 길",            keyJobPresence:_KJP({gatekeeper:true}),excludedKeyJobs:[] },
+  { presetKey:"mx_ci_asn_nodef",     presetCode:"asn_nodef",     themeId:"assassin", themeGroup:"asn_nodef",     groupLabel:"암살 / 방어직 無",     groupPurpose:"방어직 없는 공포 기본선",     keyJobPresence:_KJP(),                 excludedKeyJobs:["tracker","gatekeeper","wall"] },
+  // 트롤 (밸런스축만)
+  { presetKey:"mx_ci_trl_trapper",   presetCode:"trl_trapper",   themeId:"troll",    themeGroup:"trl_trapper",   groupLabel:"트롤 / 덫꾼",          groupPurpose:"덫꾼 재생 억제 기준",          keyJobPresence:_KJP({trapper:true}),   excludedKeyJobs:[] },
+  { presetKey:"mx_ci_trl_rogue",     presetCode:"trl_rogue",     themeId:"troll",    themeGroup:"trl_rogue",     groupLabel:"트롤 / 도적",          groupPurpose:"덫꾼 밖 단일 독/처형 대안",   keyJobPresence:_KJP(),                 excludedKeyJobs:["trapper"] },
+  { presetKey:"mx_ci_trl_defense",   presetCode:"trl_defense",   themeId:"troll",    themeGroup:"trl_defense",   groupLabel:"트롤 / 방어·힐",       groupPurpose:"방어/힐 중심이 분쇄에 무너지나?", keyJobPresence:_KJP(),               excludedKeyJobs:["trapper","rogue"] },
+];
+
 const MATRIX_TICK_WATCHDOG = 120000;   // 최후망: 진짜 코드 오류용 (교착이 아닌 행 — ERROR:"timeout" 분리 적재)
 // v0.3.8bz [스톨 가드 — 유키 승인: "스톨은 코드 오류가 아니라 게임 실패 양상이다"]:
 //   한 전투(tickCount는 전투마다 리셋) 6000틱 초과 = 못 끝내는 실패 → DEFEAT + resultReason:"timeout_stall".
@@ -10448,6 +10504,7 @@ function _matrixPersist() {
       exportType: "project_signal_qa_matrix",
       buildVersion: (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : null,
       matrixId: _matrix.matrixId, startedAt: _matrix.startedAtIso || null, runs: _matrix.rows,
+      summary: (typeof _matrixBuildSummary === "function") ? _matrixBuildSummary(_matrix.rows) : null,   // v0.3.8ci: 그룹 요약 동봉
     }));
   } catch (e) { console.warn("[matrix] persist 실패", e); }
 }
@@ -10500,6 +10557,65 @@ function startMatrixPoison1B() {
 // v0.3.8bz [Phase 1C — 유키 승인: "작게 간다. 트롤만 간다. 3프리셋 × 3런만 간다."]
 function startMatrixTroll1C() {
   startMatrixMvp(3, MATRIX_TRL_PLAN);
+}
+
+// v0.3.8ci [4테마 체온계 1차 — 유키 결]: 12그룹 × 5런 = 60런. startMatrixMvp 기계 그대로 재사용.
+//   samplePhase 주입 + 플랜의 그룹 메타가 자동으로 row까지 흐른다. 5런은 동전 5닢 — 극단 탐지용.
+function startMatrixCi(reps) {
+  const r = reps || 5;
+  const plan = MATRIX_CI_PLAN.map(p => Object.assign({}, p, { samplePhase: "theme_thermometer_1" }));
+  startMatrixMvp(r, plan);
+}
+
+// v0.3.8ci [그룹 요약 export — 루다 수기 합산 축소]: themeGroup별로 자동 집계.
+//   5런 clearRate는 표시하되 판정 문구는 "체온계 5런 — 극단 탐지용". 5런으로 밸런스 확정 안 함.
+function _matrixBuildSummary(rows) {
+  const src = rows || (_matrix.rows && _matrix.rows.length ? _matrix.rows : (function(){ const s=_matrixLoadStore(); return (s&&s.runs)||[]; })());
+  const groups = {};
+  src.forEach(row => {
+    const key = row.themeGroup || row.presetCode || "(ungrouped)";
+    if (!groups[key]) groups[key] = {
+      themeGroup: key, themeId: row.themeId || null, groupLabel: row.groupLabel || null,
+      groupPurpose: row.groupPurpose || null, keyJobPresence: row.keyJobPresence || null,
+      excludedKeyJobs: row.excludedKeyJobs || null, samplePhase: row.samplePhase || null,
+      totalRuns: 0, clearCount: 0, defeatCount: 0, errorCount: 0,
+      _reached: [], _ticks: [], resultReasonCounts: {}, validityTagCounts: {},
+    };
+    const g = groups[key];
+    g.totalRuns++;
+    if (row.result === "CLEAR") g.clearCount++;
+    else if (row.result === "ERROR") g.errorCount++;
+    else g.defeatCount++;
+    if (typeof row.reachedStage === "number") g._reached.push(row.reachedStage);
+    if (typeof row.runDurationTicks === "number") g._ticks.push(row.runDurationTicks);
+    const rr = row.resultReason || "(none)";
+    g.resultReasonCounts[rr] = (g.resultReasonCounts[rr] || 0) + 1;
+    (row.validityTags && row.validityTags.length ? row.validityTags : ["VALID"]).forEach(t => {
+      g.validityTagCounts[t] = (g.validityTagCounts[t] || 0) + 1;
+    });
+  });
+  const avg = a => a.length ? Math.round((a.reduce((s,x)=>s+x,0)/a.length)*100)/100 : null;
+  return Object.values(groups).map(g => {
+    const out = {
+      themeGroup: g.themeGroup, themeId: g.themeId, groupLabel: g.groupLabel, groupPurpose: g.groupPurpose,
+      totalRuns: g.totalRuns, clearCount: g.clearCount, defeatCount: g.defeatCount, errorCount: g.errorCount,
+      clearRate: g.totalRuns ? Math.round((g.clearCount/g.totalRuns)*1000)/1000 : null,
+      avgReachedStage: avg(g._reached), minReachedStage: g._reached.length ? Math.min(...g._reached) : null,
+      maxReachedStage: g._reached.length ? Math.max(...g._reached) : null,
+      resultReasonCounts: g.resultReasonCounts, avgLastBattleTicks: avg(g._ticks),
+      validityTagCounts: g.validityTagCounts, keyJobPresence: g.keyJobPresence, excludedKeyJobs: g.excludedKeyJobs,
+      samplePhase: g.samplePhase,
+      verdictNote: "체온계 5런 — 극단 탐지용 (밸런스 확정 아님; 성공률 판정은 10런+)",
+    };
+    return out;
+  });
+}
+function matrixCopySummary() {
+  const summary = _matrixBuildSummary();
+  const txt = JSON.stringify({ exportType: "project_signal_qa_matrix_summary", buildVersion: (typeof BUILD_VERSION !== "undefined") ? BUILD_VERSION : null, samplePhase: "theme_thermometer_1", groups: summary }, null, 2);
+  const done = () => _matrixStatus("Matrix 그룹 요약 복사됨");
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done); else done();
+  return txt;
 }
 
 function stopMatrixMvp(reason) {
@@ -10593,6 +10709,18 @@ function _matrixCollectRow() {
       timestamp: new Date().toISOString(),
       themeId: meta.themeId || (fp && fp.themeId) || null,
       presetCode: meta.presetCode || null,
+      // v0.3.8ci [체온계 그룹 메타 — 루다 그룹 집계용]: 플랜 entry에서 그대로 적재
+      themeGroup: meta.themeGroup || null,
+      groupLabel: meta.groupLabel || null,
+      groupPurpose: meta.groupPurpose || null,
+      keyJobPresence: meta.keyJobPresence || null,
+      excludedKeyJobs: meta.excludedKeyJobs || null,
+      matrixBatchId: _matrix.matrixId,
+      samplePhase: meta.samplePhase || null,
+      // v0.3.8ci [유효성 태그 — 기본 VALID, ERROR면 RUN_INVALID]: x1/성능 오염은 손맛 단계에서 부여
+      runValidity: _matrix.errInfo ? "RUN_INVALID" : "VALID",
+      validityTags: _matrix.errInfo ? ["RUN_INVALID"] : [],
+      validityNote: null,
       rep: meta.rep || null,
       seedLike: meta.seedLike || null,
       result,
