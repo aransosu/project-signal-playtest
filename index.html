@@ -5184,7 +5184,7 @@ body.fx-debug-strong .taunt-link-knot-icon { font-size: 22px; }
       <div class="title-codename">CODENAME</div>
       <div class="title-main">PROJECT<br>SIGNAL</div>
       <div class="title-version" id="title-version">MK.II</div>
-      <div class="dev-unlock-banner" id="dev-unlock-banner" style="display:none;">⚙ DEV · ALL UNLOCKED</div>
+      <div class="dev-unlock-banner" id="dev-unlock-banner" style="display:none;"></div>
     </div>
 
     <p class="title-tagline">
@@ -6142,7 +6142,7 @@ const ROLE_SYMBOLS = {
 
   되돌리려면: ENABLE_STAGE13_TEST_SOFTENING = false
 */
-const BUILD_VERSION = "v0.3.8cq-assassin-mark-target-meter";
+const BUILD_VERSION = "v0.3.8-final-rnd-clean";
 const ENABLE_STAGE13_TEST_SOFTENING = true;
 
 /* ─── v0.3.8r2: 개발용 스테이지 테스트 도구 ───
@@ -6151,13 +6151,13 @@ const ENABLE_STAGE13_TEST_SOFTENING = true;
    목적: 클리어 밸런스 확인이 아니라 "장면 관측" (인트로/대형감/게이지 surge/광폭화/로그 시인성).
    ※ 오염 방지: dev 점프 런은 runState.devTest로 표식 → timeStats/export/결과/발자취에 "DEV 테스트 런" 표시.
       일반 런 데이터와 섞이지 않게. */
-const DEV_STAGE_TEST = true;
+const DEV_STAGE_TEST = false;   // v0.3.8-final-rnd-clean: R&D 종료 보관용 — DEV 도구 화면 비노출
 
 /* ─── v0.3.8v: DEV 모드 ───
    메인 화면엔 [DEV 모드] 버튼 하나만. 누르면 별도 화면에서 테스트 항목을 스크롤 선택.
    DEV_MODE_ENABLED = false 로 친구/릴리즈 빌드에서 완전히 숨김.
    (DEV_STAGE_TEST는 하위호환 — 둘 중 하나라도 true면 노출) */
-const DEV_MODE_ENABLED = true;
+const DEV_MODE_ENABLED = false;   // v0.3.8-final-rnd-clean: R&D 종료 보관용 — DEV/QA UI 전부 비노출
 
 // v0.3.8ak1: DEV 강제 해금 — true면 배속/테마 잠금 무시 (홈빌드 테스트용. 릴리즈는 false).
 //   실제 해금 진행(ps_hasClearedBeginner)과 별개 — 잠금 흐름을 거치지 않고 바로 관측할 때.
@@ -18789,8 +18789,8 @@ const CODEX_ENTRIES = [
     document.title = "Project Signal Mk.II " + ver;
     const el = document.getElementById("title-version");
     if (!el) return;
-    const unlocked = (typeof DEV_PLAYTEST_UNLOCK_ALL !== "undefined" && DEV_PLAYTEST_UNLOCK_ALL)
-      ? " · all unlocked" : "";
+    // v0.3.8-final-rnd-clean: 해금은 유지하되 'all unlocked' DEV 문구는 화면에 노출하지 않는다.
+    const unlocked = "";
     el.textContent = `MK.II — ${ver}${unlocked}`;
   })();
 })();
